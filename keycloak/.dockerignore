@@ -1,0 +1,14 @@
+node_modules
+dist
+dist_keycloak
+.git
+.gitignore
+README.md
+*.log
+.DS_Store
+.env
+.env.local
+coverage
+.vscode
+.idea
+
