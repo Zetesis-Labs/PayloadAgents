@@ -81,12 +81,11 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_DB=postgres
       - KC_DB_URL=jdbc:postgresql://db:5432/keycloak-db
-      - KC_DB_USERNAME=admin
+      - KC_DB_USERNAME=db_admin
       - KC_DB_PASSWORD=devsecret
       - KC_HOSTNAME_STRICT=false
-      - KC_HOSTNAME=auth.localhost
+      - KC_HOSTNAME=https://auth.localhost
       - KC_HTTP_ENABLED=true
-      - KC_HOSTNAME_STRICT_HTTPS=true
       - KC_HEALTH_ENABLED=true
       - KC_METRICS_ENABLED=true
       - KC_PROXY=edge
