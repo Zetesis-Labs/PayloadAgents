@@ -9,6 +9,7 @@ import { Tenants } from './collections/Tenants'
 import Users from './collections/Users'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { isSuperAdmin } from './access/isSuperAdmin'
+import { typesensePlugin } from './payload/plugins/typesense'
 import type { Config } from './payload-types'
 import { getUserTenantIDs } from './utilities/getUserTenantIDs'
 import { seed } from './seed'
@@ -62,6 +63,7 @@ export default buildConfig({
       },
       userHasAccessToAllTenants: (user) => isSuperAdmin(user),
     }),
+    typesensePlugin,
     authJs,
   ],
 })
