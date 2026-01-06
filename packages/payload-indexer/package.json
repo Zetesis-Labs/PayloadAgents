@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-indexer",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "Generic document indexing library for Payload CMS with support for multiple search backends, embedding providers, and chunking strategies.",
   "license": "MIT",
   "sideEffects": false,

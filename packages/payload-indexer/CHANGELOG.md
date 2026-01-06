@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.6.4
+
+### Patch Changes
+
+- 082043e: fix: issues related with the compilation and import of the package
+
 ## 1.6.3
 
 ### Patch Changes
