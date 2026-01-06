@@ -68,20 +68,20 @@
     "url": "https://github.com/Nexo-Labs/PayloadCMS-Keycloak-MultiTenancy-Base/issues"
   },
   "author": {
-    "name": "Front Tribe",
-    "email": "hey@fronttribe.com",
-    "url": "https://fronttribe.com"
+    "name": "Rubén Garcia",
+    "email": "ruben@nexolabs.xyz",
+    "url": "https://nexolabs.xyz"
   },
   "publishConfig": {
     "exports": {
       ".": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
       }
     },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   }

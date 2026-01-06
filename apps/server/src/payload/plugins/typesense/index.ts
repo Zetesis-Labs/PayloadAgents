@@ -13,6 +13,7 @@ import {
 } from '@nexo-labs/payload-typesense'
 
 import { transformTenant } from './transforms'
+import { Config } from 'payload'
 
 // ============================================================================
 // CONSTANTS
@@ -86,8 +87,8 @@ const typesenseRAGPlugin = createTypesenseRAGPlugin({
 
 // 4. Export composed plugin
 // Using generic to avoid version conflicts between workspace packages
-export const typesensePlugin = <T extends Record<string, unknown>>(config: T): T => {
-    config = indexerPlugin(config as never) as unknown as T
-    config = typesenseRAGPlugin(config as never) as unknown as T
-    return config
+export const typesensePlugin = (config: Config): Config => {
+  config = indexerPlugin(config)
+  config = typesenseRAGPlugin(config)
+  return config
 }
