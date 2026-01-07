@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-typesense",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "A powerful, production-ready search plugin that integrates Typesense with Payload CMS, providing lightning-fast, typo-tolerant search capabilities with real-time synchronization and a comprehensive theme system.",
   "license": "MIT",
   "sideEffects": false,

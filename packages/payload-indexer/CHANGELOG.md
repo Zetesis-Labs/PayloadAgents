@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.6.7
+
+### Patch Changes
+
+- 7288412: Updated the external depencencies to avoid conflits with paylaod types
+
 ## 1.6.6
 
 ### Patch Changes

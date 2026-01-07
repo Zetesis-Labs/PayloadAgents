@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.7
+
+### Patch Changes
+
+- 7288412: Updated the external depencencies to avoid conflits with paylaod types
+- Updated dependencies [7288412]
+  - @nexo-labs/payload-indexer@1.6.7
+
 ## 1.6.6
 
 ### Patch Changes
