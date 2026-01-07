@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.6.6
+
+### Patch Changes
+
+- 4619358: update typos in payload-typesense and payload-indexer
+
 ## 1.6.5
 
 ### Patch Changes
