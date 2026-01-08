@@ -23,6 +23,9 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   admin: {
     user: 'users',
+    components: {
+      afterDashboard: ['@/modules/payload-admin/typesense-sync-widget'],
+    },
   },
   collections: [Pages, Users, Tenants, ChatSessions],
   db: postgresAdapter({
