@@ -67,23 +67,23 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
       },
       "./builder": {
-        "import": "./dist/builder.js",
-        "types": "./dist/builder.d.ts",
-        "default": "./dist/builder.js"
+        "types": "./dist/builder.d.mts",
+        "import": "./dist/builder.mjs",
+        "default": "./dist/builder.mjs"
       },
       "./renderer": {
-        "import": "./dist/renderer.js",
-        "types": "./dist/renderer.d.ts",
-        "default": "./dist/renderer.js"
+        "types": "./dist/renderer.d.mts",
+        "import": "./dist/renderer.mjs",
+        "default": "./dist/renderer.mjs"
       }
     },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   }

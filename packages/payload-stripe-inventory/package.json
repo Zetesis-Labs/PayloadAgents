@@ -64,18 +64,18 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
       },
       "./server": {
-        "import": "./dist/server/index.js",
-        "types": "./dist/server/index.d.ts",
-        "default": "./dist/server/index.js"
+        "types": "./dist/server/index.d.mts",
+        "import": "./dist/server/index.mjs",
+        "default": "./dist/server/index.mjs"
       }
     },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   }
