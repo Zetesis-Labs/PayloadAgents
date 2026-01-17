@@ -49,13 +49,13 @@
     "prepare": "pnpm run clean && pnpm run build"
   },
   "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.70.0",
-    "@payloadcms/ui": "^3.70.0",
-    "payload": "^3.70.0",
+    "@payloadcms/richtext-lexical": "^3.72.0",
+    "@payloadcms/ui": "^3.72.0",
+    "payload": "^3.72.0",
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@payloadcms/richtext-lexical": "^3.70.0",
+    "@payloadcms/richtext-lexical": "^3.72.0",
     "@storybook/react": "^8.6.11",
     "@types/node": "^22.0.0",
     "@types/react": "npm:types-react@19.0.0-rc.1",
