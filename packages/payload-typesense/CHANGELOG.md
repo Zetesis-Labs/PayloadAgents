@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.10
+
+### Patch Changes
+
+- 59dcf78: Fixed issue in the external tsdown config
+- Updated dependencies [59dcf78]
+  - @nexo-labs/payload-indexer@1.6.10
+
 ## 1.6.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @nexo-labs/payload-taxonomies
 
+## 1.6.10
+
+### Patch Changes
+
+- 59dcf78: Fixed issue in the external tsdown config
+
 ## 1.6.9
 
 ### Patch Changes
