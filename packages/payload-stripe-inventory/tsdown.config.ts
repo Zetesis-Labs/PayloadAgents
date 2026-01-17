@@ -6,11 +6,18 @@ export default defineConfig({
   dts: {
     resolve: true,
   },
-  splitting: false,
   sourcemap: true,
   clean: true,
   treeshake: true,
   outDir: 'dist',
   tsconfig: './tsconfig.json',
+  external: [
+    'payload',
+    'stripe',
+    '@payloadcms/plugin-stripe',
+    '@nexo-labs/payload-taxonomies',
+    'react',
+    'next'
+  ]
 })
 

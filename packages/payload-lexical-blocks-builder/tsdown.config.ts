@@ -6,11 +6,16 @@ export default defineConfig({
   dts: {
     resolve: true,
   },
-  splitting: false,
   sourcemap: true,
   clean: true,
   treeshake: true,
   outDir: 'dist',
   tsconfig: './tsconfig.json',
+  external: [
+    'payload',
+    '@payloadcms/ui',
+    '@payloadcms/richtext-lexical',
+    'react',
+  ],
 })
 
