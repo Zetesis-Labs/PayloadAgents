@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-taxonomies",
-  "version": "1.6.1",
+  "version": "1.6.8",
   "description": "Taxonomies for Payload CMS",
   "keywords": [
     "payload-cms",
@@ -8,6 +8,11 @@
   ],
   "license": "MIT",
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nexo-Labs/PayloadCMS-Keycloak-MultiTenancy-Base",
+    "directory": "packages/payload-taxonomies"
+  },
   "sideEffects": false,
   "type": "module",
   "exports": {

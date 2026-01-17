@@ -1,5 +1,11 @@
 # @nexo-labs/payload-lexical-blocks-builder
 
+## 1.6.8
+
+### Patch Changes
+
+- 773fc91: Unified in the repository all the common packages
+
 ## 1.6.1
 
 ### Patch Changes

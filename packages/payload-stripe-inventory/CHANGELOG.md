@@ -1,5 +1,13 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.6.8
+
+### Patch Changes
+
+- 773fc91: Unified in the repository all the common packages
+- Updated dependencies [773fc91]
+  - @nexo-labs/payload-taxonomies@1.6.8
+
 ## 1.6.1
 
 ### Patch Changes

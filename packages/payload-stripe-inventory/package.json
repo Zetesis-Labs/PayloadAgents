@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-stripe-inventory",
-  "version": "1.6.1",
+  "version": "1.6.8",
   "description": "Sistema de inventario y suscripciones con Stripe para Payload CMS",
   "keywords": [
     "payload-cms",
@@ -12,6 +12,11 @@
   ],
   "license": "MIT",
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nexo-Labs/PayloadCMS-Keycloak-MultiTenancy-Base",
+    "directory": "packages/payload-stripe-inventory"
+  },
   "sideEffects": false,
   "type": "module",
   "exports": {
