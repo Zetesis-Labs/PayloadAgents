@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.9
+
+### Patch Changes
+
+- 772a66e: Fix publishConfig exports to point to correct .mjs and .d.mts files instead of non-existent .js and .d.ts files
+- Updated dependencies [772a66e]
+  - @nexo-labs/payload-indexer@1.6.9
+
 ## 1.6.8
 
 ### Patch Changes

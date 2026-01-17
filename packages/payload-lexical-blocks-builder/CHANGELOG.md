@@ -1,5 +1,11 @@
 # @nexo-labs/payload-lexical-blocks-builder
 
+## 1.6.9
+
+### Patch Changes
+
+- 772a66e: Fix publishConfig exports to point to correct .mjs and .d.mts files instead of non-existent .js and .d.ts files
+
 ## 1.6.8
 
 ### Patch Changes
