@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.11
+
+### Patch Changes
+
+- 90d208b: payload updated to 3.72.0
+- Updated dependencies [90d208b]
+  - @nexo-labs/payload-indexer@1.6.11
+
 ## 1.6.10
 
 ### Patch Changes
