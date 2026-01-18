@@ -14,8 +14,13 @@ export interface StripeInventoryRoutes {
 
 /**
  * Configuration for the Stripe Inventory plugin
+ * @template TProduct - The product type used by the consumer (defaults to unknown)
+ * @template TContent - The content type used by the consumer (defaults to unknown)
  */
-export interface StripeInventoryPluginConfig {
+export interface StripeInventoryPluginConfig<
+  TProduct = unknown,
+  TContent = unknown
+> {
   /**
    * URL routes for redirects after Stripe operations
    */
@@ -62,11 +67,7 @@ export interface StripeInventoryPluginConfig {
    * @param payload - The Payload instance
    * @returns An array of permission slugs
    */
-  resolveSubscriptionPermissions: (
-    subscription: Stripe.Subscription,
-    product: unknown,
-    payload: Payload
-  ) => Promise<string[]>;
+  resolveSubscriptionPermissions: ResolveSubscriptionPermissions<TProduct>;
 
   /**
    * Resolves the permissions required by content.
@@ -75,26 +76,25 @@ export interface StripeInventoryPluginConfig {
    * @param payload - The Payload instance
    * @returns An array of permission slugs required by the content
    */
-  resolveContentPermissions: (
-    content: unknown,
-    payload: Payload
-  ) => Promise<string[]>;
+  resolveContentPermissions: ResolveContentPermissions<TContent>;
 }
 
 /**
  * Type alias for subscription permissions resolver callback
+ * @template TProduct - The product type used by the consumer (defaults to unknown for flexibility)
  */
-export type ResolveSubscriptionPermissions = (
+export type ResolveSubscriptionPermissions<TProduct = unknown> = (
   subscription: Stripe.Subscription,
-  product: unknown,
+  product: TProduct,
   payload: Payload
 ) => Promise<string[]>;
 
 /**
  * Type alias for content permissions resolver callback
+ * @template TContent - The content type used by the consumer (defaults to unknown for flexibility)
  */
-export type ResolveContentPermissions = (
-  content: unknown,
+export type ResolveContentPermissions<TContent = unknown> = (
+  content: TContent,
   payload: Payload
 ) => Promise<string[]>;
 

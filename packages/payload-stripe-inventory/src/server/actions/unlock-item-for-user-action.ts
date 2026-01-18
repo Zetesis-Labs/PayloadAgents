@@ -6,16 +6,8 @@ import {
   MAX_UNLOCKS_PER_WEEK,
 } from "../../model/index.js";
 import { generateUserInventory } from "../../model/builders.js";
-import type { BaseUser, UnlockItem, UserInventory } from "../../types/index.js";
+import type { BaseUser, UnlockItem, UserInventory, Result } from "../../types/index.js";
 import type { ResolveContentPermissions } from "../plugin/stripe-inventory-types.js";
-
-export type Result<T, E = string> = {
-    data: T;
-    error?: never;
-} | {
-    data?: never;
-    error: E;
-}
 
 
 const addUniqueUnlock = (
@@ -56,8 +48,8 @@ const addUniqueUnlock = (
  * await unlockItem(payload, user, 'posts', 123);
  * ```
  */
-export const createUnlockAction = (
-  resolveContentPermissions: ResolveContentPermissions
+export const createUnlockAction = <TContent = unknown>(
+  resolveContentPermissions: ResolveContentPermissions<TContent>
 ) => {
   /**
    * Unlocks an item for a user, adding it to their inventory.
@@ -77,15 +69,16 @@ export const createUnlockAction = (
     if (!user || !user.id) {
       return { error: "Usuario no válido" };
     }
+    // Collection slug is validated by the consumer - cast required for generic plugin
     const item = await payload.findByID({
-      collection: collection as any,
+      collection: collection as "users",
       id: contentId.toString(),
     });
 
     if (!item) {
       return { error: "Elemento no encontrado" };
     }
-    const permissions = await resolveContentPermissions(item, payload);
+    const permissions = await resolveContentPermissions(item as TContent, payload);
 
     if (!checkIfUserCanUnlockQuery(user, permissions)) {
       return { error: "No tienes permisos para desbloquear este elemento" };
@@ -98,8 +91,8 @@ export const createUnlockAction = (
       };
     }
 
-    const inventory =
-      (user.inventory as UserInventory) ?? generateUserInventory();
+    const inventory: UserInventory =
+      (user.inventory as UserInventory | undefined) ?? generateUserInventory();
 
     const updatedUnlocks = addUniqueUnlock(
       inventory.unlocks,

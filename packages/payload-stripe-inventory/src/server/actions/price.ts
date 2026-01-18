@@ -28,17 +28,19 @@ export const updatePrices = async (payload: Payload) => {
       {} as Record<string, number[]>
     );
 
-  Object.entries(pricesByProductId).map(async ([productId, prices]) => {
-    await payload.update({
-      collection: COLLECTION_SLUG_PRODUCTS,
-      data: {
-        prices,
-      },
-      where: {
-        stripeID: { equals: productId },
-      },
-    });
-  });
+  await Promise.all(
+    Object.entries(pricesByProductId).map(async ([productId, prices]) => {
+      await payload.update({
+        collection: COLLECTION_SLUG_PRODUCTS,
+        data: {
+          prices,
+        },
+        where: {
+          stripeID: { equals: productId },
+        },
+      });
+    })
+  );
 };
 
 interface PriceUpserted {
@@ -54,7 +56,7 @@ export async function priceUpsert(
     typeof price.product === "string" ? price.product : price.product.id;
 
   if (price.deleted !== undefined) {
-    priceDeleted(price, payload);
+    await priceDeleted(price, payload);
     return null;
   }
   if (price.unit_amount == null) return null;

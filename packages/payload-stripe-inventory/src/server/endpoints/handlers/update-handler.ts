@@ -35,7 +35,16 @@ export function createUpdateHandler(config: StripeEndpointConfig): PayloadHandle
         return errorResponse("subscriptionId is required", 400);
       }
 
+      // Validate subscription ID format
+      if (!subscriptionId.startsWith("sub_")) {
+        return errorResponse("Invalid subscription ID format", 400);
+      }
+
       const stripe = stripeBuilder();
+
+      // Get current subscription state for potential rollback
+      const originalSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const originalCancelAtPeriodEnd = originalSubscription.cancel_at_period_end;
 
       // Update subscription in Stripe
       await stripe.subscriptions.update(subscriptionId, {
@@ -50,13 +59,22 @@ export function createUpdateHandler(config: StripeEndpointConfig): PayloadHandle
         inventory.subscriptions[subscriptionId].cancel_at_period_end = cancelAtPeriodEnd;
       }
 
-      // Sync inventory
+      // Sync inventory with rollback on failure
       if (customer?.email) {
-        await upsertCustomerInventoryAndSyncWithUser(
-          payload,
-          inventory,
-          customer.email
-        );
+        try {
+          await upsertCustomerInventoryAndSyncWithUser(
+            payload,
+            inventory,
+            customer.email
+          );
+        } catch (syncError) {
+          // Rollback Stripe change if local sync fails
+          console.error("[Stripe Update] Local sync failed, rolling back Stripe change", syncError);
+          await stripe.subscriptions.update(subscriptionId, {
+            cancel_at_period_end: originalCancelAtPeriodEnd,
+          });
+          throw syncError;
+        }
       }
 
       // Redirect back to subscription page

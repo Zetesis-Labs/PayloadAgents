@@ -27,6 +27,11 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
 
       const { user, payload } = validated;
 
+      // Validate user email
+      if (!user.email) {
+        return errorResponse("User email is required", 400);
+      }
+
       // Extract amount from query params
       const url = new URL(request.url || "");
       const amountParam = url.searchParams.get("amount");
@@ -45,7 +50,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
 
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
-        user.email!,
+        user.email,
         user.name
       );
 
@@ -53,7 +58,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
       await upsertCustomerInventoryAndSyncWithUser(
         payload,
         user.customer?.inventory,
-        user.email!,
+        user.email,
         customerId
       );
 

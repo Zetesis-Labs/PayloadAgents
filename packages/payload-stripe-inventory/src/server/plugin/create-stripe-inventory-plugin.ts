@@ -69,8 +69,11 @@ export { createStripeEndpoints };
  * - GET /api{basePath}/update?subscriptionId={id}&cancelAtPeriodEnd={bool} - Update subscription
  * - GET /api{basePath}/donation?amount={cents} - Returns JSON with checkout URL
  */
-export function createStripeInventoryPlugin(
-  config: StripeInventoryPluginConfig
+export function createStripeInventoryPlugin<
+  TProduct = unknown,
+  TContent = unknown
+>(
+  config: StripeInventoryPluginConfig<TProduct, TContent>
 ): Plugin {
   const basePath = config.basePath || "/stripe";
 
@@ -109,21 +112,21 @@ export function createStripeInventoryPlugin(
         "price.deleted": async ({ event, payload }) =>
           await priceDeleted(event.data.object, payload),
         "customer.subscription.created": async ({ event, payload }) =>
-          await subscriptionUpsert(
+          await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
             resolveSubscriptionPermissions
           ),
         "customer.subscription.paused": async ({ event, payload }) =>
-          await subscriptionUpsert(
+          await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
             resolveSubscriptionPermissions
           ),
         "customer.subscription.updated": async ({ event, payload }) =>
-          await subscriptionUpsert(
+          await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,

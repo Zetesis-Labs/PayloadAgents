@@ -1,4 +1,4 @@
-import { COLLECTION_SLUG_CUSTOMERS } from "../../../model/index.js";
+import { COLLECTION_SLUG_CUSTOMERS, COLLECTION_SLUG_USER } from "../../../model/index.js";
 import { Payload } from "payload";
 
 export async function syncCustomerByEmail({ email, payload }: { email: string, payload: Payload }) {
@@ -9,7 +9,7 @@ export async function syncCustomerByEmail({ email, payload }: { email: string, p
   const customerId = customers.docs?.[0]?.id;
 
   await payload.update({
-    collection: "users",
+    collection: COLLECTION_SLUG_USER,
     data: {
       customer: customerId,
     },

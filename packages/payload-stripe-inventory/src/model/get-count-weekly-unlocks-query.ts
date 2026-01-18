@@ -13,10 +13,12 @@ export const countWeeklyUnlocksQuery = (
     return 0;
   }
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  // Use UTC to ensure consistent counting regardless of server timezone
+  const now = Date.now();
+  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+  const sevenDaysAgo = now - sevenDaysInMs;
 
   return inventory.unlocks.filter(
-    unlock => new Date(unlock.dateUnlocked) >= sevenDaysAgo
+    unlock => new Date(unlock.dateUnlocked).getTime() >= sevenDaysAgo
   ).length;
 };

@@ -1,6 +1,6 @@
 import { Payload } from "payload";
 import type Stripe from "stripe";
-import { COLLECTION_SLUG_CUSTOMERS } from "../../model/index.js";
+import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from "../../model/index.js";
 import { resolveStripeCustomer } from "../utils/stripe/get-customer.js";
 import { findOrCreateCustomer } from "../utils/payload/find-or-create-customer.js";
 import { removeCustomerByStripeId } from "../utils/payload/remove-customer-by-stripe-id.js";
@@ -30,14 +30,12 @@ export const paymentSucceeded = async (
       payload,
       stripeId: stripeCustomer.id,
     });
-    if (!customer) return;
-
     if (!customer) {
-      payload.logger.error(`User not found for payment: ${stripeCustomer.email}`);
+      payload.logger.error(`Customer not found for payment: ${stripeCustomer.email}`);
       return;
     }
 
-    let inventory = customer.inventory
+    const inventory = customer.inventory ?? generateCustomerInventory();
     inventory.payments[id] = paymentIntent;
 
     await payload.update({
