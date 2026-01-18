@@ -1,5 +1,13 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.6.12
+
+### Patch Changes
+
+- 2c43730: Uploaded payload-stripe-inventory to new system of building
+- Updated dependencies [2c43730]
+  - @nexo-labs/payload-taxonomies@1.6.12
+
 ## 1.6.11
 
 ### Patch Changes

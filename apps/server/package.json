@@ -1,6 +1,6 @@
 {
   "name": "multi-tenant",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "An example of a multi tenant application with Payload",
   "license": "MIT",
   "type": "module",
