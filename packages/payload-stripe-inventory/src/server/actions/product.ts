@@ -11,12 +11,12 @@ const logs = false;
 export const updateProducts = async (payload: Payload) => {
   const stripe = await stripeBuilder();
   const products = await stripe.products.list({ limit: 100, active: true });
-  products.data.forEach(product => productSync(product, payload));
+  await Promise.all(products.data.map(product => productSync(product, payload)));
 };
 
 export const productSync = async (object: Stripe.Product, payload: Payload) => {
   const { id: stripeProductID, name, description, images } = object;
-  if (object.deleted !== undefined) return productDeleted(object, payload);
+  if (object.deleted !== undefined) return await productDeleted(object, payload);
   try {
     await payloadUpsert({
       payload,

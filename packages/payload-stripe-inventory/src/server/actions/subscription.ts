@@ -1,21 +1,22 @@
 import { Payload } from "payload";
 import type Stripe from "stripe";
-import { COLLECTION_SLUG_PRODUCTS } from "../../model/index.js";
-import { getPermissionsSlugs } from "../../model/permissions.js";
+import { COLLECTION_SLUG_PRODUCTS, generateCustomerInventory } from "../../model/index.js";
 import type { CustomerInventory } from "../../types/index.js";
 import { upsertCustomerInventoryAndSyncWithUser } from "../utils/payload/upsert-customer-inventory-and-sync-with-user.js";
 import { getUserIdByEmail } from "../utils/payload/get-userId-by-email.js";
 import { resolveStripeCustomer } from "../utils/stripe/get-customer.js";
 import { removeCustomerByStripeId } from "../utils/payload/remove-customer-by-stripe-id.js";
 import { findOrCreateCustomer } from "../utils/payload/find-or-create-customer.js";
+import type { ResolveSubscriptionPermissions } from "../plugin/stripe-inventory-types.js";
 
-export const subscriptionUpsert = async (
+export const subscriptionUpsert = async <TProduct = unknown>(
   subscription: Stripe.Subscription,
   payload: Payload,
   onSubscriptionUpdate: (
     type: "create" | "delete",
     userId: string
-  ) => Promise<void>
+  ) => Promise<void>,
+  resolveSubscriptionPermissions: ResolveSubscriptionPermissions<TProduct>
 ) => {
   const { id: stripeID, status, customer: stripeCustomer } = subscription;
   const customer = await resolveStripeCustomer({ customer: stripeCustomer });
@@ -62,7 +63,7 @@ export const subscriptionUpsert = async (
     const inventory = customer.inventory;
     inventory.subscriptions[stripeID] = {
       ...subscription,
-      permissions: getPermissionsSlugs({ permissions: product.roles }),
+      permissions: await resolveSubscriptionPermissions(subscription, product as TProduct, payload),
     };
     info(`INVENTORY OF THE SUBSCRIPTION ${inventory}`);
     await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId);
@@ -95,7 +96,7 @@ export const subscriptionDeleted = async (
   if (!customer) {
     payload.logger.error("No stripe customer found for subscription");
     return;
-  } 
+  }
   if (customer.deleted) {
     await removeCustomerByStripeId({ stripeId: customer.id, payload });
     return;
@@ -116,7 +117,7 @@ export const subscriptionDeleted = async (
       return;
     }
 
-    const inventory = customer.inventory as unknown as CustomerInventory;
+    const inventory: CustomerInventory = customer.inventory ?? generateCustomerInventory();
     delete inventory.subscriptions[id];
 
     await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId);

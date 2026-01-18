@@ -1,4 +1,3 @@
-import { buildTaxonomyRelationship } from "@nexo-labs/payload-taxonomies";
 import { CollectionConfig } from "payload";
 import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from "../../model/index.js";
 import { isAdminOrStripeActive } from "../access/index.js";
@@ -57,16 +56,5 @@ export const products: CollectionConfig = {
       name: "features",
       fields: [{ type: "text", name: "title" }],
     },
-    buildTaxonomyRelationship({
-      name: "roles",
-      label: "Roles",
-      defaultValue: [],
-      filterOptions: () => {
-        return {
-          "payload.types": { in: ["role"] },
-        };
-      },
-      required: false,
-    }),
   ],
 };

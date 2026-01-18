@@ -1,6 +1,6 @@
 import { Payload } from "payload";
 import type Stripe from "stripe";
-import { COLLECTION_SLUG_CUSTOMERS } from "../../model/index.js";
+import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from "../../model/index.js";
 import { findOrCreateCustomer } from "../utils/payload/find-or-create-customer.js";
 import { resolveStripeCustomer } from "../utils/stripe/get-customer.js";
 import { removeCustomerByStripeId } from "../utils/payload/remove-customer-by-stripe-id.js";
@@ -30,9 +30,12 @@ export const invoiceSucceeded = async (
       payload,
       stripeId: stripeCustomer.id,
     });
-    if (!customer) return;
+    if (!customer) {
+      payload.logger.error(`Customer not found for invoice: ${stripeCustomer.email}`);
+      return;
+    }
 
-    let inventory = customer.inventory
+    const inventory = customer.inventory ?? generateCustomerInventory();
     inventory.invoices[id] = invoiceIntent;
 
     await payload.update({

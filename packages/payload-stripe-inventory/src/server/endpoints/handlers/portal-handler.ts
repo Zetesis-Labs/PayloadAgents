@@ -27,10 +27,23 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
 
       const { user, payload } = validated;
 
+      // Validate user email
+      if (!user.email) {
+        return errorResponse("User email is required", 400);
+      }
+
       // Extract optional params for subscription actions
       const url = new URL(request.url || "");
       const cancelSubscriptionId = url.searchParams.get("cancelSubscriptionId");
       const updateSubscriptionId = url.searchParams.get("updateSubscriptionId");
+
+      // Validate subscription ID format if provided (Stripe IDs start with 'sub_')
+      if (cancelSubscriptionId && !cancelSubscriptionId.startsWith("sub_")) {
+        return errorResponse("Invalid subscription ID format", 400);
+      }
+      if (updateSubscriptionId && !updateSubscriptionId.startsWith("sub_")) {
+        return errorResponse("Invalid subscription ID format", 400);
+      }
 
       // Build flow data if subscription action is requested
       let flowData: Stripe.BillingPortal.SessionCreateParams.FlowData | undefined;
@@ -51,7 +64,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
 
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
-        user.email!,
+        user.email,
         user.name
       );
 
@@ -59,7 +72,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
       await upsertCustomerInventoryAndSyncWithUser(
         payload,
         user.customer?.inventory,
-        user.email!,
+        user.email,
         customerId
       );
 

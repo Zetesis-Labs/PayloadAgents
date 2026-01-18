@@ -192,9 +192,6 @@ importers:
 
   packages/payload-stripe-inventory:
     dependencies:
-      '@nexo-labs/payload-taxonomies':
-        specifier: workspace:*
-        version: link:../payload-taxonomies
       '@payloadcms/plugin-stripe':
         specifier: ^3.72.0
         version: 3.72.0(next@15.4.10(@playwright/test@1.57.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.77.4))(payload@3.72.0(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(types-react@19.0.0-rc.1)(typescript@5.7.3)

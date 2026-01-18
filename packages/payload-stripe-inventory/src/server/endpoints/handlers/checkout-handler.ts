@@ -27,6 +27,11 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
 
       const { user, payload } = validated;
 
+      // Validate user email
+      if (!user.email) {
+        return errorResponse("User email is required", 400);
+      }
+
       // Extract priceId from query params
       const url = new URL(request.url || "");
       const priceId = url.searchParams.get("priceId");
@@ -39,7 +44,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
 
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
-        user.email!,
+        user.email,
         user.name
       );
 
@@ -47,7 +52,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
       await upsertCustomerInventoryAndSyncWithUser(
         payload,
         user.customer?.inventory,
-        user.email!,
+        user.email,
         customerId
       );
 

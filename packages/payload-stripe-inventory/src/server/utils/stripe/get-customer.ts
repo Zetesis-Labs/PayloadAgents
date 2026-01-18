@@ -9,11 +9,12 @@ export async function getCustomer({
   email: string;
 }): Promise<Stripe.Customer | null> {
   stripe = stripe ?? stripeBuilder();
-  const customers =  await stripe.customers.search({
-    query: `email:'${email}'`,
+  // Escape single quotes in email to prevent query injection
+  const sanitizedEmail = email.replace(/'/g, "\\'");
+  const customers = await stripe.customers.search({
+    query: `email:'${sanitizedEmail}'`,
   });
   return customers.data.length ? customers.data[0] as Stripe.Customer : null;
-  
 }
 
 export async function resolveStripeCustomer({ customer }: {
