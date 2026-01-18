@@ -7,8 +7,7 @@ import {
 } from "../../model/index.js";
 import { generateUserInventory } from "../../model/builders.js";
 import { getPermissionsSlugs } from "../../model/permissions.js";
-import type { UnlockItem, UserInventory } from "../../types/index.js";
-import { getCurrentUserQuery } from "../access/get-current-user-query.js";
+import type { BaseUser, UnlockItem, UserInventory } from "../../types/index.js";
 
 export type Result<T, E = string> = {
     data: T;
@@ -41,13 +40,21 @@ const addUniqueUnlock = (
   ];
 };
 
+/**
+ * Unlocks an item for a user, adding it to their inventory.
+ *
+ * @param payload - The Payload instance
+ * @param user - The authenticated user
+ * @param collection - The collection slug of the item to unlock
+ * @param contentId - The ID of the item to unlock
+ * @returns Result indicating success or error message
+ */
 export const unlockItemForUser = async (
-  getPayload: () => Promise<Payload>,
+  payload: Payload,
+  user: BaseUser,
   collection: string,
   contentId: number
 ): Promise<Result<boolean>> => {
-  const payload = await getPayload();
-  const user = await getCurrentUserQuery(payload);
   if (!user || !user.id) {
     return { error: "Usuario no válido" };
   }

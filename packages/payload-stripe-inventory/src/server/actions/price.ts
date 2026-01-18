@@ -16,7 +16,7 @@ export const updatePrices = async (payload: Payload) => {
   const pricesUpserted = await Promise.all(promises);
 
   const pricesByProductId = pricesUpserted
-    .mapNotNull(t => t)
+    .filter((p): p is PriceUpserted => p !== null)
     .reduce(
       (acc, { productId, priceId }) => {
         if (!acc[productId]) {

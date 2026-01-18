@@ -1,6 +1,3 @@
-// API Types
-export * from './api.types.js';
-
 // Permission Types
 export * from './permission.types.js';
 
