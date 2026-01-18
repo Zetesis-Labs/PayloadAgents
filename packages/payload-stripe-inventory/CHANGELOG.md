@@ -1,5 +1,11 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.6.13
+
+### Patch Changes
+
+- 6acd2d9: Updated payload-stripe-inventory to improve how the package is configured
+
 ## 1.6.12
 
 ### Patch Changes
