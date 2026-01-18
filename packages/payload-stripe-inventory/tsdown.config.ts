@@ -15,7 +15,6 @@ export default defineConfig({
     'payload',
     'stripe',
     '@payloadcms/plugin-stripe',
-    '@nexo-labs/payload-taxonomies',
     'react',
     'next'
   ]

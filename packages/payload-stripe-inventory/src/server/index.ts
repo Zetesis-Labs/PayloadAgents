@@ -10,10 +10,8 @@ export * from "./actions/index.js";
 
 // Collections
 export * from "./collections/customers.js";
-export * from "./collections/fields/permission-evaluation-field.js";
 export * from "./collections/prices.js";
 export * from "./collections/products.js";
-export * from "./collections/fields/index.js";
 
 // Utilities
 export * from "./utils/payload/sync-customer-by-email.js";

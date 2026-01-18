@@ -1,4 +1,5 @@
-import type { PayloadRequest } from "payload";
+import type { Payload, PayloadRequest } from "payload";
+import type Stripe from "stripe";
 import type { BaseUser } from "../../types/index.js";
 
 /**
@@ -52,7 +53,50 @@ export interface StripeInventoryPluginConfig {
    * @returns The user object or null if not authenticated
    */
   resolveUser?: (request: PayloadRequest) => Promise<BaseUser | null>;
+
+  /**
+   * Resolves the permissions granted by a subscription.
+   * This callback allows you to define how permissions are extracted from a product.
+   * @param subscription - The Stripe subscription object
+   * @param product - The product associated with the subscription
+   * @param payload - The Payload instance
+   * @returns An array of permission slugs
+   */
+  resolveSubscriptionPermissions: (
+    subscription: Stripe.Subscription,
+    product: unknown,
+    payload: Payload
+  ) => Promise<string[]>;
+
+  /**
+   * Resolves the permissions required by content.
+   * This callback allows you to define how permissions are extracted from content items.
+   * @param content - The content item to check permissions for
+   * @param payload - The Payload instance
+   * @returns An array of permission slugs required by the content
+   */
+  resolveContentPermissions: (
+    content: unknown,
+    payload: Payload
+  ) => Promise<string[]>;
 }
+
+/**
+ * Type alias for subscription permissions resolver callback
+ */
+export type ResolveSubscriptionPermissions = (
+  subscription: Stripe.Subscription,
+  product: unknown,
+  payload: Payload
+) => Promise<string[]>;
+
+/**
+ * Type alias for content permissions resolver callback
+ */
+export type ResolveContentPermissions = (
+  content: unknown,
+  payload: Payload
+) => Promise<string[]>;
 
 /**
  * Internal configuration passed to endpoint handlers

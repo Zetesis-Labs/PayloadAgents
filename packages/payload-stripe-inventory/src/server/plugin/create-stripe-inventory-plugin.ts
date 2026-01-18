@@ -16,6 +16,14 @@
  *       onSubscriptionUpdate: async (type, userId) => {
  *         console.log(`Subscription ${type} for user ${userId}`);
  *       },
+ *       resolveSubscriptionPermissions: async (subscription, product, payload) => {
+ *         // Extract permissions from product metadata or custom fields
+ *         return product?.metadata?.permissions?.split(',') || [];
+ *       },
+ *       resolveContentPermissions: async (content, payload) => {
+ *         // Extract required permissions from content
+ *         return content.requiredPermissions || [];
+ *       },
  *     }),
  *   ],
  * });
@@ -37,9 +45,11 @@ import { createStripeEndpoints } from "../endpoints/index.js";
 import type {
   StripeEndpointConfig,
   StripeInventoryPluginConfig,
+  ResolveSubscriptionPermissions,
+  ResolveContentPermissions,
 } from "./stripe-inventory-types.js";
 
-export type { StripeInventoryPluginConfig, StripeEndpointConfig };
+export type { StripeInventoryPluginConfig, StripeEndpointConfig, ResolveSubscriptionPermissions, ResolveContentPermissions };
 export { createStripeEndpoints };
 
 /**
@@ -78,6 +88,9 @@ export function createStripeInventoryPlugin(
       /* no-op */
     });
 
+  // Required callbacks for permission resolution
+  const { resolveSubscriptionPermissions, resolveContentPermissions } = config;
+
   return (incomingConfig: Config): Config => {
     // 1. Create and register Stripe endpoints
     const stripeEndpoints = createStripeEndpoints(endpointConfig, basePath);
@@ -99,19 +112,22 @@ export function createStripeInventoryPlugin(
           await subscriptionUpsert(
             event.data.object,
             payload,
-            onSubscriptionUpdate
+            onSubscriptionUpdate,
+            resolveSubscriptionPermissions
           ),
         "customer.subscription.paused": async ({ event, payload }) =>
           await subscriptionUpsert(
             event.data.object,
             payload,
-            onSubscriptionUpdate
+            onSubscriptionUpdate,
+            resolveSubscriptionPermissions
           ),
         "customer.subscription.updated": async ({ event, payload }) =>
           await subscriptionUpsert(
             event.data.object,
             payload,
-            onSubscriptionUpdate
+            onSubscriptionUpdate,
+            resolveSubscriptionPermissions
           ),
         "customer.subscription.deleted": async ({ event, payload }) =>
           await subscriptionDeleted(
