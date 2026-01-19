@@ -1,7 +1,6 @@
 import { JSONSchema4 } from "json-schema";
-import type { CollectionConfig } from "payload";
-
-export const COLLECTION_SLUG_TAXONOMY = "taxonomy" as const;
+import { slugField, type CollectionConfig } from "payload";
+import { COLLECTION_SLUG_TAXONOMY } from "./constants.js";
 type TaxonomyTypescriptSchema = {
   payloadTypescriptSchema?: Array<
     (args: { jsonSchema: JSONSchema4 }) => JSONSchema4
@@ -19,24 +18,29 @@ export const taxonomiesCollection: (
     ...config.labels,
   },
   admin: {
-    useAsTitle: "singular_name",
+    useAsTitle: "name",
     group: "Contenido",
+    defaultColumns: ["name", "parent", "payload"],
     ...config.admin,
   },
   fields: [
     {
-      name: "singular_name",
+      name: "name",
       label: "Nombre",
       type: "text",
       localized: true,
       required: true,
     },
+    slugField({useAsSlug: 'name'}),
     {
       name: "payload",
       label: "Payload Adicional",
       type: "json",
       required: false,
       typescriptSchema: payloadTypescriptSchema,
+      admin: {
+        description: "Metadata: types, permissions, selectable, etc.",
+      },
     },
     ...(config.fields ?? []),
   ],
