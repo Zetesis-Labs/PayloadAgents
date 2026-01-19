@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.14
+
+### Patch Changes
+
+- 41dee94: Updated payload-taxonomies for simplify all
+- Updated dependencies [41dee94]
+  - @nexo-labs/payload-indexer@1.6.14
+
 ## 1.6.13
 
 ### Patch Changes

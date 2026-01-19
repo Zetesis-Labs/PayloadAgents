@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-stripe-inventory",
-  "version": "1.6.13",
+  "version": "1.6.14",
   "description": "Sistema de inventario y suscripciones con Stripe para Payload CMS",
   "keywords": [
     "payload-cms",

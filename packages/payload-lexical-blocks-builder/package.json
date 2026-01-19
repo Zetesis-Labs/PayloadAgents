@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-lexical-blocks-builder",
-  "version": "1.6.13",
+  "version": "1.6.14",
   "description": "Builder y renderer de bloques para Payload CMS Lexical",
   "keywords": [
     "payload-cms",

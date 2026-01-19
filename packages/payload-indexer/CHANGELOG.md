@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.6.14
+
+### Patch Changes
+
+- 41dee94: Updated payload-taxonomies for simplify all
+
 ## 1.6.13
 
 ### Patch Changes
