@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.15
+
+### Patch Changes
+
+- 954f5ce: fix issue related with payload-taxonomies package
+- Updated dependencies [954f5ce]
+  - @nexo-labs/payload-indexer@1.6.15
+
 ## 1.6.14
 
 ### Patch Changes

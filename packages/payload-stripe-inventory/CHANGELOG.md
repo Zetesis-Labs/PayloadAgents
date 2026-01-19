@@ -1,5 +1,11 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.6.15
+
+### Patch Changes
+
+- 954f5ce: fix issue related with payload-taxonomies package
+
 ## 1.6.14
 
 ### Patch Changes
