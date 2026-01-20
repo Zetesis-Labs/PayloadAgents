@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.6.16
+
+### Patch Changes
+
+- cc721cb: added the sumarization by ai to the payload-indexer
+- Updated dependencies [cc721cb]
+  - @nexo-labs/payload-indexer@1.6.16
+
 ## 1.6.15
 
 ### Patch Changes
