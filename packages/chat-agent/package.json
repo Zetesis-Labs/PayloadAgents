@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/chat-agent",
-  "version": "1.6.16",
+  "version": "1.6.17",
   "description": "Floating chat agent component for React applications with AI integration",
   "keywords": [
     "react",
@@ -48,8 +48,8 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "peerDependencies": {
-    "@nexo-labs/payload-stripe-inventory": "^1.6.16",
-    "@nexo-labs/payload-typesense": "^1.6.16",
+    "@nexo-labs/payload-stripe-inventory": "workspace:*",
+    "@nexo-labs/payload-typesense": "workspace:*",
     "payload": "3.72.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"

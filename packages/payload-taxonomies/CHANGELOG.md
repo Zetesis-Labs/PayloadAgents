@@ -1,5 +1,11 @@
 # @nexo-labs/payload-taxonomies
 
+## 1.6.17
+
+### Patch Changes
+
+- d628208: added chat agent package to the colection of packages
+
 ## 1.6.16
 
 ### Patch Changes
