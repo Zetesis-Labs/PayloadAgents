@@ -1,5 +1,11 @@
 # @nexo-labs/payload-lexical-blocks-builder
 
+## 1.6.18
+
+### Patch Changes
+
+- 819a292: Fixed issue in chat-agent
+
 ## 1.6.17
 
 ### Patch Changes
