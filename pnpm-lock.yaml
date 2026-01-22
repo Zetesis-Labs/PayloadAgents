@@ -36,6 +36,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@nexo-labs/chat-agent':
+        specifier: workspace:*
+        version: link:../../packages/chat-agent
       '@nexo-labs/payload-indexer':
         specifier: workspace:*
         version: link:../../packages/payload-indexer

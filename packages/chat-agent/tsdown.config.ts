@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/react.ts', 'src/server.ts'],
   format: ['esm'],
   dts: {
     resolve: true,

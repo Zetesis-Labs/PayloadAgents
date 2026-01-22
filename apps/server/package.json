@@ -17,13 +17,14 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@nexo-labs/chat-agent": "workspace:*",
+    "@nexo-labs/payload-indexer": "workspace:*",
+    "@nexo-labs/payload-typesense": "workspace:*",
     "@payloadcms/db-mongodb": "latest",
     "@payloadcms/db-postgres": "latest",
     "@payloadcms/next": "latest",
     "@payloadcms/plugin-multi-tenant": "latest",
     "@payloadcms/richtext-lexical": "latest",
-    "@nexo-labs/payload-indexer": "workspace:*",
-    "@nexo-labs/payload-typesense": "workspace:*",
     "@payloadcms/ui": "latest",
     "cross-env": "^7.0.3",
     "dotenv": "^8.2.0",
