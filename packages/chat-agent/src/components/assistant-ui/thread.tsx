@@ -380,7 +380,7 @@ const UserMessage: FC = () => {
     return (
         <MessagePrimitive.Root className="flex justify-end py-2 w-full">
             <motion.div
-                className="max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br from-primary to-primary/90 px-4 py-2.5 text-primary-foreground shadow-md shadow-primary/20"
+                className="max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-primary-foreground shadow-md shadow-primary/20"
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{
@@ -391,7 +391,7 @@ const UserMessage: FC = () => {
             >
                 <MessagePrimitive.Content
                     components={{
-                        Text: ({ text }) => <span className="whitespace-pre-wrap">{text}</span>,
+                        Text: ({ text }) => <span className="whitespace-pre-wrap font-medium">{text}</span>,
                     }}
                 />
             </motion.div>
