@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.7.3
+
+### Patch Changes
+
+- 668266a: Fixed issue with css
+- Updated dependencies [668266a]
+  - @nexo-labs/payload-indexer@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes

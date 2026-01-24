@@ -1,5 +1,11 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.7.3
+
+### Patch Changes
+
+- 668266a: Fixed issue with css
+
 ## 1.7.2
 
 ### Patch Changes
