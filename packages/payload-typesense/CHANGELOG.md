@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.7.2
+
+### Patch Changes
+
+- 8ff3d8c: fixed problem in dependencies of chat-agent with @assistant-ui/react
+- Updated dependencies [8ff3d8c]
+  - @nexo-labs/payload-indexer@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

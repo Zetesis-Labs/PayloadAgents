@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/chat-agent",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Floating chat agent component for React applications with AI integration",
   "keywords": [
     "react",

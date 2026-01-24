@@ -1,5 +1,14 @@
 # multi-tenant
 
+## 1.0.21
+
+### Patch Changes
+
+- Updated dependencies [8ff3d8c]
+  - @nexo-labs/chat-agent@1.7.2
+  - @nexo-labs/payload-indexer@1.7.2
+  - @nexo-labs/payload-typesense@1.7.2
+
 ## 1.0.20
 
 ### Patch Changes
