@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.7.0
+
+### Minor Changes
+
+- cf47f0f: First version with a chat-agent working
+
 ## 1.6.20
 
 ### Patch Changes
