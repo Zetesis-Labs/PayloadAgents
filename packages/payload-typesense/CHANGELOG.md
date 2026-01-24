@@ -1,5 +1,16 @@
 # @nexo-labs/payload-typesense
 
+## 1.7.0
+
+### Minor Changes
+
+- cf47f0f: First version with a chat-agent working
+
+### Patch Changes
+
+- Updated dependencies [cf47f0f]
+  - @nexo-labs/payload-indexer@1.7.0
+
 ## 1.6.20
 
 ### Patch Changes
