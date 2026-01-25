@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '../lib/utils.js'
 import { SessionSummary } from '../hooks/useChatSession.js'
+import { PublicAgentInfo } from '../adapters/ChatAdapter.js'
 
 interface ChatHistoryListProps {
     sessions: SessionSummary[]
@@ -14,6 +15,7 @@ interface ChatHistoryListProps {
     onRenameSession: (id: string, newTitle: string) => Promise<boolean>
     onDeleteSession: (id: string) => Promise<boolean>
     onLoadHistory: () => Promise<void>
+    agents?: PublicAgentInfo[]
 }
 
 export const ChatHistoryList = ({
@@ -24,11 +26,19 @@ export const ChatHistoryList = ({
     onRenameSession,
     onDeleteSession,
     onLoadHistory,
+    agents = [],
 }: ChatHistoryListProps) => {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editTitle, setEditTitle] = useState('')
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+
+    // Helper to get agent name from slug
+    const getAgentName = (agentSlug?: string) => {
+        if (!agentSlug) return null
+        const agent = agents.find(a => a.slug === agentSlug)
+        return agent?.name || null
+    }
 
     useEffect(() => {
         onLoadHistory()
@@ -119,7 +129,10 @@ export const ChatHistoryList = ({
                                 autoFocus
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSaveEdit(e)
-                                    if (e.key === 'Escape') setEditingId(null)
+                                    if (e.key === 'Escape') {
+                                        setEditingId(null)
+                                        setEditTitle('')
+                                    }
                                 }}
                             />
                             <button onClick={handleSaveEdit} className="p-1 hover:text-green-500"><Check className="h-3 w-3" /></button>
@@ -139,6 +152,14 @@ export const ChatHistoryList = ({
                                 <div className="truncate font-medium">
                                     {session.title || 'Conversación sin título'}
                                 </div>
+                                {(() => {
+                                    const agentName = getAgentName(session.agentSlug)
+                                    return agentName && (
+                                        <div className="truncate text-xs text-primary/80 font-medium">
+                                            {agentName}
+                                        </div>
+                                    )
+                                })()}
                                 <div className="truncate text-xs text-muted-foreground opacity-70">
                                     {formatDistanceToNow(new Date(session.last_activity), { addSuffix: true, locale: es })}
                                 </div>

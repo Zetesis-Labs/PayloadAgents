@@ -63,7 +63,7 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
   // Agent management
   const [agents, setAgents] = useState<PublicAgentInfo[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
-  const [isLoadingAgents, setIsLoadingAgents] = useState(true)
+  const [isLoadingAgents, setIsLoadingAgents] = useState(false)
 
   // Load agents on mount
   useEffect(() => {
@@ -83,7 +83,7 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
     }
 
     loadAgents()
-  }, [adapter, selectedAgent]) // Re-run if adapter changes
+  }, [adapter])
 
   // Check if device is mobile or tablet (not desktop)
   const isMobileOrTablet = () => {
@@ -122,28 +122,35 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
     })
   }, [])
 
-  // Block body scroll when chat is maximized
+  // Block body scroll when chat is maximized and open
   useEffect(() => {
-    if (isMaximized && isPanelOpen) {
-      // Save current scroll position
-      const scrollY = window.scrollY
+    // Restore scroll when not maximized OR not open
+    if (!isMaximized || !isPanelOpen) {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      return
+    }
 
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden'
-      document.body.style.position = 'fixed'
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.width = '100%'
+    // Save current scroll position
+    const scrollY = window.scrollY
 
-      return () => {
-        // Restore body scroll
-        document.body.style.overflow = ''
-        document.body.style.position = ''
-        document.body.style.top = ''
-        document.body.style.width = ''
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
 
-        // Restore scroll position
-        window.scrollTo(0, scrollY)
-      }
+    return () => {
+      // Restore body scroll
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+
+      // Restore scroll position
+      window.scrollTo(0, scrollY)
     }
   }, [isMaximized, isPanelOpen])
 

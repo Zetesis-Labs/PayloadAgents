@@ -8,12 +8,12 @@ import {
   type TypesenseConnectionConfig,
 } from '../../index.js'
 
-// Import atomized handlers
 import { generateEmbeddingWithTracking } from './handlers/embedding-handler.js'
 import { saveChatSessionIfNeeded } from './handlers/session-handler.js'
 import { checkTokenLimitsIfNeeded } from './handlers/token-limit-handler.js'
 import { calculateTotalUsage, sendUsageStatsIfNeeded } from './handlers/usage-stats-handler.js'
 import { validateChatRequest } from './validators/index.js'
+import type { AgentConfig } from '@nexo-labs/payload-typesense'
 
 /**
  * Configuration for chat endpoint
@@ -60,6 +60,7 @@ export type ChatEndpointConfig = {
     sources: ChunkSource[],
     spendingEntries: SpendingEntry[],
     collectionName: CollectionSlug,
+    agentSlug?: string,
   ) => Promise<void>
   /** Handle streaming response function */
   handleStreamingResponse: (
@@ -106,9 +107,19 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
       // Resolve Agent Configuration
       let searchConfig: RAGSearchConfig;
       const agentSlug = body.agentSlug;
-      
-      if (agentSlug && config.rag?.agents) {
-          const agent = config.rag.agents.find(a => a.slug === agentSlug);
+
+      // Resolve agents - can be array or function
+      let agents: AgentConfig<string>[] = [];
+      if (config.rag?.agents) {
+        if (typeof config.rag.agents === 'function') {
+          agents = await config.rag.agents(payload);
+        } else if (Array.isArray(config.rag.agents)) {
+          agents = config.rag.agents;
+        }
+      }
+
+      if (agentSlug && agents.length > 0) {
+          const agent = agents.find(a => a.slug === agentSlug);
           if (!agent) {
             return new Response(JSON.stringify({ error: `Agent not found: ${agentSlug}` }), { status: 404 });
           }
@@ -116,16 +127,18 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
               modelId: agent.slug,
               searchCollections: agent.searchCollections,
               kResults: agent.kResults,
+              taxonomySlugs: agent.taxonomySlugs,
               advancedConfig: config.rag.advanced
           };
-      } else if (config.rag?.agents && config.rag.agents.length > 0) {
+      } else if (agents.length > 0) {
           // Use first agent as default
-          const agent = config.rag.agents[0];
+          const agent = agents[0];
           if (!agent) throw new Error("Default agent not found");
           searchConfig = {
               modelId: agent.slug,
               searchCollections: agent.searchCollections,
               kResults: agent.kResults,
+              taxonomySlugs: agent.taxonomySlugs,
               advancedConfig: config.rag.advanced
           };
       } else {
@@ -223,7 +236,8 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
               userMessage,
               fullAssistantMessage,
               sourcesCapture,
-              spendingEntries
+              spendingEntries,
+              agentSlug
             );
 
             logger.info('Chat request completed successfully', {

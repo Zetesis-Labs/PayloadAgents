@@ -66,8 +66,9 @@ export class NexoPayloadChatAdapter implements ChatAdapter {
         if (!reader) throw new Error('No stream reader')
 
         let buffer = ''
+        let streamDone = false
 
-        while (true) {
+        while (!streamDone) {
             const { done, value } = await reader.read()
             if (done) break
 
@@ -79,7 +80,10 @@ export class NexoPayloadChatAdapter implements ChatAdapter {
                 if (!line.startsWith('data: ')) continue
 
                 const data = line.slice(6)
-                if (data === '[DONE]') break
+                if (data === '[DONE]') {
+                    streamDone = true
+                    break
+                }
 
                 try {
                     const event = JSON.parse(data)

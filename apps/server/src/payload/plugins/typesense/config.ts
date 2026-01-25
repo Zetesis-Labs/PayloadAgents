@@ -3,13 +3,19 @@
  * Used by both the plugin and the sync endpoint
  */
 
-import type { TypesenseConnectionConfig, TypesenseFieldMapping } from '@nexo-labs/payload-typesense'
-import type { IndexableCollectionConfig } from '@nexo-labs/payload-indexer'
-import { transformTenant } from './transforms'
+import type { TypesenseConnectionConfig } from '@nexo-labs/payload-typesense'
+import type { EmbeddingProviderConfig } from '@nexo-labs/payload-indexer'
 
-export const SEARCH_COLLECTIONS = ['pages']
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
-// Typesense connection configuration
+export const SEARCH_COLLECTIONS = ['pages_chunk']
+
+// ============================================================================
+// TYPESENSE CONNECTION
+// ============================================================================
+
 export const typesenseConnection: TypesenseConnectionConfig = {
     apiKey: process.env.TYPESENSE_API_KEY || 'xyz',
     nodes: [
@@ -21,25 +27,13 @@ export const typesenseConnection: TypesenseConnectionConfig = {
     ],
 }
 
-// Collection configurations for indexing
-export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
-    pages: [
-        {
-            enabled: true,
-            tableName: 'pages',
-            displayName: 'Pages',
-            fields: [
-                { name: 'title', type: 'string' },
-                { name: 'slug', type: 'string', index: true },
-                { name: 'tenant', type: 'string', facet: true, optional: true, transform: transformTenant },
-            ],
-        },
-    ],
-}
+// ============================================================================
+// EMBEDDING CONFIGURATION
+// ============================================================================
 
-// Get table config for a specific collection
-export const getTableConfig = (collectionSlug: string) => {
-    const configs = collections[collectionSlug]
-    if (!configs || configs.length === 0) return null
-    return configs[0]
+export const embeddingConfig: EmbeddingProviderConfig = {
+    type: 'gemini',
+    model: 'text-embedding-004',
+    dimensions: 768,
+    apiKey: (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) as string,
 }

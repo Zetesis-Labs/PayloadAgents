@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Maximize2, Minimize2 } from "lucide-react";
+import { X, Maximize2, Minimize2, Bot } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef } from "react";
 import { useChat } from "./chat-context.js";
@@ -12,7 +12,8 @@ import { cn } from "../lib/utils.js";
 interface FloatingChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  aiIcon: string;
+  aiIcon?: string;
+  agentName?: string;
   generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string;
   ImageComponent?: ImageComponent;
   LinkComponent?: LinkComponent;
@@ -22,6 +23,7 @@ const FloatingChatPanel = ({
   isOpen,
   onClose,
   aiIcon,
+  agentName = "Asistente",
   generateHref,
   ImageComponent: Image = DefaultImage,
   LinkComponent: Link = DefaultLink
@@ -62,9 +64,9 @@ const FloatingChatPanel = ({
               width: "100vw",
               borderRadius: "0px",
             }}
-            animate={
-              isMaximized
-                ? {
+            animate={() => {
+              if (isMaximized) {
+                return {
                   x: 0,
                   left: 0,
                   top: 0,
@@ -74,37 +76,22 @@ const FloatingChatPanel = ({
                   height: "100vh",
                   borderRadius: "0px",
                 }
-                : {
-                  x: 0,
-                  // En movil/tablet: fullscreen, en desktop: panel lateral
-                  left:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? 0
-                      : "1rem",
-                  top:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? 0
-                      : "5rem",
-                  right: "auto",
-                  bottom:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? 0
-                      : "1rem",
-                  // Movil/Tablet: 100vw (fullscreen), Desktop: 33.333333%
-                  width:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? "100vw"
-                      : "33.333333%",
-                  height:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? "100vh"
-                      : "auto",
-                  borderRadius:
-                    typeof window !== "undefined" && window.innerWidth < 1024
-                      ? "0px"
-                      : "0.75rem",
-                }
-            }
+              }
+              // Calculate mobile/tablet state once
+              const isMobileOrTablet = typeof window !== "undefined" && window.innerWidth < 1024
+              return {
+                x: 0,
+                // En movil/tablet: fullscreen, en desktop: panel lateral
+                left: isMobileOrTablet ? 0 : "1rem",
+                top: isMobileOrTablet ? 0 : "5rem",
+                right: "auto",
+                bottom: isMobileOrTablet ? 0 : "1rem",
+                // Movil/Tablet: 100vw (fullscreen), Desktop: 33.333333%
+                width: isMobileOrTablet ? "100vw" : "33.333333%",
+                height: isMobileOrTablet ? "100vh" : "auto",
+                borderRadius: isMobileOrTablet ? "0px" : "0.75rem",
+              }
+            }}
             exit={{
               x: "-100vw",
               transition: {
@@ -125,17 +112,26 @@ const FloatingChatPanel = ({
                 {/* Avatar with breathing effect and status indicator */}
                 <div className="relative">
                   <motion.div
-                    className="w-10 h-10 rounded-full p-0.5 flex-shrink-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60 animate-pulse-glow"
+                    className={cn(
+                      "w-10 h-10 rounded-full p-0.5 flex-shrink-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60 animate-pulse-glow",
+                      !aiIcon && "flex items-center justify-center"
+                    )}
                   >
-                    <div className="w-full h-full rounded-full overflow-hidden">
-                      <Image
-                        src={aiIcon}
-                        alt="Oraculo"
-                        className="w-full h-full object-cover"
-                        width={40}
-                        height={40}
-                      />
-                    </div>
+                    {aiIcon ? (
+                      <div className="w-full h-full rounded-full overflow-hidden">
+                        <Image
+                          src={aiIcon}
+                          alt={agentName}
+                          className="w-full h-full object-cover"
+                          width={40}
+                          height={40}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full rounded-full overflow-hidden bg-primary flex items-center justify-center">
+                        <Bot className="w-6 h-6 text-primary-foreground" />
+                      </div>
+                    )}
                   </motion.div>
                   {/* Status indicator - AI available */}
                   <motion.div
@@ -153,7 +149,7 @@ const FloatingChatPanel = ({
                 </div>
                 <div className="flex flex-col">
                   <ChatMenuDropdown
-                    title="Oraculo"
+                    title={agentName}
                     onNewConversation={handleNewConversation}
                   />
                   <span className="text-xs text-muted-foreground">

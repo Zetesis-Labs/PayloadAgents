@@ -167,6 +167,7 @@ const ChatMenuDropdown = ({ title, onNewConversation }: ChatMenuDropdownProps) =
                       onRenameSession={renameSession}
                       onDeleteSession={deleteSession}
                       onLoadHistory={loadHistory}
+                      agents={agents}
                     />
                   </div>
                 </div>

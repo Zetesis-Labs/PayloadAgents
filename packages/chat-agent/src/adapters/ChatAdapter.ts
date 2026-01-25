@@ -23,11 +23,20 @@ export interface SessionSummary {
     title?: string
     last_activity: string
     status: string
+    agentSlug?: string
 }
 
 export interface PublicAgentInfo {
     slug: string
     name: string
+    welcomeTitle?: string
+    welcomeSubtitle?: string
+    suggestedQuestions?: Array<{
+        prompt: string
+        title: string
+        description: string
+    }>
+    avatar?: string
 }
 
 export interface TokenUsage {

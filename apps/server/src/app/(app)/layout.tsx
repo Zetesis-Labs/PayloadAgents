@@ -1,6 +1,9 @@
 import React from 'react'
 
-import './index.scss'
+import './index.css'
+import { UserProvider } from '@/components/organisms/user-context'
+import { ChatProvider } from '@nexo-labs/chat-agent'
+import { FloatingChatWrapper } from '@/components/organisms/floating-chat-wrapper'
 
 const baseClass = 'multi-tenant'
 
@@ -13,7 +16,14 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html className={baseClass} lang="en">
-      <body>{children}</body>
+      <body>
+        <UserProvider>
+          <ChatProvider>
+            {children}
+            <FloatingChatWrapper />
+          </ChatProvider>
+        </UserProvider>
+      </body>
     </html>
   )
 }

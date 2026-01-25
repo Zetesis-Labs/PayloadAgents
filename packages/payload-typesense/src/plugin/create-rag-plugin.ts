@@ -41,6 +41,7 @@
 
 import type { CollectionSlug, Config } from "payload";
 import type { TypesenseRAGPluginConfig } from "./rag-types.js";
+import type { AgentConfig } from "../shared/types/plugin-types.js";
 import { Logger } from "@nexo-labs/payload-indexer";
 import { createTypesenseClient } from "../core/client/typesense-client.js";
 import { createRAGPayloadHandlers } from "../features/rag/endpoints.js";
@@ -134,10 +135,17 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
         }
 
         // B. Sync RAG agents
-        if (config.agents && config.agents.length > 0) {
-          logger.info("Initializing RAG agents...");
+        let agents: AgentConfig[] = [];
+        if (typeof config.agents === 'function') {
+          agents = await config.agents(payload);
+        } else if (Array.isArray(config.agents)) {
+          agents = config.agents;
+        }
+
+        if (agents && agents.length > 0) {
+          logger.info(`Initializing ${agents.length} RAG agents...`);
           const agentManager = new AgentManager(typesenseClient, {
-            agents: config.agents,
+            agents: agents,
           });
           await agentManager.syncAgents();
         }

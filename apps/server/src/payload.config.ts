@@ -7,7 +7,10 @@ import { fileURLToPath } from 'url'
 import { Pages } from './collections/Pages'
 import { Tenants } from './collections/Tenants'
 import { ChatSessions } from './collections/ChatSessions'
+import { Agents } from './collections/Agents'
+import { Media } from './collections/Media'
 import Users from './collections/Users'
+import { taxonomiesCollection } from '@nexo-labs/payload-taxonomies'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { isSuperAdmin } from './access/isSuperAdmin'
 import { typesensePlugin } from './payload/plugins/typesense'
@@ -27,7 +30,7 @@ export default buildConfig({
       afterDashboard: ['@/modules/payload-admin/typesense-sync-widget'],
     },
   },
-  collections: [Pages, Users, Tenants, ChatSessions],
+  collections: [Pages, Users, Tenants, ChatSessions, Agents, Media, taxonomiesCollection({})],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL,

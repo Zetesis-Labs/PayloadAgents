@@ -14,7 +14,7 @@ interface User {
 }
 
 interface FloatingChatManagerProps {
-  aiIcon: string
+  aiIcon?: string
   useUser: () => { user: User | null }
   generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
   LinkComponent?: LinkComponent
@@ -29,22 +29,29 @@ const FloatingChatManager = ({
   ImageComponent
 }: FloatingChatManagerProps) => {
   const { user } = useUser()
-  const { isPanelOpen, openPanel, closePanel } = useChat()
+  const { isPanelOpen, openPanel, closePanel, agents, selectedAgent } = useChat()
 
   if (!user) return null
+
+  const currentAgent = agents.find(agent => agent.slug === selectedAgent)
+  const currentAvatar = currentAgent?.avatar && currentAgent.avatar.trim() !== ''
+    ? currentAgent.avatar
+    : aiIcon || undefined
+  const currentAgentName = currentAgent?.name || "Asistente"
 
   return (
     <>
       <FloatingChatButton
         onOpen={openPanel}
-        aiIcon={aiIcon}
+        aiIcon={currentAvatar}
         ImageComponent={ImageComponent}
       />
       {/* Siempre renderizar para que AnimatePresence funcione */}
       <FloatingChatPanel
         isOpen={isPanelOpen}
         onClose={closePanel}
-        aiIcon={aiIcon}
+        aiIcon={currentAvatar}
+        agentName={currentAgentName}
         generateHref={generateHref}
         LinkComponent={LinkComponent}
         ImageComponent={ImageComponent}

@@ -34,6 +34,8 @@ export type { TypesenseFieldType, TypesenseFieldMapping } from "./adapter/index.
 // Plugin configuration types
 export type {
   TypesenseConnectionConfig,
+  AgentConfig,
+  AgentProvider
 } from "./shared/types/plugin-types.js";
 
 // Core library types (Typesense-specific)

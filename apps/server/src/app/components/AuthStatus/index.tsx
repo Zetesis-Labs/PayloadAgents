@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 interface AuthStatusProps {
@@ -50,61 +51,25 @@ export const AuthStatus: React.FC<AuthStatusProps> = ({ user, signIn }) => {
 
     if (!user) {
         return (
-            <div style={styles.container}>
-                <p style={styles.text}>No has iniciado sesión</p>
-                <button onClick={() => signIn()} style={styles.button}>
-                    Iniciar sesión
-                </button>
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">No has iniciado sesión</p>
+                <Button onClick={() => signIn()}>Iniciar sesión</Button>
             </div>
         );
     }
 
     return (
-        <div style={styles.container}>
-            <p style={styles.text}>
-                ✅ Conectado como:{" "}
-                <strong>{user.email || user.name || user.id}</strong>
+        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm">
+                ✅ Conectado como: <strong>{user.email || user.name || user.id}</strong>
             </p>
-            <button
+            <Button
+                variant="destructive"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                style={{
-                    ...styles.button,
-                    ...styles.logoutButton,
-                    opacity: isLoggingOut ? 0.7 : 1,
-                }}
             >
                 {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
-            </button>
+            </Button>
         </div>
     );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-        padding: "1rem",
-        backgroundColor: "#f5f5f5",
-        borderRadius: "8px",
-        marginBottom: "1.5rem",
-    },
-    text: {
-        margin: 0,
-        fontSize: "0.95rem",
-    },
-    button: {
-        padding: "0.5rem 1rem",
-        borderRadius: "4px",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "0.9rem",
-        textDecoration: "none",
-        backgroundColor: "#0070f3",
-        color: "white",
-    },
-    logoutButton: {
-        backgroundColor: "#dc3545",
-    },
 };

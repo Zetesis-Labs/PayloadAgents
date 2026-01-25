@@ -30,6 +30,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     setMaximized,
     updateTokenUsage,
     selectedAgent,
+    agents,
     // Session props from context
     conversationId,
     setConversationId,
@@ -37,9 +38,13 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     setMessages,
     isLoadingSession,
     handleNewConversation,
+    isLoadingAgents,
   } = useChat()
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([])
   const [isDesktop, setIsDesktop] = useState(false)
+
+  // Find the full agent configuration
+  const currentAgent = agents.find(agent => agent.slug === selectedAgent)
 
   // Create assistant-ui runtime
   const runtime = useAssistantRuntime({
@@ -71,8 +76,8 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     handleNewConversation,
   }))
 
-  // Show loading state while restoring session
-  if (isLoadingSession) {
+  // Show loading state while restoring session or loading agents
+  if (isLoadingSession || isLoadingAgents || (agents.length > 0 && !selectedAgent)) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -81,7 +86,23 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
             <div className="w-3 h-3 rounded-full bg-primary animate-bounce delay-75" />
             <div className="w-3 h-3 rounded-full bg-primary animate-bounce delay-150" />
           </div>
-          <p className="text-muted-foreground">Cargando conversación...</p>
+          <p className="text-muted-foreground">
+            {isLoadingSession ? "Cargando conversación..." : "Cargando asistente..."}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error/empty state if no agents loaded
+  if (!isLoadingAgents && agents.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center max-w-md p-6">
+          <p className="text-lg font-medium text-muted-foreground mb-2">No hay asistentes disponibles</p>
+          <p className="text-sm text-muted-foreground">
+            Por favor, contacta con el administrador del sistema.
+          </p>
         </div>
       </div>
     )
@@ -104,10 +125,12 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
         <div className="flex-1 flex flex-col">
           <Thread
             runtime={runtime}
-            welcomeTitle="¡Bienvenido al Oráculo de Escohotado!"
-            welcomeSubtitle="Pregunta sobre filosofía, drogas, libertad, historia de las ideas y más."
+            welcomeTitle={currentAgent?.welcomeTitle || undefined}
+            welcomeSubtitle={currentAgent?.welcomeSubtitle || undefined}
+            suggestedQuestions={currentAgent?.suggestedQuestions}
             generateHref={generateHref}
             LinkComponent={LinkComponent}
+            agentName={currentAgent?.name}
           />
         </div>
       </div>
@@ -130,10 +153,12 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
       <div className="flex-1 min-h-0">
         <Thread
           runtime={runtime}
-          welcomeTitle="¡Bienvenido al Oráculo de Escohotado!"
-          welcomeSubtitle="Pregunta sobre filosofía, drogas, libertad, historia de las ideas y más."
+          welcomeTitle={currentAgent?.welcomeTitle || undefined}
+          welcomeSubtitle={currentAgent?.welcomeSubtitle || undefined}
+          suggestedQuestions={currentAgent?.suggestedQuestions}
           generateHref={generateHref}
           LinkComponent={LinkComponent}
+          agentName={currentAgent?.name}
         />
       </div>
     </div>

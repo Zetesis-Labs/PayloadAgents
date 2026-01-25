@@ -3,7 +3,7 @@ import {
     ThreadPrimitive,
     ComposerPrimitive,
     MessagePrimitive,
-    useMessage,
+    useMessageRuntime,
     useThreadRuntime,
 } from "@assistant-ui/react"
 import { ArrowUpIcon, SquareIcon, Sparkles, ArrowRight, AlertTriangle, X } from "lucide-react"
@@ -13,12 +13,14 @@ import type { FC } from "react"
 import { cn } from "../../lib/utils.js"
 import { SourcesList } from "../SourcesList.js"
 import { LinkComponent } from "../../types/components.js"
+import type { Source } from "../../adapters/ChatAdapter.js"
 import { createContext, useContext, useState, useEffect } from "react"
 import { useChat } from "../chat-context.js"
 
 interface ThreadContextValue {
     generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
     LinkComponent?: LinkComponent
+    agentName?: string
 }
 
 const ThreadContext = createContext<ThreadContextValue | null>(null)
@@ -27,8 +29,14 @@ interface ThreadProps {
     runtime: ReturnType<typeof import("@assistant-ui/react").useExternalStoreRuntime>
     welcomeTitle?: string
     welcomeSubtitle?: string
+    suggestedQuestions?: Array<{
+        prompt: string
+        title: string
+        description: string
+    }>
     generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
     LinkComponent?: LinkComponent
+    agentName?: string
 }
 
 /**
@@ -36,21 +44,27 @@ interface ThreadProps {
  */
 export const Thread: FC<ThreadProps> = ({
     runtime,
-    welcomeTitle = "Bienvenido al Oraculo!",
-    welcomeSubtitle = "Pregunta sobre filosofia, drogas, libertad, historia de las ideas y mas.",
+    welcomeTitle,
+    welcomeSubtitle,
+    suggestedQuestions,
     generateHref,
-    LinkComponent
+    LinkComponent,
+    agentName
 }) => {
     return (
         <AssistantRuntimeProvider runtime={runtime}>
-            <ThreadContext.Provider value={{ generateHref, LinkComponent }}>
+            <ThreadContext.Provider value={{ generateHref, LinkComponent, agentName }}>
                 <ThreadPrimitive.Root className="flex h-full flex-col bg-background">
                     {/* Limit Error Alert */}
                     <LimitAlert />
 
                     <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 pt-4">
                         <ThreadPrimitive.Empty>
-                            <ThreadWelcome title={welcomeTitle} subtitle={welcomeSubtitle} />
+                            { welcomeTitle && welcomeSubtitle && <ThreadWelcome
+                                title={welcomeTitle}
+                                subtitle={welcomeSubtitle}
+                                suggestedQuestions={suggestedQuestions}
+                            /> }
                         </ThreadPrimitive.Empty>
 
                         <ThreadPrimitive.Messages
@@ -79,6 +93,11 @@ export const Thread: FC<ThreadProps> = ({
 interface ThreadWelcomeProps {
     title: string
     subtitle: string
+    suggestedQuestions?: Array<{
+        prompt: string
+        title: string
+        description: string
+    }>
 }
 
 const containerVariants = {
@@ -105,7 +124,9 @@ const itemVariants = {
     }
 }
 
-const ThreadWelcome: FC<ThreadWelcomeProps> = ({ title, subtitle }) => {
+const ThreadWelcome: FC<ThreadWelcomeProps> = ({ title, subtitle, suggestedQuestions }) => {
+    if (!title) return null
+
     return (
         <motion.div
             className="flex h-full flex-col items-center justify-center p-4 max-w-2xl mx-auto"
@@ -136,31 +157,21 @@ const ThreadWelcome: FC<ThreadWelcomeProps> = ({ title, subtitle }) => {
                 </p>
             </motion.div>
 
-            <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full"
-                variants={containerVariants}
-            >
-                <SuggestionCard
-                    prompt="Que opina Escohotado sobre las drogas?"
-                    title="Que opina sobre las drogas?"
-                    description="Historia general y su vision filosofica"
-                />
-                <SuggestionCard
-                    prompt="Explicame la tesis de 'Caos y Orden'"
-                    title="Tesis de 'Caos y Orden'"
-                    description="Conceptos clave de su obra magna"
-                />
-                <SuggestionCard
-                    prompt="Cual es la diferencia entre comercio y guerra?"
-                    title="Comercio vs Guerra"
-                    description="Los enemigos del comercio"
-                />
-                <SuggestionCard
-                    prompt="Hablame de su etapa en Ibiza"
-                    title="Su etapa en Ibiza"
-                    description="Amnesia, traduccion y vida"
-                />
-            </motion.div>
+            {suggestedQuestions && suggestedQuestions.length > 0 && (
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full"
+                    variants={containerVariants}
+                >
+                    {suggestedQuestions.map((question, index) => (
+                        <SuggestionCard
+                            key={index}
+                            prompt={question.prompt}
+                            title={question.title}
+                            description={question.description}
+                        />
+                    ))}
+                </motion.div>
+            )}
         </motion.div>
     )
 }
@@ -281,6 +292,7 @@ const TokenUsageBar: FC = () => {
 const TypingIndicator: FC = () => {
     const threadRuntime = useThreadRuntime()
     const [isRunning, setIsRunning] = useState(false)
+    const context = useContext(ThreadContext)
 
     useEffect(() => {
         // Subscribe to thread state changes
@@ -294,6 +306,8 @@ const TypingIndicator: FC = () => {
 
         return unsubscribe
     }, [threadRuntime])
+
+    const agentName = context?.agentName || "El asistente"
 
     return (
         <AnimatePresence>
@@ -313,7 +327,7 @@ const TypingIndicator: FC = () => {
                                 <span className="typing-dot w-2 h-2 rounded-full bg-primary/60" />
                             </div>
                             <span className="text-sm text-muted-foreground">
-                                El Oraculo esta pensando...
+                                {agentName} está pensando...
                             </span>
                         </div>
                     </div>
@@ -329,9 +343,8 @@ const Composer: FC = () => {
             <motion.div
                 className="relative flex w-full flex-col rounded-3xl border border-input bg-background/50 px-4 py-2 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50"
                 style={{
-                    // @ts-ignore - CSS custom property
                     "--tw-shadow": "var(--shadow-glow-primary)"
-                }}
+                } as React.CSSProperties}
                 whileFocus={{ scale: 1.01 }}
             >
                 <ComposerPrimitive.Input
@@ -400,12 +413,13 @@ const UserMessage: FC = () => {
 }
 
 const AssistantMessage: FC = () => {
-    const message = useMessage()
+    const messageRuntime = useMessageRuntime()
     const context = useContext(ThreadContext)
 
-    // Extract sources from metadata
-    // @ts-ignore - We know the structure from our adapter
-    const sources = message.metadata?.custom?.sources as any[]
+    // Extract sources from metadata with type-safe access
+    const messageState = messageRuntime.getState()
+    const metadata = messageState.metadata as { custom?: { sources?: Source[] } } | undefined
+    const sources = metadata?.custom?.sources
 
     return (
         <MessagePrimitive.Root className="flex justify-start py-4 w-full">

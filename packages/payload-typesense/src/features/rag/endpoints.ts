@@ -25,14 +25,16 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
   const endpoints: Array<{ path: string; method: 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put'; handler: PayloadHandler }> = [];
 
   // Validate required config
-  if (!config.agents || config.agents.length === 0 || !config.callbacks) {
+  if (!config.agents || (Array.isArray(config.agents) && config.agents.length === 0) || !config.callbacks) {
     return endpoints;
   }
 
   const { agents, callbacks, typesense } = config;
 
   // Get valid collections from agents configuration
-  const agentCollections = agents.flatMap(agent => agent.searchCollections) || [];
+  const agentCollections = Array.isArray(agents)
+    ? agents.flatMap(agent => agent.searchCollections)
+    : [];
   const validCollections = Array.from(new Set(agentCollections));
 
   // Build RAG feature config for handlers that still need it

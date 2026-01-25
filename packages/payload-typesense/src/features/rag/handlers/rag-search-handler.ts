@@ -28,6 +28,8 @@ export type RAGSearchConfig = {
     prefix?: boolean
     dropTokensThreshold?: number
   }
+  /** Taxonomy slugs to filter RAG content */
+  taxonomySlugs?: string[]
 }
 
 /**
@@ -95,6 +97,7 @@ export async function executeRAGSearch(
     searchCollections: searchConfig.searchCollections,
     kResults: searchConfig.kResults || 10,
     advancedConfig: searchConfig.advancedConfig,
+    taxonomySlugs: searchConfig.taxonomySlugs,
   })
 
   // Execute the search

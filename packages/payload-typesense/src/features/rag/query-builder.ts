@@ -78,7 +78,8 @@ export function buildMultiSearchRequests(config: TypesenseQueryConfig) {
     queryEmbedding,
     selectedDocuments,
     kResults = 10,
-    advancedConfig = {}
+    advancedConfig = {},
+    taxonomySlugs,
   } = config
 
   return searchCollections.map((collection: string) => {
@@ -90,10 +91,24 @@ export function buildMultiSearchRequests(config: TypesenseQueryConfig) {
       ...buildAdvancedSearchParams(advancedConfig),
     }
 
+    // Build filters array
+    const filters: string[] = []
+
     // Add document filter if documents are selected
     if (selectedDocuments && selectedDocuments.length > 0) {
       const documentIds = selectedDocuments.map((id: string) => `"${id}"`).join(',')
-      request.filter_by = `parent_doc_id:[${documentIds}]`
+      filters.push(`parent_doc_id:[${documentIds}]`)
+    }
+
+    // Add taxonomy filter if taxonomies are specified
+    if (taxonomySlugs && taxonomySlugs.length > 0) {
+      const taxFilter = taxonomySlugs.map((s: string) => `"${s}"`).join(',')
+      filters.push(`taxonomy_slugs:[${taxFilter}]`)
+    }
+
+    // Apply combined filters
+    if (filters.length > 0) {
+      request.filter_by = filters.join(' && ')
     }
 
     return request

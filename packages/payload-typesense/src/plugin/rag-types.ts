@@ -6,6 +6,7 @@ import type { EmbeddingProviderConfig, TableConfig } from "@nexo-labs/payload-in
 import type {
   TypesenseConnectionConfig,
   AgentConfig,
+  AgentProvider,
   RAGCallbacks,
   HybridSearchConfig,
   HNSWConfig,
@@ -15,6 +16,7 @@ import { CollectionSlug } from "payload";
 
 /**
  * Search feature configuration for the Typesense RAG plugin
+ * ...
  */
 export interface TypesenseSearchConfig {
   /** Enable search endpoints */
@@ -32,12 +34,7 @@ export interface TypesenseSearchConfig {
 
 /**
  * Configuration for the Typesense RAG plugin
- *
- * This plugin handles all Typesense-specific functionality:
- * - Search endpoints
- * - RAG endpoints
- * - Schema synchronization
- * - Agent synchronization
+ * ...
  */
 export interface TypesenseRAGPluginConfig<TSlug extends CollectionSlug> {
   /** Typesense connection configuration */
@@ -59,7 +56,7 @@ export interface TypesenseRAGPluginConfig<TSlug extends CollectionSlug> {
   search?: TypesenseSearchConfig;
 
   /** RAG agent configurations */
-  agents?: AgentConfig[];
+  agents?: AgentConfig[] | AgentProvider;
 
   /** Callback functions for permissions, session management, etc. */
   callbacks?: RAGCallbacks;

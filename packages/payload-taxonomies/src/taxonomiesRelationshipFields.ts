@@ -1,4 +1,4 @@
-import { DefaultValue, Field, FilterOptions } from "payload";
+import { CollectionSlug, DefaultValue, Field, FilterOptions } from "payload";
 import { COLLECTION_SLUG_TAXONOMY } from "./constants.js";
 
 interface BuildTaxonomyRelationshipFieldProps {

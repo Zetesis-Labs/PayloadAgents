@@ -71,6 +71,9 @@ export interface Config {
     users: User;
     tenants: Tenant;
     'chat-sessions': ChatSession;
+    agents: Agent;
+    media: Media;
+    taxonomy: Taxonomy;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +85,9 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     'chat-sessions': ChatSessionsSelect<false> | ChatSessionsSelect<true>;
+    agents: AgentsSelect<false> | AgentsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    taxonomy: TaxonomySelect<false> | TaxonomySelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -129,6 +135,25 @@ export interface Page {
   tenant?: (number | null) | Tenant;
   title?: string | null;
   slug?: string | null;
+  /**
+   * Contenido de la pagina. Se indexa para busqueda y RAG.
+   */
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  categories?: (number | Taxonomy)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -155,6 +180,33 @@ export interface Tenant {
    * ID de la organizacion en Keycloak (sincronizado automaticamente)
    */
   keycloakOrgId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "taxonomy".
+ */
+export interface Taxonomy {
+  id: number;
+  name: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Metadata: types, permissions, selectable, etc.
+   */
+  payload?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -216,6 +268,10 @@ export interface ChatSession {
    */
   status: 'active' | 'closed';
   /**
+   * Slug del agente utilizado en esta conversación
+   */
+  agentSlug?: string | null;
+  /**
    * Historial de mensajes en formato JSON: [{role, content, timestamp, sources}]
    */
   messages:
@@ -260,6 +316,144 @@ export interface ChatSession {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agents".
+ */
+export interface Agent {
+  id: number;
+  /**
+   * Display name for the agent
+   */
+  name: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Enable or disable this agent
+   */
+  isActive?: boolean | null;
+  /**
+   * LLM model to use (e.g., google/gemini-2.0-flash, openai/gpt-4o-mini)
+   */
+  llmModel: string;
+  /**
+   * System prompt that defines the agent personality and constraints
+   */
+  systemPrompt: string;
+  /**
+   * Colecciones donde buscar contexto para RAG
+   */
+  searchCollections?: 'pages_chunk'[] | null;
+  /**
+   * Taxonomies that filter the RAG content. If empty, searches all content.
+   */
+  taxonomies?: (number | Taxonomy)[] | null;
+  /**
+   * Number of chunks to retrieve for RAG context
+   */
+  kResults?: number | null;
+  /**
+   * Maximum context size in bytes (default: 64KB)
+   */
+  maxContextBytes?: number | null;
+  /**
+   * TTL for conversation history in seconds (default: 24h)
+   */
+  ttl?: number | null;
+  /**
+   * Avatar image for the agent
+   */
+  avatar?: (number | null) | Media;
+  /**
+   * Welcome message title displayed when starting a new chat
+   */
+  welcomeTitle?: string | null;
+  /**
+   * Welcome message subtitle displayed when starting a new chat
+   */
+  welcomeSubtitle?: string | null;
+  /**
+   * Suggested questions displayed to help users get started
+   */
+  suggestedQuestions?:
+    | {
+        /**
+         * The full prompt text to send when clicked
+         */
+        prompt: string;
+        /**
+         * Short title for the suggestion
+         */
+        title: string;
+        /**
+         * Brief description of what the question is about
+         */
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Alternative text for accessibility
+   */
+  alt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    avatar?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    medium?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -297,6 +491,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'chat-sessions';
         value: number | ChatSession;
+      } | null)
+    | ({
+        relationTo: 'agents';
+        value: number | Agent;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'taxonomy';
+        value: number | Taxonomy;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -348,6 +554,8 @@ export interface PagesSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
   slug?: T;
+  content?: T;
+  categories?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -411,12 +619,117 @@ export interface ChatSessionsSelect<T extends boolean = true> {
   user?: T;
   conversation_id?: T;
   status?: T;
+  agentSlug?: T;
   messages?: T;
   spending?: T;
   total_tokens?: T;
   total_cost?: T;
   last_activity?: T;
   closed_at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agents_select".
+ */
+export interface AgentsSelect<T extends boolean = true> {
+  name?: T;
+  generateSlug?: T;
+  slug?: T;
+  isActive?: T;
+  llmModel?: T;
+  systemPrompt?: T;
+  searchCollections?: T;
+  taxonomies?: T;
+  kResults?: T;
+  maxContextBytes?: T;
+  ttl?: T;
+  avatar?: T;
+  welcomeTitle?: T;
+  welcomeSubtitle?: T;
+  suggestedQuestions?:
+    | T
+    | {
+        prompt?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        avatar?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "taxonomy_select".
+ */
+export interface TaxonomySelect<T extends boolean = true> {
+  name?: T;
+  generateSlug?: T;
+  slug?: T;
+  payload?: T;
   updatedAt?: T;
   createdAt?: T;
 }

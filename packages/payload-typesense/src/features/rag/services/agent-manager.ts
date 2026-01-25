@@ -30,7 +30,7 @@ export class AgentManager {
     logger.info(`Starting synchronization of ${agents.length} RAG agents...`);
 
     // Ensure history collections exist for all agents
-    const historyCollections = new Set(agents.map(a => a.historyCollection || 'conversation_history'));
+    const historyCollections = new Set(agents.map(a => `conversation_history_${a.slug}`));
     for (const collectionName of historyCollections) {
       await ensureConversationCollection(this.client, collectionName);
     }
@@ -51,7 +51,7 @@ export class AgentManager {
         model_name: agent.llmModel,
         system_prompt: agent.systemPrompt,
         api_key: agent.apiKey,
-        history_collection: agent.historyCollection || 'conversation_history',
+        history_collection: `conversation_history_${agent.slug}`,
         max_bytes: agent.maxContextBytes || 65536,
         ttl: agent.ttl || 86400,
         k_results: agent.kResults || 5,

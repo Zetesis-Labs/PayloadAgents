@@ -3,17 +3,19 @@ import { APIError } from "payload";
 import type { PayloadDocument } from "@nexo-labs/payload-indexer";
 import { syncDocumentToIndex } from "@nexo-labs/payload-indexer";
 import { createTypesenseAdapter } from "@nexo-labs/payload-typesense";
-import { typesenseConnection, getTableConfig } from "@/payload/plugins/typesense/config";
+import { typesenseConnection } from "@/payload/plugins/typesense/config";
+import { getTableConfig } from "@/payload/plugins/typesense/collections";
 import { isSuperAdmin } from "@/access/isSuperAdmin";
 import type { Page } from "@/payload-types";
 
 /**
  * Convert Payload Page document to indexable format
- * Handles the id type conversion (number -> string)
+ * Handles the id type conversion (number -> string) and null values
  */
 const toIndexableDocument = (doc: Page): PayloadDocument => ({
   ...doc,
   id: String(doc.id),
+  slug: doc.slug ?? undefined,
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 });

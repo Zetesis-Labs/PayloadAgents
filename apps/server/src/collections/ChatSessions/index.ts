@@ -58,6 +58,16 @@ export const ChatSessions: CollectionConfig = {
       },
     },
     {
+      name: 'agentSlug',
+      type: 'text',
+      required: false,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Slug del agente utilizado en esta conversación',
+      },
+    },
+    {
       name: 'messages',
       type: 'json',
       required: true,
@@ -118,8 +128,8 @@ export const ChatSessions: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, operation }) => {
-        // Auto-update last_activity on any change
-        if (operation === 'update') {
+        // Auto-update last_activity on create and update
+        if (operation === 'create' || operation === 'update') {
           data.last_activity = new Date()
         }
 
