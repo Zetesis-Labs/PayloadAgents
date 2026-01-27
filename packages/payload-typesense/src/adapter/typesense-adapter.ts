@@ -46,7 +46,7 @@ import type {
 export class TypesenseAdapter implements IndexerAdapter<TypesenseCollectionSchema> {
   readonly name = 'typesense';
 
-  constructor(private client: Client) {}
+  constructor(private client: Client) { }
 
   /**
    * Test connection to Typesense
@@ -138,7 +138,14 @@ export class TypesenseAdapter implements IndexerAdapter<TypesenseCollectionSchem
       await this.client.collections(collectionName).documents().import(documents, {
         action: 'upsert',
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.importResults) {
+        const failedItems = error.importResults.filter((r: any) => !r.success);
+        logger.error(
+          `Failed to batch upsert documents to ${collectionName}. Detailed errors:`,
+          JSON.stringify(failedItems, null, 2)
+        );
+      }
       logger.error(`Failed to batch upsert ${documents.length} documents to ${collectionName}`, error);
       throw error;
     }

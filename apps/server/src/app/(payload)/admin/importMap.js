@@ -27,6 +27,7 @@ import { default as default_2b626bed1026074d9f37e7a587a41216 } from '@/modules/p
 import { AccountRowLabel as AccountRowLabel_06d0cb594d8f6ba2ac35015f930c882e } from 'payload-authjs/components'
 import { WatchTenantCollection as WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
 import { default as default_1b639377e9a2a76ced05fe2cb57c84a4 } from '@/modules/payload-admin/sync-tenants-button'
+import { default as default_d67366a4d3e799e02b498444ecc82b8d } from '@/modules/payload-admin/import-agent-data-button'
 import { SlugField as SlugField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { default as default_cb5f4735a17af09a6401c0fbd4d1854f } from '@/modules/payload-admin/import-agents-button'
 import { default as default_23f8f8ad767b9ad980aa1b301dd5a975 } from '@/modules/payload-admin/typesense-sync-widget'
@@ -65,6 +66,7 @@ export const importMap = {
   "payload-authjs/components#AccountRowLabel": AccountRowLabel_06d0cb594d8f6ba2ac35015f930c882e,
   "@payloadcms/plugin-multi-tenant/client#WatchTenantCollection": WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a,
   "@/modules/payload-admin/sync-tenants-button#default": default_1b639377e9a2a76ced05fe2cb57c84a4,
+  "@/modules/payload-admin/import-agent-data-button#default": default_d67366a4d3e799e02b498444ecc82b8d,
   "@payloadcms/ui#SlugField": SlugField_3817bf644402e67bfe6577f60ef982de,
   "@/modules/payload-admin/import-agents-button#default": default_cb5f4735a17af09a6401c0fbd4d1854f,
   "@/modules/payload-admin/typesense-sync-widget#default": default_23f8f8ad767b9ad980aa1b301dd5a975,

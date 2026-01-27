@@ -136,6 +136,14 @@ export interface Page {
   title?: string | null;
   slug?: string | null;
   /**
+   * ID externo del contenido importado (ej: ID de tweet)
+   */
+  external_id?: string | null;
+  /**
+   * URL original del contenido
+   */
+  url?: string | null;
+  /**
    * Contenido de la pagina. Se indexa para busqueda y RAG.
    */
   content?: {
@@ -154,6 +162,36 @@ export interface Page {
     [k: string]: unknown;
   } | null;
   categories?: (number | Taxonomy)[] | null;
+  /**
+   * Videos relacionados
+   */
+  related_links_videos?:
+    | {
+        url: string;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Libros relacionados
+   */
+  related_links_books?:
+    | {
+        url: string;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Otros enlaces relacionados
+   */
+  related_links_other?:
+    | {
+        url: string;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -554,8 +592,31 @@ export interface PagesSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
   slug?: T;
+  external_id?: T;
+  url?: T;
   content?: T;
   categories?: T;
+  related_links_videos?:
+    | T
+    | {
+        url?: T;
+        title?: T;
+        id?: T;
+      };
+  related_links_books?:
+    | T
+    | {
+        url?: T;
+        title?: T;
+        id?: T;
+      };
+  related_links_other?:
+    | T
+    | {
+        url?: T;
+        title?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

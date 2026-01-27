@@ -32,8 +32,8 @@ export const typesenseConnection: TypesenseConnectionConfig = {
 // ============================================================================
 
 export const embeddingConfig: EmbeddingProviderConfig = {
-    type: 'gemini',
-    model: 'text-embedding-004',
-    dimensions: 768,
-    apiKey: (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) as string,
+  type: 'openai',
+  model: 'text-embedding-3-large',
+  dimensions: 3072,
+  apiKey: process.env.OPENAI_API_KEY as string,
 }

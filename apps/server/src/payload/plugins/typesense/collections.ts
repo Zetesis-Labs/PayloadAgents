@@ -30,14 +30,13 @@ const transformCategories = (categories: unknown): string[] => {
 
 export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
   pages: [
-    // Chunked version for RAG (with embeddings)
     {
       enabled: true,
       tableName: 'pages_chunk',
       displayName: 'Pages (Chunked)',
       embedding: {
         fields: [{ field: 'content', transform: transformLexicalToMarkdown }],
-        chunking: { strategy: 'text', size: 2000, overlap: 300 },
+        chunking: { strategy: 'markdown', size: 2000, overlap: 300 },
       },
       fields: [
         { name: 'title', type: 'string' },

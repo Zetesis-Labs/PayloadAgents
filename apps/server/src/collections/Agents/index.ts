@@ -2,6 +2,7 @@ import type { CollectionConfig, CollectionSlug } from 'payload'
 import { slugField } from 'payload'
 import { COLLECTION_SLUG_TAXONOMY } from '@nexo-labs/payload-taxonomies'
 import { importAgents } from './endpoints/importAgents'
+import { importAgentData } from './endpoints/importAgentData'
 
 export const Agents: CollectionConfig = {
   slug: 'agents',
@@ -17,8 +18,18 @@ export const Agents: CollectionConfig = {
       },
     },
   },
-  endpoints: [importAgents],
+  endpoints: [importAgents, importAgentData],
   fields: [
+    // UI field for import button - appears at the top of the edit form
+    {
+      name: 'importDataButton',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/modules/payload-admin/import-agent-data-button',
+        },
+      },
+    },
     {
       type: 'tabs',
       tabs: [

@@ -4,6 +4,81 @@ import type { SanitizedConfig } from 'payload';
 import OpenAI from 'openai';
 
 /**
+ * Recursively extracts plain text from Lexical nodes
+ * Used as a fallback when proper Lexical conversion is not available
+ */
+function extractTextFromLexicalNodes(nodes: any[]): string {
+  if (!Array.isArray(nodes)) return '';
+
+  const textParts: string[] = [];
+
+  for (const node of nodes) {
+    if (!node) continue;
+
+    // Text node
+    if (node.type === 'text' && typeof node.text === 'string') {
+      textParts.push(node.text);
+    }
+    // Linebreak node
+    else if (node.type === 'linebreak') {
+      textParts.push('\n');
+    }
+    // Link node - extract text and URL
+    else if (node.type === 'link' && node.children) {
+      const linkText = extractTextFromLexicalNodes(node.children);
+      const url = node.fields?.url || node.url || '';
+      if (url && linkText) {
+        textParts.push(`[${linkText}](${url})`);
+      } else {
+        textParts.push(linkText);
+      }
+    }
+    // Heading nodes - add markdown heading prefix
+    else if (node.type === 'heading' && node.children) {
+      const level = parseInt(node.tag?.replace('h', '') || '1', 10);
+      const prefix = '#'.repeat(Math.min(level, 6)) + ' ';
+      textParts.push(prefix + extractTextFromLexicalNodes(node.children) + '\n\n');
+    }
+    // List items
+    else if (node.type === 'listitem' && node.children) {
+      textParts.push('- ' + extractTextFromLexicalNodes(node.children) + '\n');
+    }
+    // Quote blocks
+    else if (node.type === 'quote' && node.children) {
+      const quoteText = extractTextFromLexicalNodes(node.children);
+      textParts.push('> ' + quoteText.replace(/\n/g, '\n> ') + '\n\n');
+    }
+    // Paragraph and other block nodes
+    else if (node.children) {
+      textParts.push(extractTextFromLexicalNodes(node.children));
+      // Add paragraph break for block-level elements
+      if (['paragraph', 'heading', 'quote', 'list'].includes(node.type)) {
+        textParts.push('\n\n');
+      }
+    }
+  }
+
+  return textParts.join('');
+}
+
+/**
+ * Simple extraction of text from Lexical structure
+ * Falls back to this when proper conversion fails
+ */
+function simpleLexicalToText(value: SerializedEditorState): string {
+  try {
+    const root = value?.root;
+    if (!root || !root.children) return '';
+
+    const text = extractTextFromLexicalNodes(root.children);
+    // Clean up excessive whitespace
+    return text.replace(/\n{3,}/g, '\n\n').trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Transforms Lexical editor state to Markdown
  * @param value - The serialized editor state
  * @param config - Optional Payload config. If provided, it will be used to generate the editor config.
@@ -15,20 +90,31 @@ export const transformLexicalToMarkdown = async (
   if (!value) {
     return '';
   }
-  try {
-    const editorConfig = await editorConfigFactory.default({
-      config: config as SanitizedConfig
-    });
 
-    const result = await convertLexicalToMarkdown({
-      data: value,
-      editorConfig
-    });
-    return result;
-  } catch (error) {
-    console.error('Error transforming lexical to markdown', error);
-    return '';
+  // Check if we have a valid config with collections
+  const hasValidConfig = config &&
+    typeof config === 'object' &&
+    'collections' in config &&
+    Array.isArray(config.collections);
+
+  if (config && hasValidConfig) {
+    try {
+      const editorConfig = await editorConfigFactory.default({
+        config
+      });
+
+      const result = await convertLexicalToMarkdown({
+        data: value,
+        editorConfig
+      });
+      return result;
+    } catch (error) {
+      console.warn('Error in Lexical to markdown conversion, falling back to simple extraction:', error);
+    }
   }
+
+  // Fallback to simple text extraction
+  return simpleLexicalToText(value);
 };
 
 /**

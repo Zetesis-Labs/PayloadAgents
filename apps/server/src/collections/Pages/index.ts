@@ -39,6 +39,21 @@ export const Pages: CollectionConfig = {
       index: true,
     },
     {
+      name: 'external_id',
+      type: 'text',
+      index: true,
+      admin: {
+        description: 'ID externo del contenido importado (ej: ID de tweet)',
+      },
+    },
+    {
+      name: 'url',
+      type: 'text',
+      admin: {
+        description: 'URL original del contenido',
+      },
+    },
+    {
       name: 'content',
       type: 'richText',
       admin: {
@@ -50,5 +65,38 @@ export const Pages: CollectionConfig = {
       label: 'Categorias',
       required: false,
     }),
+    {
+      name: 'related_links_videos',
+      type: 'array',
+      admin: {
+        description: 'Videos relacionados',
+      },
+      fields: [
+        { name: 'url', type: 'text', required: true },
+        { name: 'title', type: 'text' },
+      ],
+    },
+    {
+      name: 'related_links_books',
+      type: 'array',
+      admin: {
+        description: 'Libros relacionados',
+      },
+      fields: [
+        { name: 'url', type: 'text', required: true },
+        { name: 'title', type: 'text' },
+      ],
+    },
+    {
+      name: 'related_links_other',
+      type: 'array',
+      admin: {
+        description: 'Otros enlaces relacionados',
+      },
+      fields: [
+        { name: 'url', type: 'text', required: true },
+        { name: 'title', type: 'text' },
+      ],
+    },
   ],
 }

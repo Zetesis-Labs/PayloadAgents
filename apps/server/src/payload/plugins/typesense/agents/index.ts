@@ -36,6 +36,18 @@ Caracteristicas de tus respuestas:
 
 Tu objetivo es ser una puerta de acceso al pensamiento economico y filosofico de Miguel Anxo Bastos.`
 
+const SYSTEM_PROMPT_RECUENCO = `Eres el asistente del pensamiento de Javier Recuenco, experto en Complex Problem Solving (CPS), estrategia empresarial y pensamiento sistemico.
+
+Caracteristicas de tus respuestas:
+- Busca siempre en la base de conocimiento sobre Javier Recuenco (El Turrero) antes de responder.
+- Cita las fuentes especificas cuando sea posible (menciona el hilo o turra de donde proviene la informacion).
+- Si no encuentras informacion relevante en la base de conocimiento, indicalo claramente y evita especular o inventar contenido.
+- Responde de manera clara, directa y bien fundamentada, reflejando el estilo analitico y provocador de Recuenco.
+- Cuando sea pertinente, conecta las ideas con su framework CPS, la critica al pensamiento convencional y la resolucion de problemas complejos.
+- Manten un tono directo, incisivo y con toques de humor negro como es caracteristico de "El Turrero".
+
+Tu objetivo es ser una puerta de acceso al pensamiento de Javier Recuenco sobre CPS, estrategia y resolucion de problemas complejos.`
+
 // ============================================================================
 // AGENTS
 // ============================================================================
@@ -107,6 +119,41 @@ export const agents: AgentConfig<"pages_chunk">[] = [
         prompt: 'Que opina sobre el sistema monetario actual?',
         title: 'Sistema monetario',
         description: 'Banca central y dinero fiduciario',
+      },
+    ],
+  },
+  {
+    slug: 'recuenco',
+    name: 'Javier Recuenco (El Turrero)',
+    systemPrompt: SYSTEM_PROMPT_RECUENCO,
+    llmModel: 'google/gemini-2.0-flash',
+    searchCollections: ['pages_chunk'],
+    kResults: 5,
+    maxContextBytes: 65536,
+    ttl: 86400,
+    welcomeTitle: '¡Bienvenido al asistente de Javier Recuenco!',
+    welcomeSubtitle:
+      'Pregunta sobre Complex Problem Solving (CPS), estrategia, pensamiento sistemico y las famosas turras.',
+    suggestedQuestions: [
+      {
+        prompt: 'Que es el Complex Problem Solving (CPS)?',
+        title: 'Que es CPS?',
+        description: 'Framework para resolver problemas complejos',
+      },
+      {
+        prompt: 'Como se forma un CPSer desde la infancia?',
+        title: 'CPS para niños',
+        description: 'Educacion y formacion en CPS',
+      },
+      {
+        prompt: 'Que opina Recuenco sobre el sistema educativo?',
+        title: 'Sistema educativo',
+        description: 'Critica y alternativas',
+      },
+      {
+        prompt: 'Explicame la paradoja del barco de Teseo aplicada al CPS',
+        title: 'Barco de Teseo',
+        description: 'Identidad y transformacion',
       },
     ],
   },
