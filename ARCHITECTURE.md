@@ -1,8 +1,8 @@
-# Architecture Documentation
+# Architecture Documentation: Kogito.es
 
 ## Introduction
 
-This repository contains a **Multi-tenant Content Management System** built with [Payload CMS 3.0](https://payloadcms.com/). It integrates **Keycloak** for robust authentication and identity management, and utilizes **Typesense** for high-performance search capabilities. The system is designed to support AI-driven features, including a conversational chat agent with RAG (Retrieval-Augmented Generation) capabilities.
+**Kogito.es** is a **Multi-tenant Content Management System** built with [Payload CMS 3.0](https://payloadcms.com/). It integrates **Keycloak** for robust authentication and identity management, and utilizes **Typesense** for high-performance search capabilities. The system is designed to support AI-driven features, including a conversational chat agent with RAG (Retrieval-Augmented Generation) capabilities.
 
 The project is structured as a **Monorepo** using [Turbo](https://turbo.build/) and [PNPM Workspaces](https://pnpm.io/workspaces), enabling efficient management of the main application and shared packages.
 

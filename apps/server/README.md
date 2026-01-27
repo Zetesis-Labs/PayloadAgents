@@ -1,6 +1,6 @@
-# Payload Server Application
+# Kogito.es Server Application
 
-This is the core application of the Keycloak Multi-Tenant system, built with [Payload CMS 3.0](https://payloadcms.com/) and [Next.js](https://nextjs.org/).
+This is the core application of the **Kogito.es** system, built with [Payload CMS 3.0](https://payloadcms.com/) and [Next.js](https://nextjs.org/).
 
 ## Features
 
@@ -54,5 +54,5 @@ For a deeper dive into the system architecture, refer to the [Root Architecture 
 The application is container-ready. See `Dockerfile` in this directory for build instructions.
 
 ```bash
-docker build -t payload-server .
+docker build -t kogito-server .
 ```

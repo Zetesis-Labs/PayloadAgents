@@ -1,4 +1,4 @@
-# Keycloak Multi-Tenant Payload CMS
+# Kogito.es
 
 A powerful, production-ready multi-tenant Content Management System built with [Payload CMS 3.0](https://payloadcms.com/), integrated with [Keycloak](https://www.keycloak.org/) for authentication and [Typesense](https://typesense.org/) for AI-powered search.
 
