@@ -4,11 +4,14 @@ import { COLLECTION_SLUG_TAXONOMY } from '@nexo-labs/payload-taxonomies'
 import { importAgents } from './endpoints/importAgents'
 import { importAgentData } from './endpoints/importAgentData'
 import { afterChangeHook, afterDeleteHook } from './hooks'
+import { encryptApiKeyBeforeChange, decryptApiKeyAfterRead } from './security-hooks'
 
 export const Agents: CollectionConfig = {
   slug: 'agents',
   hooks: {
+    beforeChange: [encryptApiKeyBeforeChange],
     afterChange: [afterChangeHook],
+    afterRead: [decryptApiKeyAfterRead],
     afterDelete: [afterDeleteHook],
   },
   admin: {
@@ -77,7 +80,7 @@ export const Agents: CollectionConfig = {
               type: 'text',
               required: true,
               admin: {
-                description: 'API Key for the LLM provider (optional)',
+                description: 'API Key for the LLM provider (encrypted at rest)',
               },
             },
             {
