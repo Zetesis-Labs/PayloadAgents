@@ -1,3 +1,4 @@
+import type { TypedUser } from 'payload'
 import type { Tenant, User } from '../payload-types'
 import { extractID } from './extractID'
 
@@ -8,10 +9,10 @@ import { extractID } from './extractID'
  * @param role - Optional role to filter by
  */
 export const getUserTenantIDs = (
-  user: null | User,
+  user: TypedUser | null,
   role?: NonNullable<User['tenants']>[number]['roles'][number],
 ): Tenant['id'][] => {
-  if (!user) {
+  if (!user || user.collection == "payload-mcp-api-keys") {
     return []
   }
 

@@ -14,6 +14,7 @@ import Users from './collections/Users'
 import { importExportPlugin } from './payload/plugins/import-export'
 import { typesensePlugin } from './payload/plugins/typesense'
 import { multiTenantPlugin } from './payload/plugins/multi-tenant'
+import { mcpPlugin } from './payload/plugins/mcp'
 import { nestedDocsPlugin } from './payload/plugins/nested-docs'
 import { seed } from './seed'
 import authJs from './modules/authjs'
@@ -54,6 +55,7 @@ export default buildConfig({
   plugins: [
     importExportPlugin,
     nestedDocsPlugin,
+    mcpPlugin,
     multiTenantPlugin,
     typesensePlugin,
     authJs,

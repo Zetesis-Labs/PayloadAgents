@@ -43,9 +43,10 @@ export async function validateChatRequest(
       error: jsonResponse({ error: 'URL not found' }, { status: 400 }),
     };
   }
+  const { user } = request;
 
-  const { id: userId, email } = request.user;
-  const userEmail = email || '';
+  const { id: userId } = user;
+  const userEmail = "email" in user ? user['email'] ?? "" : "";
   const payload = await config.getPayload();
   const body = await request.json?.();
 

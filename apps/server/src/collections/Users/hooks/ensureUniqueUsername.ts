@@ -44,14 +44,14 @@ export const ensureUniqueUsername: FieldHook = async ({
       and: constraints,
     },
   });
+  if (req.user?.collection == "payload-mcp-api-keys") {
+    return
+  }
 
   if (findDuplicateUsers.docs.length > 0 && req.user) {
     const tenantIDs = getUserTenantIDs(req.user);
-    // if the user is an admin or has access to more than 1 tenant
-    // provide a more specific error message
-    if (req.user.roles?.includes("superadmin") || tenantIDs.length > 1) {
+    if (selectedTenant && (req.user.roles?.includes("superadmin") || tenantIDs.length > 1)) {
       const attemptedTenantChange = await req.payload.findByID({
-        // @ts-ignore - selectedTenant will match DB ID type
         id: selectedTenant,
         collection: "tenants",
       });

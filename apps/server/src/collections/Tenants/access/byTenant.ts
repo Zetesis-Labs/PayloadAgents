@@ -23,6 +23,9 @@ export const canMutateTenant: Access = ({ req }) => {
   if (isSuperAdmin(req.user)) {
     return true
   }
+  if (req.user.collection === "payload-mcp-api-keys") {
+    return false
+  }
 
   return {
     id: {
