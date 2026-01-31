@@ -186,6 +186,10 @@ export interface Page {
    */
   url?: string | null;
   /**
+   * Fecha de publicación del contenido
+   */
+  publishedAt: string;
+  /**
    * Contenido de la pagina. Se indexa para busqueda y RAG.
    */
   content?: {
@@ -439,7 +443,7 @@ export interface Agent {
    */
   searchCollections?: 'pages_chunk'[] | null;
   /**
-   * Taxonomies that filter the RAG content. If empty, searches all content.
+   * Taxonomies that filter the RAG content. REQUIRED: if empty, agent will not search any content (prevents global searches).
    */
   taxonomies?: (number | Taxonomy)[] | null;
   /**
@@ -892,6 +896,7 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   external_id?: T;
   url?: T;
+  publishedAt?: T;
   content?: T;
   categories?: T;
   related_links_videos?:

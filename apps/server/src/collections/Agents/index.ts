@@ -116,7 +116,7 @@ export const Agents: CollectionConfig = {
                   relationTo: COLLECTION_SLUG_TAXONOMY,
                   hasMany: true,
                   admin: {
-                    description: 'Taxonomies that filter the RAG content. If empty, searches all content.',
+                    description: 'Taxonomies that filter the RAG content. REQUIRED: if empty, agent will not search any content (prevents global searches).',
                   },
                 },
               ],

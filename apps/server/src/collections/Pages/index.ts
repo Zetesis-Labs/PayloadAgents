@@ -45,6 +45,18 @@ export const Pages: CollectionConfig = {
       },
     },
     {
+      name: 'publishedAt',
+      type: 'date',
+      index: true,
+      required: true,
+      admin: {
+        description: 'Fecha de publicación del contenido',
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
+    },
+    {
       name: 'content',
       type: 'richText',
       admin: {

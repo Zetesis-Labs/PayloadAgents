@@ -1,0 +1,110 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{needspace}
+
+\definecolor{primary}{RGB}{45,55,72}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary}
+
+\titleformat{\section}{\large\bfseries\color{primary}}{\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.5ex}{1ex}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+
+% Evitar viudas y huérfanas
+\widowpenalty=10000
+\clubpenalty=10000
+
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries PayloadAgents}\\[0.3em]
+{\large Framework de Gestión de Contenido para Agentes de IA}\\[0.5em]
+{\small Nexo Labs --- \url{https://github.com/Nexo-Labs/PayloadAgents}}
+\end{center}
+
+\vspace{0.5em}
+
+\needspace{5\baselineskip}
+\section*{Descripción}
+
+PayloadAgents es un framework multi-tenant para la administración de contenido orientado a agentes de IA. Construido sobre Payload CMS, proporciona la infraestructura de datos necesaria para alimentar sistemas de recuperación aumentada (RAG) y agentes conversacionales.
+
+El objetivo del framework es estructurar, indexar y exponer contenido de forma óptima para su consumo por sistemas de IA, independientemente del motor RAG o base de datos vectorial que se utilice como backend.
+
+\needspace{8\baselineskip}
+\section*{Contexto de Aplicación}
+
+\begin{samepage}
+Este framework se está desarrollando como base tecnológica para la creación de una \textbf{plataforma de análisis del conocimiento asistida por inteligencia artificial}. 
+
+En concreto, el caso de uso principal es la construcción de una plataforma para el estudio de autores y materias de la \textbf{Escuela Austriaca de Economía}, permitiendo explorar, relacionar y consultar de forma inteligente el corpus de obras y pensamiento de esta tradición intelectual.
+\end{samepage}
+
+\needspace{12\baselineskip}
+\section*{Objetivos del Proyecto}
+
+\begin{samepage}
+\begin{itemize}[leftmargin=1.5em, itemsep=0.3em]
+    \item \textbf{Gestión de contenido multi-tenant:} Aislamiento completo de datos por organización
+    \item \textbf{Indexación inteligente:} Chunking, embeddings y sincronización con motores de búsqueda
+    \item \textbf{Arquitectura extensible:} Diseño modular que permite integrar diferentes backends de RAG
+    \item \textbf{Taxonomías automáticas:} Clasificación de contenido asistida por IA
+    \item \textbf{Autenticación empresarial:} Integración con Keycloak para SSO
+\end{itemize}
+\end{samepage}
+
+\needspace{10\baselineskip}
+\section*{Estado Actual}
+
+\begin{samepage}
+Actualmente, el framework ofrece integración nativa con \textbf{Typesense} como motor de búsqueda vectorial y RAG básico. Esta implementación permite búsqueda híbrida (semántica + keyword) y respuestas conversacionales sobre el contenido indexado.
+
+La arquitectura está diseñada para ser extensible: nada impide integrar otras bases de datos vectoriales (Pinecone, Weaviate, Qdrant) u otros sistemas RAG personalizados según las necesidades del proyecto.
+
+\textit{Nota: En un proyecto paralelo se está explorando la integración de Self-RAG con la arquitectura de datos que genera PayloadAgents.}
+\end{samepage}
+
+\needspace{10\baselineskip}
+\section*{Componentes}
+
+\begin{samepage}
+El monorepo incluye cinco paquetes npm bajo el scope \texttt{@nexo-labs}:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=0.2em]
+    \item \texttt{payload-typesense} --- Sincronización e indexación con Typesense
+    \item \texttt{payload-indexer} --- Extracción, chunking y generación de embeddings
+    \item \texttt{payload-taxonomies} --- Clasificación automática con IA
+    \item \texttt{payload-stripe-inventory} --- Integración con Stripe
+    \item \texttt{chat-agent} --- Componente React de interfaz de chat
+\end{itemize}
+\end{samepage}
+
+\needspace{8\baselineskip}
+\section*{Stack Tecnológico}
+
+\begin{samepage}
+\begin{tabular}{@{}ll@{}}
+\textbf{CMS:} & Payload CMS 3.x (Next.js 15, React 19) \\
+\textbf{Base de datos:} & MongoDB / PostgreSQL \\
+\textbf{Búsqueda:} & Typesense (extensible a otros backends) \\
+\textbf{Embeddings:} & OpenAI, Google Gemini \\
+\textbf{Auth:} & Keycloak, NextAuth \\
+\end{tabular}
+\end{samepage}
+
+\vfill
+
+\begin{center}
+{\small\color{gray} MIT License --- Versión 1.8.0}
+\end{center}
+
+\end{document}

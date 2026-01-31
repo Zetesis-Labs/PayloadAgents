@@ -106,31 +106,4 @@ export const seed: NonNullable<Config["onInit"]> = async (
       username: "multi-admin",
     },
   });
-
-  await payload.create({
-    collection: "pages",
-    data: {
-      slug: "home",
-      tenant: tenant1.id,
-      title: "Page for Tenant 1",
-    },
-  });
-
-  await payload.create({
-    collection: "pages",
-    data: {
-      slug: "home",
-      tenant: tenant2.id,
-      title: "Page for Tenant 2",
-    },
-  });
-
-  await payload.create({
-    collection: "pages",
-    data: {
-      slug: "home",
-      tenant: tenant3.id,
-      title: "Page for Tenant 3",
-    },
-  });
 };

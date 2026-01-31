@@ -4,8 +4,8 @@
  */
 
 import type { IndexableCollectionConfig } from '@nexo-labs/payload-indexer'
-import type { TypesenseFieldMapping } from '@nexo-labs/payload-typesense'
 import { transformLexicalToMarkdown } from '@nexo-labs/payload-indexer'
+import type { TypesenseFieldMapping } from '@nexo-labs/payload-typesense'
 import { transformTenant } from './transforms'
 
 // ============================================================================
@@ -15,22 +15,36 @@ import { transformTenant } from './transforms'
 /**
  * Transform categories relationship to taxonomy slugs array
  */
+/**
+ * Extrae la jerarquía de slugs de los breadcrumbs de la última categoría
+ * Ejemplo: categories = [ { ..., breadcrumbs: [ { url: '/autor', label: 'Autor' }, { url: '/autor/hoppe', label: 'Hoppe' } ] } ]
+ * Devuelve: ['autor', 'hoppe']
+ */
 const transformCategories = (categories: unknown): string[] => {
-  if (!categories || !Array.isArray(categories)) return []
-  return categories
-    .map((cat) => {
-      if (typeof cat === 'object' && cat !== null) {
-        return (cat as { slug?: string }).slug
-      }
-      if (typeof cat === 'string') {
-        return cat
-      }
-      if (typeof cat === 'number') {
-        return String(cat)
-      }
-      return null
-    })
-    .filter((slug): slug is string => Boolean(slug))
+  if (!categories || !Array.isArray(categories) || categories.length === 0)
+    return []
+  // Buscar la última categoría que tenga breadcrumbs
+  const lastWithBreadcrumbs = [...categories]
+    .reverse()
+    .find(
+      (cat) =>
+        cat &&
+        typeof cat === 'object' &&
+        Array.isArray((cat as any).breadcrumbs),
+    )
+  if (!lastWithBreadcrumbs) return []
+  const breadcrumbs = (lastWithBreadcrumbs as any).breadcrumbs
+  if (!Array.isArray(breadcrumbs) || breadcrumbs.length === 0) return []
+  // Tomar el último breadcrumb válido con url
+  const last = [...breadcrumbs]
+    .reverse()
+    .find(
+      (b) =>
+        b && typeof b === 'object' && 'url' in b && typeof b.url === 'string',
+    )
+  if (!last || typeof last.url !== 'string') return []
+  // Extraer los slugs de la url (ignorando vacíos)
+  return last.url.split('/').filter(Boolean)
 }
 
 // ============================================================================
@@ -50,7 +64,14 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
       fields: [
         { name: 'title', type: 'string' },
         { name: 'slug', type: 'string', index: true },
-        { name: 'tenant', type: 'string', facet: true, optional: true, transform: transformTenant },
+        { name: 'publishedAt', type: 'int64', index: true },
+        {
+          name: 'tenant',
+          type: 'string',
+          facet: true,
+          optional: true,
+          transform: transformTenant,
+        },
         {
           name: 'taxonomy_slugs',
           type: 'string[]',
@@ -69,8 +90,20 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
       fields: [
         { name: 'title', type: 'string' },
         { name: 'slug', type: 'string', index: true },
-        { name: 'content', type: 'string', optional: true, transform: transformLexicalToMarkdown },
-        { name: 'tenant', type: 'string', facet: true, optional: true, transform: transformTenant },
+        { name: 'publishedAt', type: 'int64', index: true },
+        {
+          name: 'content',
+          type: 'string',
+          optional: true,
+          transform: transformLexicalToMarkdown,
+        },
+        {
+          name: 'tenant',
+          type: 'string',
+          facet: true,
+          optional: true,
+          transform: transformTenant,
+        },
         {
           name: 'taxonomy_slugs',
           type: 'string[]',

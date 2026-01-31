@@ -5,10 +5,13 @@
 
 import type { CollectionConfig } from "payload";
 import type { IndexerAdapter } from "../../adapter/types.js";
+import { logger } from "../../core/logging/logger.js";
 import type { EmbeddingService } from "../../embedding/types.js";
 import type { IndexerPluginConfig } from "../types.js";
-import { logger } from "../../core/logging/logger.js";
-import { syncDocumentToIndex, deleteDocumentFromIndex } from "./document-syncer.js";
+import {
+  deleteDocumentFromIndex,
+  syncDocumentToIndex,
+} from "./document-syncer.js";
 
 /**
  * Applies sync hooks to Payload collections
@@ -18,7 +21,7 @@ export const applySyncHooks = (
   collections: CollectionConfig[],
   pluginConfig: IndexerPluginConfig,
   adapter: IndexerAdapter,
-  embeddingService?: EmbeddingService
+  embeddingService?: EmbeddingService,
 ): CollectionConfig[] => {
   if (
     !pluginConfig.features.sync?.enabled ||
@@ -58,12 +61,24 @@ export const applySyncHooks = (
                 if (tableConfig.shouldIndex) {
                   const shouldIndex = await tableConfig.shouldIndex(doc);
                   if (!shouldIndex) {
-                    await deleteDocumentFromIndex(adapter, collection.slug, doc.id, tableConfig);
+                    await deleteDocumentFromIndex(
+                      adapter,
+                      collection.slug,
+                      doc.id,
+                      tableConfig,
+                    );
                     continue;
                   }
                 }
 
-                await syncDocumentToIndex(adapter, collection.slug, doc, operation, tableConfig, embeddingService);
+                await syncDocumentToIndex(
+                  adapter,
+                  collection.slug,
+                  doc,
+                  operation,
+                  tableConfig,
+                  embeddingService,
+                );
               }
             },
           ],
@@ -72,11 +87,13 @@ export const applySyncHooks = (
             async ({ doc, req: _req }) => {
               if (!tableConfigs) return;
 
-              for (const tableConfig of tableConfigs) {
-                if (!tableConfig.enabled) continue;
-
-                await deleteDocumentFromIndex(adapter, collection.slug, doc.id, tableConfig);
-              }
+              // Borra el documento y chunks en todas las tablas asociadas
+              await deleteDocumentFromIndex(
+                adapter,
+                collection.slug,
+                doc.id,
+                tableConfigs.filter((tableConfig) => tableConfig.enabled),
+              );
             },
           ],
         },

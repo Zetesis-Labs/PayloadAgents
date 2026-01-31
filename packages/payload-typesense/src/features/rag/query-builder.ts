@@ -100,10 +100,13 @@ export function buildMultiSearchRequests(config: TypesenseQueryConfig) {
       filters.push(`parent_doc_id:[${documentIds}]`)
     }
 
-    // Add taxonomy filter if taxonomies are specified
+    // Add taxonomy filter - REQUIRED to prevent global searches
     if (taxonomySlugs && taxonomySlugs.length > 0) {
       const taxFilter = taxonomySlugs.map((s: string) => `"${s}"`).join(',')
       filters.push(`taxonomy_slugs:[${taxFilter}]`)
+    } else {
+      // No taxonomies assigned = no search results allowed (prevent global search)
+      filters.push(`id:=__BLOCKED_NO_TAXONOMIES__`)
     }
 
     // Apply combined filters
