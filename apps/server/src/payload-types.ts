@@ -68,7 +68,8 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    pages: Page;
+    posts: Post;
+    books: Book;
     users: User;
     tenants: Tenant;
     'chat-sessions': ChatSession;
@@ -86,7 +87,8 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    pages: PagesSelect<false> | PagesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    books: BooksSelect<false> | BooksSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     'chat-sessions': ChatSessionsSelect<false> | ChatSessionsSelect<true>;
@@ -166,9 +168,9 @@ export interface PayloadMcpApiKeyAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
+ * via the `definition` "posts".
  */
-export interface Page {
+export interface Post {
   id: number;
   tenant?: (number | null) | Tenant;
   title?: string | null;
@@ -208,9 +210,6 @@ export interface Page {
     [k: string]: unknown;
   } | null;
   categories?: (number | Taxonomy)[] | null;
-  /**
-   * Videos relacionados
-   */
   related_links_videos?:
     | {
         url: string;
@@ -218,19 +217,17 @@ export interface Page {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Libros relacionados
-   */
   related_links_books?:
     | {
-        url: string;
+        /**
+         * Libro relacionado de la colección
+         */
+        book?: (number | null) | Book;
+        url?: string | null;
         title?: string | null;
         id?: string | null;
       }[]
     | null;
-  /**
-   * Otros enlaces relacionados
-   */
   related_links_other?:
     | {
         url: string;
@@ -297,6 +294,46 @@ export interface Taxonomy {
         doc?: (number | null) | Taxonomy;
         url?: string | null;
         label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "books".
+ */
+export interface Book {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Título del libro
+   */
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Fecha de publicación del libro
+   */
+  publishedAt: string;
+  categories?: (number | Taxonomy)[] | null;
+  /**
+   * Capítulos del libro
+   */
+  chapters?:
+    | {
+        /**
+         * Título del capítulo (opcional)
+         */
+        title?: string | null;
+        /**
+         * Contenido del capítulo en formato markdown
+         */
+        content: string;
         id?: string | null;
       }[]
     | null;
@@ -413,6 +450,7 @@ export interface ChatSession {
  */
 export interface Agent {
   id: number;
+  tenant?: (number | null) | Tenant;
   /**
    * Display name for the agent
    */
@@ -441,7 +479,7 @@ export interface Agent {
   /**
    * Colecciones donde buscar contexto para RAG
    */
-  searchCollections?: 'pages_chunk'[] | null;
+  searchCollections?: ('posts_chunk' | 'books_chunk')[] | null;
   /**
    * Taxonomies that filter the RAG content. REQUIRED: if empty, agent will not search any content (prevents global searches).
    */
@@ -592,7 +630,7 @@ export interface Export {
  */
 export interface Import {
   id: number;
-  collectionSlug: 'agents' | 'taxonomy' | 'pages';
+  collectionSlug: 'agents' | 'taxonomy' | 'posts';
   importMode?: ('create' | 'update' | 'upsert') | null;
   matchField?: string | null;
   status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
@@ -643,21 +681,39 @@ export interface PayloadMcpApiKey {
    * The purpose of the API key.
    */
   description?: string | null;
-  pages?: {
+  posts?: {
     /**
-     * Allow clients to find pages.
+     * Allow clients to find posts.
      */
     find?: boolean | null;
     /**
-     * Allow clients to create pages.
+     * Allow clients to create posts.
      */
     create?: boolean | null;
     /**
-     * Allow clients to update pages.
+     * Allow clients to update posts.
      */
     update?: boolean | null;
     /**
-     * Allow clients to delete pages.
+     * Allow clients to delete posts.
+     */
+    delete?: boolean | null;
+  };
+  books?: {
+    /**
+     * Allow clients to find books.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create books.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update books.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete books.
      */
     delete?: boolean | null;
   };
@@ -802,8 +858,12 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'pages';
-        value: number | Page;
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'books';
+        value: number | Book;
       } | null)
     | ({
         relationTo: 'users';
@@ -887,9 +947,9 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages_select".
+ * via the `definition` "posts_select".
  */
-export interface PagesSelect<T extends boolean = true> {
+export interface PostsSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
   generateSlug?: T;
@@ -909,6 +969,7 @@ export interface PagesSelect<T extends boolean = true> {
   related_links_books?:
     | T
     | {
+        book?: T;
         url?: T;
         title?: T;
         id?: T;
@@ -918,6 +979,27 @@ export interface PagesSelect<T extends boolean = true> {
     | {
         url?: T;
         title?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "books_select".
+ */
+export interface BooksSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  publishedAt?: T;
+  categories?: T;
+  chapters?:
+    | T
+    | {
+        title?: T;
+        content?: T;
         id?: T;
       };
   updatedAt?: T;
@@ -998,6 +1080,7 @@ export interface ChatSessionsSelect<T extends boolean = true> {
  * via the `definition` "agents_select".
  */
 export interface AgentsSelect<T extends boolean = true> {
+  tenant?: T;
   name?: T;
   generateSlug?: T;
   slug?: T;
@@ -1173,7 +1256,15 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   user?: T;
   label?: T;
   description?: T;
-  pages?:
+  posts?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  books?:
     | T
     | {
         find?: T;
@@ -1304,7 +1395,8 @@ export interface TaskCreateCollectionExport {
 export interface TaskCreateCollectionImport {
   input: {
     collectionSlug:
-      | 'pages'
+      | 'posts'
+      | 'books'
       | 'users'
       | 'tenants'
       | 'chat-sessions'

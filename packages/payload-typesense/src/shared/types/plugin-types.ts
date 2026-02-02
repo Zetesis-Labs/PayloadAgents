@@ -317,7 +317,7 @@ export type TypesenseConnectionConfig = {
 /**
  * Configuration for a single conversational agent
  */
-export interface AgentConfig<SearchCollections extends string = string> {
+export interface AgentConfig<SearchCollections extends readonly string[] = string[]> {
   /**
    * Unique identifier for the agent (used in API requests)
    */
@@ -343,7 +343,7 @@ export interface AgentConfig<SearchCollections extends string = string> {
   /**
    * Collections this agent is allowed to search in
    */
-  searchCollections: SearchCollections[];
+  searchCollections: SearchCollections[number][];
   /**
    * Maximum context size in bytes. Default: 65536 (64KB)
    */

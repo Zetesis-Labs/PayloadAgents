@@ -35,7 +35,7 @@ function toAgentConfig(agent: Agent): AgentConfig {
     name: agent.name,
     systemPrompt: agent.systemPrompt,
     llmModel: agent.llmModel,
-    searchCollections: agent.searchCollections || ['pages_chunk'],
+    searchCollections: agent.searchCollections || ['posts_chunk'],
     kResults: agent.kResults ?? 5,
     apiKey: agent.apiKey,
     maxContextBytes: agent.maxContextBytes ?? 65536,

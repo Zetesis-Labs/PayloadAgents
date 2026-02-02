@@ -1,11 +1,11 @@
 import { slugField, type CollectionConfig } from 'payload'
 
-import { superAdminOrTenantAdminAccess } from '@/collections/Pages/access/superAdminOrTenantAdmin'
+import { superAdminOrTenantAdminAccess } from '@/collections/access/superAdminOrTenantAdmin'
 import { syncToTypesense } from './endpoints/syncToTypesense'
 import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
 
-export const Pages: CollectionConfig = {
-  slug: 'pages',
+export const Posts: CollectionConfig = {
+  slug: 'posts',
   access: {
     create: superAdminOrTenantAdminAccess,
     delete: superAdminOrTenantAdminAccess,
@@ -69,33 +69,36 @@ export const Pages: CollectionConfig = {
       required: false,
     }),
     {
+      label: 'Videos relacionados',
       name: 'related_links_videos',
       type: 'array',
-      admin: {
-        description: 'Videos relacionados',
-      },
       fields: [
         { name: 'url', type: 'text', required: true },
         { name: 'title', type: 'text' },
       ],
     },
     {
+      label: 'Libros relacionados',
       name: 'related_links_books',
       type: 'array',
-      admin: {
-        description: 'Libros relacionados',
-      },
       fields: [
-        { name: 'url', type: 'text', required: true },
+        {
+          name: 'book',
+          type: 'relationship',
+          relationTo: 'books',
+          required: false,
+          admin: {
+            description: 'Libro relacionado de la colección',
+          },
+        },
+        { name: 'url', type: 'text', required: false },
         { name: 'title', type: 'text' },
       ],
     },
     {
+      label: 'Otros enlaces relacionados',
       name: 'related_links_other',
       type: 'array',
-      admin: {
-        description: 'Otros enlaces relacionados',
-      },
       fields: [
         { name: 'url', type: 'text', required: true },
         { name: 'title', type: 'text' },

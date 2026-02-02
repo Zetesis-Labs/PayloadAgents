@@ -6,7 +6,7 @@
 import type { IndexableCollectionConfig } from '@nexo-labs/payload-indexer'
 import { transformLexicalToMarkdown } from '@nexo-labs/payload-indexer'
 import type { TypesenseFieldMapping } from '@nexo-labs/payload-typesense'
-import { transformTenant, transformCategories } from './transforms'
+import { transformTenant, transformCategories, transformChapters } from './transforms'
 
 
 // ============================================================================
@@ -14,11 +14,11 @@ import { transformTenant, transformCategories } from './transforms'
 // ============================================================================
 
 export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
-  pages: [
+  posts: [
     {
       enabled: true,
-      tableName: 'pages_chunk',
-      displayName: 'Pages (Chunked)',
+      tableName: 'posts_chunk',
+      displayName: 'Posts (Chunked)',
       embedding: {
         fields: [{ field: 'content', transform: transformLexicalToMarkdown }],
         chunking: { strategy: 'markdown', size: 2000, overlap: 300 },
@@ -47,8 +47,8 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
     // Full document version for search
     {
       enabled: true,
-      tableName: 'pages',
-      displayName: 'Pages',
+      tableName: 'posts',
+      displayName: 'Posts',
       fields: [
         { name: 'title', type: 'string' },
         { name: 'slug', type: 'string', index: true },
@@ -59,6 +59,63 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           optional: true,
           transform: transformLexicalToMarkdown,
         },
+        {
+          name: 'tenant',
+          type: 'string',
+          facet: true,
+          optional: true,
+          transform: transformTenant,
+        },
+        {
+          name: 'taxonomy_slugs',
+          type: 'string[]',
+          facet: true,
+          optional: true,
+          transform: transformCategories,
+          payloadField: 'categories',
+        },
+      ],
+    },
+  ],
+  books: [
+    {
+      enabled: true,
+      tableName: 'books_chunk',
+      displayName: 'Books (Chunked)',
+      embedding: {
+        fields: [{ field: 'chapters', transform: transformChapters }],
+        chunking: { strategy: 'markdown', size: 2000, overlap: 300 },
+      },
+      fields: [
+        { name: 'title', type: 'string' },
+        { name: 'slug', type: 'string', index: true },
+        { name: 'publishedAt', type: 'int64', index: true },
+        {
+          name: 'tenant',
+          type: 'string',
+          facet: true,
+          optional: true,
+          transform: transformTenant,
+        },
+        {
+          name: 'taxonomy_slugs',
+          type: 'string[]',
+          facet: true,
+          optional: true,
+          transform: transformCategories,
+          payloadField: 'categories',
+        },
+      ],
+    },
+    // Full document version for search
+    {
+      enabled: true,
+      tableName: 'books',
+      displayName: 'Books',
+      fields: [
+        { name: 'title', type: 'string' },
+        { name: 'slug', type: 'string', index: true },
+        { name: 'publishedAt', type: 'int64', index: true },
         {
           name: 'tenant',
           type: 'string',

@@ -4,9 +4,16 @@ import { COLLECTION_SLUG_TAXONOMY } from '@nexo-labs/payload-taxonomies'
 import { importAgents } from './endpoints/importAgents'
 import { afterChangeHook, afterDeleteHook } from './hooks'
 import { encryptApiKeyBeforeChange, decryptApiKeyAfterRead } from './security-hooks'
+import { superAdminOrTenantAdminAccess } from '../access/superAdminOrTenantAdmin'
 
 export const Agents: CollectionConfig = {
   slug: 'agents',
+  access: {
+    create: superAdminOrTenantAdminAccess,
+    delete: superAdminOrTenantAdminAccess,
+    read: () => true,
+    update: superAdminOrTenantAdminAccess,    
+  },
   hooks: {
     beforeChange: [encryptApiKeyBeforeChange],
     afterChange: [afterChangeHook],
@@ -102,9 +109,10 @@ export const Agents: CollectionConfig = {
                   name: 'searchCollections',
                   type: 'select',
                   hasMany: true,
-                  defaultValue: ['pages_chunk'],
+                  defaultValue: ['posts_chunk', 'books_chunk'],
                   options: [
-                    { label: 'Páginas', value: 'pages_chunk' },
+                    { label: 'Posts', value: 'posts_chunk' },
+                    { label: 'Libros', value: 'books_chunk' },
                   ],
                   admin: {
                     description: 'Colecciones donde buscar contexto para RAG',

@@ -4,7 +4,7 @@ export const importExportPlugin =   _importExportPlugin({
     collections: [
       { slug: "agents" },
       { slug: "taxonomy" },
-      { slug: "pages" },
+      { slug: "posts" },
     ],
     overrideExportCollection: ({ collection }) => {
       collection.admin = collection.admin || {}

@@ -52,13 +52,13 @@ Tu objetivo es ser una puerta de acceso al pensamiento de Javier Recuenco sobre 
 // AGENTS
 // ============================================================================
 
-export const agents: AgentConfig<"pages_chunk">[] = [
+export const agents: AgentConfig<["posts_chunk", "books_chunk"]>[] = [
   {
     slug: 'escohotado',
     name: 'Oráculo de Escohotado',
     systemPrompt: SYSTEM_PROMPT_ESCOHOTADO,
     llmModel: 'openai/gpt-4o-mini',
-    searchCollections: ['pages_chunk'],
+    searchCollections: ['posts_chunk', 'books_chunk'],
     kResults: 5,
     apiKey: process.env.OPENAI_API_KEY!,
     maxContextBytes: 65536,
@@ -93,7 +93,7 @@ export const agents: AgentConfig<"pages_chunk">[] = [
     name: 'Miguel Anxo Bastos',
     systemPrompt: SYSTEM_PROMPT_BASTOS,
     llmModel: 'openai/gpt-4o-mini',
-    searchCollections: ['pages_chunk'],
+    searchCollections: ['posts_chunk'],
     kResults: 5,
     apiKey: process.env.OPENAI_API_KEY!,
     maxContextBytes: 65536,
@@ -129,7 +129,7 @@ export const agents: AgentConfig<"pages_chunk">[] = [
     name: 'Javier Recuenco (El Turrero)',
     systemPrompt: SYSTEM_PROMPT_RECUENCO,
     llmModel: 'openai/gpt-4o-mini',
-    searchCollections: ['pages_chunk'],
+    searchCollections: ['posts_chunk'],
     kResults: 5,
     apiKey: process.env.OPENAI_API_KEY!,
     maxContextBytes: 65536,

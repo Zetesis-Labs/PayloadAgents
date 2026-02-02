@@ -1,3 +1,4 @@
+
 import type { Endpoint } from "payload";
 import { APIError } from "payload";
 import type { PayloadDocument } from "@nexo-labs/payload-indexer";
@@ -6,13 +7,13 @@ import { createTypesenseAdapter } from "@nexo-labs/payload-typesense";
 import { typesenseConnection } from "@/payload/plugins/typesense/config";
 import { getTableConfig } from "@/payload/plugins/typesense/collections";
 import { isSuperAdmin } from "@/access/isSuperAdmin";
-import type { Page } from "@/payload-types";
+import type { Post } from "@/payload-types";
 
 /**
- * Convert Payload Page document to indexable format
+ * Convert Payload Post document to indexable format
  * Handles the id type conversion (number -> string) and null values
  */
-const toIndexableDocument = (doc: Page): PayloadDocument => ({
+const toIndexableDocument = (doc: Post): PayloadDocument => ({
   ...doc,
   id: String(doc.id),
   slug: doc.slug ?? undefined,
@@ -21,8 +22,8 @@ const toIndexableDocument = (doc: Page): PayloadDocument => ({
 });
 
 /**
- * Endpoint to manually sync all Pages to Typesense
- * POST /api/pages/sync-to-typesense
+ * Endpoint to manually sync all Posts to Typesense
+ * POST /api/posts/sync-to-typesense
  */
 export const syncToTypesense: Endpoint = {
   handler: async (req) => {
@@ -38,15 +39,15 @@ export const syncToTypesense: Endpoint = {
 
     try {
       const adapter = createTypesenseAdapter(typesenseConnection);
-      const tableConfig = getTableConfig("pages");
+      const tableConfig = getTableConfig("posts");
 
       if (!tableConfig) {
-        throw new APIError("Pages collection is not configured for indexing", 500, null, true);
+        throw new APIError("Posts collection is not configured for indexing", 500, null, true);
       }
 
-      // Get all pages with tenant populated
-      const pages = await req.payload.find({
-        collection: "pages",
+      // Get all posts with tenant populated
+      const posts = await req.payload.find({
+        collection: "posts",
         limit: 0, // Get all
         depth: 1, // Populate tenant relationship
       });
@@ -56,25 +57,25 @@ export const syncToTypesense: Endpoint = {
         errors: [] as string[],
       };
 
-      console.log(`[Typesense Sync] Starting sync of ${pages.totalDocs} pages...`);
+      console.log(`[Typesense Sync] Starting sync of ${posts.totalDocs} posts...`);
 
       // Sync each document
-      for (const doc of pages.docs) {
+      for (const doc of posts.docs) {
         try {
           const indexableDoc = toIndexableDocument(doc);
           await syncDocumentToIndex(
             adapter,
-            "pages",
+            "posts",
             indexableDoc,
             "update",
             tableConfig
           );
           results.synced.push(String(doc.id));
-          console.log(`[Typesense Sync] Synced page ${doc.id}: ${doc.title}`);
+          console.log(`[Typesense Sync] Synced post ${doc.id}: ${doc.title}`);
         } catch (error) {
           const errorMsg = `${doc.id}: ${error instanceof Error ? error.message : "Unknown error"}`;
           results.errors.push(errorMsg);
-          console.error(`[Typesense Sync] Error syncing page ${doc.id}:`, error);
+          console.error(`[Typesense Sync] Error syncing post ${doc.id}:`, error);
         }
       }
 
@@ -83,7 +84,7 @@ export const syncToTypesense: Endpoint = {
       return Response.json({
         success: true,
         message: "Sync completed",
-        totalDocuments: pages.totalDocs,
+        totalDocuments: posts.totalDocs,
         results,
       });
     } catch (error) {
