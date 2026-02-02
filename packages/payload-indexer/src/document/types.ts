@@ -41,7 +41,7 @@ export interface FieldMapping {
    *   return [];
    * }
    */
-  transform?: (value: any) => any;
+  transform?: (value: any) => Promise<any> | any;
 }
 
 /**

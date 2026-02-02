@@ -28,6 +28,7 @@ yarn-error.log*
 
 # turbo
 .turbo
+__pycache__
 
 # mine I added
 build
