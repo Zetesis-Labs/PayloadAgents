@@ -1,5 +1,5 @@
 import { getPayload } from "@/modules/get-payload";
-import { Taxonomy, Tenant } from "@/payload-types";
+import { Taxonomy, Tenant, Book } from "@/payload-types";
 
 // ============================================================================
 // TRANSFORMS
@@ -14,7 +14,6 @@ import { Taxonomy, Tenant } from "@/payload-types";
  * Devuelve: ['autor', 'hoppe']
  */
 export const transformCategories = async (categories?: (number | Taxonomy)[]): Promise<string[]> => {
-    console.error('transformCategories called with:', categories);
 if (!categories || categories.length === 0) return [];
 
   let docs: Taxonomy[] = [];
@@ -74,4 +73,40 @@ export const transformTenant = async (
   const payload = await getPayload();
   const tenant = await payload.findByID({ collection: "tenants", id: value });
   return String(tenant?.slug) ?? "";
+};
+
+/**
+ * Transform book chapters array to plain text content
+ * Extracts the text content from each chapter for indexing
+ */
+export const transformChapters = async (
+  chapters?: Book["chapters"]
+): Promise<string> => {
+  if (!chapters || chapters.length === 0) return "";
+
+  // Combine all chapter content into a single text string
+  const allContent = chapters
+    .map((chapter) => {
+      const parts: string[] = [];
+
+      // Add chapter title if present
+      if (chapter.title) {
+        parts.push(`# ${chapter.title}\n\n`);
+      }
+
+      // Extract plain text from content
+      // Assuming content is a plain text field, not lexical
+      if (typeof chapter.content === 'string') {
+        parts.push(chapter.content);
+      } else if (chapter.content && typeof chapter.content === 'object') {
+        // If it's an object, try to extract text (might be lexical despite what user said)
+        // For now, just stringify it as fallback
+        parts.push(JSON.stringify(chapter.content));
+      }
+
+      return parts.join('');
+    })
+    .join('\n\n---\n\n');
+
+  return allContent;
 };

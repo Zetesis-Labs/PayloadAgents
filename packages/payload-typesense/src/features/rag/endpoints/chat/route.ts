@@ -110,7 +110,7 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
       const agentSlug = body.agentSlug;
 
       // Resolve agents - can be array or function
-      let agents: AgentConfig<string>[] = [];
+      let agents: AgentConfig<readonly string[]>[] = [];
       if (config.rag?.agents) {
         if (typeof config.rag.agents === 'function') {
           agents = await config.rag.agents(payload);

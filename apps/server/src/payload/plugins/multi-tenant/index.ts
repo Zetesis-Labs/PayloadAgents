@@ -5,7 +5,9 @@ import { getUserTenantIDs } from '@/utilities/getUserTenantIDs'
 
 export const multiTenantPlugin = _multiTenantPlugin<Config>({
       collections: {
-        pages: {},
+        posts: {},
+        books: {},
+        agents: {},
       },
       tenantField: {
         access: {

@@ -26,7 +26,7 @@ export function useChunkLoader() {
    * Get the collection name based on document type
    */
   const getCollectionName = useCallback((type: 'article' | 'book'): string => {
-    return "pages_chunk"
+    return type === 'book' ? 'books_chunk' : 'posts_chunk'
   }, [])
 
   /**

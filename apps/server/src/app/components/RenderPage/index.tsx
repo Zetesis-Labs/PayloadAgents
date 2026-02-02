@@ -1,9 +1,9 @@
-import type { Page } from "@payload-types";
+import type { Post } from "@payload-types";
 
 import React from "react";
 import { LogoutButton } from "./LogoutButton";
 
-export const RenderPage = ({ data }: { data: Page }) => {
+export const RenderPage = ({ data }: { data: Post }) => {
   return (
     <React.Fragment>
       <LogoutButton />

@@ -49,6 +49,7 @@ export async function importHardcodedAgents(payload: Payload): Promise<ImportRes
                     isActive: true,
                     llmModel: agent.llmModel,
                     systemPrompt: agent.systemPrompt,
+                    tenant: 2,
                     searchCollections: agent.searchCollections,
                     kResults: agent.kResults,
                     maxContextBytes: agent.maxContextBytes,

@@ -4,7 +4,8 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { Pages } from './collections/Pages'
+import { Posts } from './collections/Posts'
+import { Books } from './collections/Books'
 import { Tenants } from './collections/Tenants'
 import { ChatSessions } from './collections/ChatSessions'
 import { Agents } from './collections/Agents'
@@ -38,7 +39,7 @@ export default buildConfig({
   cors: [
     'http://localhost:3000',
   ],
-  collections: [Pages, Users, Tenants, ChatSessions, Agents, Media, Taxonomies],
+  collections: [Posts, Books, Users, Tenants, ChatSessions, Agents, Media, Taxonomies],
   db: postgresAdapter({
     push: false,
     prodMigrations: migrations,

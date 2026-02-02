@@ -1,8 +1,8 @@
 'use server'
 
 import { getPayload } from '@/modules/get-payload'
-import { Page } from '@/payload-types'
-import { seedPage } from '@/seed/page.seed'
+import { Post } from '@/payload-types'
+import { seedPost } from '@/seed/post.seed'
 import fs from 'fs'
 import path from 'path'
 
@@ -62,7 +62,7 @@ export async function importAgentData({ agentId }: { agentId: string | number })
     // Parse JSON
     const fileContent = fs.readFileSync(dataFilePath, 'utf-8')
     const parsed = JSON.parse(fileContent)
-    const entries: Page[] = Array.isArray(parsed) ? parsed : [parsed]
+    const entries: Post[] = Array.isArray(parsed) ? parsed : [parsed]
 
     payload.logger.info(`[Agent Data Import] Found ${entries.length} entries to process`)
 
@@ -72,8 +72,8 @@ export async function importAgentData({ agentId }: { agentId: string | number })
       errors: [] as string[],
     }
 
-    // Use seedPage for each entry
-    const seeder = seedPage(payload, 'upsert')
+    // Use seedPost for each entry
+    const seeder = seedPost(payload, 'upsert')
 
     for (const entry of entries) {
       try {

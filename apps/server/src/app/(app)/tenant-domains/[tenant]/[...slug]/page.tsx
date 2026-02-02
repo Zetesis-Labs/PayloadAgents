@@ -84,7 +84,7 @@ export default async function Page({
       }
 
   const pageQuery = await payload.find({
-    collection: 'pages',
+    collection: 'posts',
     overrideAccess: false,
     user,
     where: {
