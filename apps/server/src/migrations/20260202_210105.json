@@ -3605,29 +3605,57 @@
           "primaryKey": false,
           "notNull": false
         },
-        "pages_find": {
-          "name": "pages_find",
+        "posts_find": {
+          "name": "posts_find",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
           "default": false
         },
-        "pages_create": {
-          "name": "pages_create",
+        "posts_create": {
+          "name": "posts_create",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
           "default": false
         },
-        "pages_update": {
-          "name": "pages_update",
+        "posts_update": {
+          "name": "posts_update",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
           "default": false
         },
-        "pages_delete": {
-          "name": "pages_delete",
+        "posts_delete": {
+          "name": "posts_delete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "books_find": {
+          "name": "books_find",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "books_create": {
+          "name": "books_create",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "books_update": {
+          "name": "books_update",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "books_delete": {
+          "name": "books_delete",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
@@ -5047,7 +5075,8 @@
       "values": [
         "agents",
         "taxonomy",
-        "pages"
+        "posts",
+        "books"
       ]
     },
     "public.enum_imports_import_mode": {
@@ -5106,6 +5135,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "12d6d117-52f0-4c3a-a2b1-c333b20c4804",
+  "id": "ef54cd7d-775f-4615-a6e6-33cfc8df25d1",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

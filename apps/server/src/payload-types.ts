@@ -630,7 +630,7 @@ export interface Export {
  */
 export interface Import {
   id: number;
-  collectionSlug: 'agents' | 'taxonomy' | 'posts';
+  collectionSlug: 'agents' | 'taxonomy' | 'posts' | 'books';
   importMode?: ('create' | 'update' | 'upsert') | null;
   matchField?: string | null;
   status?: ('pending' | 'completed' | 'partial' | 'failed') | null;

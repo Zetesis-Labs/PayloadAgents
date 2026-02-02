@@ -9,7 +9,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_exports_format" AS ENUM('csv', 'json');
   CREATE TYPE "public"."enum_exports_sort_order" AS ENUM('asc', 'desc');
   CREATE TYPE "public"."enum_exports_drafts" AS ENUM('yes', 'no');
-  CREATE TYPE "public"."enum_imports_collection_slug" AS ENUM('agents', 'taxonomy', 'pages');
+  CREATE TYPE "public"."enum_imports_collection_slug" AS ENUM('agents', 'taxonomy', 'posts', 'books');
   CREATE TYPE "public"."enum_imports_import_mode" AS ENUM('create', 'update', 'upsert');
   CREATE TYPE "public"."enum_imports_status" AS ENUM('pending', 'completed', 'partial', 'failed');
   CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'createCollectionExport', 'createCollectionImport');
@@ -332,10 +332,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"user_id" varchar NOT NULL,
   	"label" varchar,
   	"description" varchar,
-  	"pages_find" boolean DEFAULT false,
-  	"pages_create" boolean DEFAULT false,
-  	"pages_update" boolean DEFAULT false,
-  	"pages_delete" boolean DEFAULT false,
+  	"posts_find" boolean DEFAULT false,
+  	"posts_create" boolean DEFAULT false,
+  	"posts_update" boolean DEFAULT false,
+  	"posts_delete" boolean DEFAULT false,
+  	"books_find" boolean DEFAULT false,
+  	"books_create" boolean DEFAULT false,
+  	"books_update" boolean DEFAULT false,
+  	"books_delete" boolean DEFAULT false,
   	"taxonomy_find" boolean DEFAULT false,
   	"taxonomy_create" boolean DEFAULT false,
   	"taxonomy_update" boolean DEFAULT false,
