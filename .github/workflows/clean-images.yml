@@ -1,0 +1,29 @@
+name: Limpieza de Imágenes Antiguas
+
+on:
+  # Ejecutar automáticamente todos los lunes a las 4:00 AM UTC
+  schedule:
+    - cron: '0 4 * * 1'
+  
+  # Permite ejecutarlo manualmente desde la pestaña "Actions" para probar
+  workflow_dispatch:
+
+jobs:
+  clean-ghcr:
+    runs-on: ubuntu-latest
+    # Permisos necesarios para poder borrar paquetes
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Borrar imágenes antiguas
+        uses: quartx-analytics/ghcr-cleaner@v1
+        with:
+          owner-type: org
+          token: ${{ secrets.PAT_TOKEN }}
+          repository-owner: ${{ github.repository_owner }}
+          package-name: payload-agents-web
+          delete-untagged: true
+          keep-at-most: 5
+          skip-tags: latest
