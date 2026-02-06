@@ -22,13 +22,11 @@ interface HeaderInfo {
 const extractHeaders = (text: string): HeaderInfo[] => {
   const headerRegex = /^(#{1,6})\s+(.+)$/gm
   const headers: HeaderInfo[] = []
-  let match
-
-  while ((match = headerRegex.exec(text)) !== null) {
+  for (const match of text.matchAll(headerRegex)) {
     headers.push({
       level: match[1]?.length ?? 0,
       text: match[2]?.trim() ?? '',
-      position: match.index
+      position: match.index ?? 0
     })
   }
 
@@ -70,7 +68,7 @@ const findChunkHeaders = (chunkText: string, allHeaders: HeaderInfo[], fullText:
   // Build the metadata object
   for (let i = 0; i < 6; i++) {
     if (currentHierarchy[i]) {
-      metadata[`Header ${i + 1}`] = currentHierarchy[i]!.text
+      metadata[`Header ${i + 1}`] = currentHierarchy[i]?.text ?? ''
     }
   }
 

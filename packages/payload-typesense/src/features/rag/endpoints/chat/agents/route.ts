@@ -31,7 +31,7 @@ export function createAgentsGETHandler(config: AgentsEndpointConfig) {
       }))
 
       return jsonResponse({ agents: publicAgents }, { status: 200 })
-    } catch (error) {
+    } catch (_error) {
       return jsonResponse({ error: 'Internal Server Error' }, { status: 500 })
     }
   }

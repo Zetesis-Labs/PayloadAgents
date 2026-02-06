@@ -137,8 +137,9 @@ export class TypesenseAdapter implements IndexerAdapter<TypesenseCollectionSchem
       await this.client.collections(collectionName).documents().import(documents, {
         action: 'upsert'
       })
-    } catch (error: any) {
-      const failedItems = error?.importResults?.filter((r: any) => !r.success)
+    } catch (error: unknown) {
+      const importError = error as { importResults?: Array<{ success: boolean }> }
+      const failedItems = importError?.importResults?.filter(r => !r.success)
       logger.error(JSON.stringify(failedItems))
       throw error
     }
@@ -196,15 +197,15 @@ export class TypesenseAdapter implements IndexerAdapter<TypesenseCollectionSchem
       }
 
       if (filter) {
-        searchParams['filter_by'] = this.buildFilterString(filter)
+        searchParams.filter_by = this.buildFilterString(filter)
       }
 
       if (includeFields) {
-        searchParams['include_fields'] = includeFields.join(',')
+        searchParams.include_fields = includeFields.join(',')
       }
 
       if (excludeFields) {
-        searchParams['exclude_fields'] = excludeFields.join(',')
+        searchParams.exclude_fields = excludeFields.join(',')
       }
 
       const result = (await this.client

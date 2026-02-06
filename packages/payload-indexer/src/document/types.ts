@@ -41,7 +41,7 @@ export interface FieldMapping {
    *   return [];
    * }
    */
-  transform?: (value: any) => Promise<any> | any
+  transform?(value: unknown, ...args: unknown[]): Promise<unknown> | unknown
 }
 
 /**
@@ -61,7 +61,7 @@ export interface SourceField {
    * @param value - The raw value from Payload
    * @returns The transformed value
    */
-  transform?: (value: any) => any | Promise<any>
+  transform?(value: unknown, ...args: unknown[]): unknown | Promise<unknown>
 }
 
 /**
@@ -91,7 +91,10 @@ export interface ChunkingConfig {
    * @param payloadDocument - The original Payload document
    * @returns The modified chunk text or object
    */
-  interceptResult?: (chunkResultsWithMetadata: any, payloadDocument: any) => string
+  interceptResult?: (
+    chunkResultsWithMetadata: Record<string, unknown>,
+    payloadDocument: Record<string, unknown>
+  ) => string
 }
 
 /**
@@ -145,7 +148,7 @@ interface BaseTableConfig<TFieldMapping extends FieldMapping = FieldMapping> {
    * @param doc - The document being indexed
    * @returns boolean | Promise<boolean> - true to index, false to skip
    */
-  shouldIndex?: (doc: any) => boolean | Promise<boolean>
+  shouldIndex?: (doc: Record<string, unknown>) => boolean | Promise<boolean>
 }
 
 /**

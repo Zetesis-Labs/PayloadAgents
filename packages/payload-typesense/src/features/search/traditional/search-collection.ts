@@ -72,7 +72,7 @@ export const searchTraditionalCollection = async (
           searchParameters.filter_by = '!is_chunk:true'
         }
         // If schema doesn't support is_chunk, don't add filter (backward compatibility)
-      } catch (schemaError: unknown) {
+      } catch (_schemaError: unknown) {
         // If we can't retrieve schema, don't add filter (will work for old collections)
       }
     }

@@ -55,6 +55,7 @@ export const ImportAgentsButton: React.FC = () => {
         {isLoading ? (
           <>
             <svg
+              aria-hidden="true"
               style={{
                 animation: 'spin 1s linear infinite',
                 width: '16px',
@@ -72,6 +73,7 @@ export const ImportAgentsButton: React.FC = () => {
         ) : (
           <>
             <svg
+              aria-hidden="true"
               width="16"
               height="16"
               viewBox="0 0 24 24"
@@ -107,7 +109,7 @@ export const ImportAgentsButton: React.FC = () => {
               {result.results?.errors.length || 0} errores
             </>
           ) : (
-            <>{result.message}</>
+            result.message
           )}
         </div>
       )}

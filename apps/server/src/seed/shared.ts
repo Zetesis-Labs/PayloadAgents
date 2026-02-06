@@ -21,7 +21,7 @@ export async function ensureTenantExists(
         id: tenantData
       })
       return tenantData
-    } catch (error) {
+    } catch (_error) {
       throw new Error(
         `Tenant con ID ${tenantData} no existe. Se necesita el objeto completo del tenant para crearlo automáticamente.`
       )
@@ -62,7 +62,7 @@ export async function ensureTaxonomiesExist(
           id: cat
         })
         categoryIds.push(cat)
-      } catch (error) {
+      } catch (_error) {
         throw new Error(
           `Taxonomy con ID ${cat} no existe. Se necesita el objeto completo de la taxonomía para crearla automáticamente.`
         )

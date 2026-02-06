@@ -4,7 +4,7 @@ import { ValidationError } from 'payload'
 import { getCollectionIDType } from '@/utilities/getCollectionIDType'
 import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 
-export const ensureUniqueUsername: FieldHook = async ({ data, originalDoc, req, value }) => {
+export const ensureUniqueUsername: FieldHook = async ({ originalDoc, req, value }) => {
   // if value is unchanged, skip validation
   if (originalDoc.username === value) {
     return value
@@ -37,7 +37,7 @@ export const ensureUniqueUsername: FieldHook = async ({ data, originalDoc, req, 
       and: constraints
     }
   })
-  if (req.user?.collection == 'payload-mcp-api-keys') {
+  if (req.user?.collection === 'payload-mcp-api-keys') {
     return
   }
 

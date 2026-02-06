@@ -8,7 +8,7 @@ export default async function HomePage() {
   const session = await auth()
   const user = session?.user
     ? {
-        id: session.user.id!,
+        id: session.user.id ?? '',
         email: session.user.email,
         name: session.user.name
       }

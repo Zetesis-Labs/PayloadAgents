@@ -58,7 +58,7 @@ export async function defaultHandleNonStreamingResponse(
   if (fullAnswer) {
     const words = fullAnswer.split(' ')
     for (let i = 0; i < words.length; i++) {
-      const token = i === 0 ? words[i] : ' ' + words[i]
+      const token = i === 0 ? words[i] : ` ${words[i]}`
       if (token) {
         sendSSEEvent(controller, encoder, { type: 'token', data: token })
       }

@@ -11,6 +11,52 @@ export interface Document {
   collection: string
 }
 
+function buildSearchParams(query: string): URLSearchParams {
+  const params = new URLSearchParams({
+    q: query,
+    exclude_fields: 'embedding,content,lexical_richtext',
+    query_by: 'title',
+    simple: 'true',
+    mode: 'simple',
+    per_page: '15'
+  })
+  params.append('collection', 'book')
+  params.append('collection', 'article_web')
+  return params
+}
+
+function logSearchResponse(data: { documents?: Document[] }): void {
+  console.log('[DocumentSelector] API response:', data)
+  console.log('[DocumentSelector] Documents found:', data.documents?.length || 0)
+
+  if (data.documents && data.documents.length > 0) {
+    console.log(
+      '[DocumentSelector] Sample document titles:',
+      data.documents.slice(0, 3).map((d: Document) => d.title)
+    )
+  }
+}
+
+async function fetchSearchResults(query: string): Promise<Document[]> {
+  const params = buildSearchParams(query)
+  const url = `/api/search?${params}`
+  if (isDev) console.log('[DocumentSelector] Fetching URL:', url)
+
+  const response = await fetch(url)
+  if (isDev) console.log('[DocumentSelector] Response status:', response.status)
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    if (isDev) console.error('[DocumentSelector] API error:', response.status, errorText)
+    throw new Error(`Error ${response.status}: ${errorText}`)
+  }
+
+  const data = await response.json()
+  if (isDev) logSearchResponse(data)
+
+  return data.documents || []
+}
+
 /**
  * Hook for managing document search functionality
  */
@@ -33,45 +79,8 @@ export function useDocumentSearch() {
     setError(null)
 
     try {
-      // Build query parameters for the search endpoint
-      const params = new URLSearchParams({
-        q: query,
-        exclude_fields: 'embedding,content,lexical_richtext',
-        query_by: 'title',
-        simple: 'true',
-        mode: 'simple',
-        per_page: '15'
-      })
-      // Add multiple collection parameters
-      params.append('collection', 'book')
-      params.append('collection', 'article_web')
-
-      const url = `/api/search?${params}`
-      if (isDev) console.log('[DocumentSelector] Fetching URL:', url)
-
-      const response = await fetch(url)
-      if (isDev) console.log('[DocumentSelector] Response status:', response.status)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        if (isDev) console.error('[DocumentSelector] API error:', response.status, errorText)
-        throw new Error(`Error ${response.status}: ${errorText}`)
-      }
-
-      const data = await response.json()
-      if (isDev) {
-        console.log('[DocumentSelector] API response:', data)
-        console.log('[DocumentSelector] Documents found:', data.documents?.length || 0)
-
-        if (data.documents && data.documents.length > 0) {
-          console.log(
-            '[DocumentSelector] Sample document titles:',
-            data.documents.slice(0, 3).map((d: any) => d.title)
-          )
-        }
-      }
-
-      setSearchResults(data.documents || [])
+      const documents = await fetchSearchResults(query)
+      setSearchResults(documents)
     } catch (err) {
       if (isDev) console.error('[DocumentSelector] Error searching documents:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')

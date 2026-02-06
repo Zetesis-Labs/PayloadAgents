@@ -57,6 +57,7 @@ export const SyncTenantsButton: React.FC = () => {
         {isLoading ? (
           <>
             <svg
+              aria-hidden="true"
               style={{
                 animation: 'spin 1s linear infinite',
                 width: '16px',
@@ -73,6 +74,7 @@ export const SyncTenantsButton: React.FC = () => {
         ) : (
           <>
             <svg
+              aria-hidden="true"
               width="16"
               height="16"
               viewBox="0 0 24 24"

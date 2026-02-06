@@ -69,8 +69,9 @@ export const seedBook =
         })
         logger.debug(`Nuevo book creado con ID: ${bookData.id}`)
       }
-    } catch (error: any) {
-      logger.error(`Error al procesar book ${bookData.id}:`, error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`Error al procesar book ${bookData.id}: ${errorMessage}`)
       throw error
     }
   }

@@ -13,7 +13,7 @@ export const isAdminOrCurrentUser: Access = ({ req }) => {
 }
 
 export const isAdminOrPublished: Access = ({ req: { user } }) => {
-  if (user && user?.roles?.includes(permissionSlugs.webAdmin)) {
+  if (user?.roles?.includes(permissionSlugs.webAdmin)) {
     return true
   }
 
@@ -25,7 +25,7 @@ export const isAdminOrPublished: Access = ({ req: { user } }) => {
 }
 
 export const isAdminOrStripeActive: Access = ({ req: { user } }) => {
-  if (user && user?.roles?.includes(permissionSlugs.webAdmin)) {
+  if (user?.roles?.includes(permissionSlugs.webAdmin)) {
     return true
   }
 

@@ -4,7 +4,7 @@ import type { ChatEndpointConfig } from '../route'
 /**
  * JSON Response helper
  */
-export const jsonResponse = (data: any, options?: ResponseInit) => {
+export const jsonResponse = (data: unknown, options?: ResponseInit) => {
   return new Response(JSON.stringify(data), {
     headers: { 'Content-Type': 'application/json' },
     ...options
@@ -51,7 +51,7 @@ export async function validateChatRequest(
   const { user } = request
 
   const { id: userId } = user
-  const userEmail = 'email' in user ? (user['email'] ?? '') : ''
+  const userEmail = 'email' in user ? (user.email ?? '') : ''
   const payload = await config.getPayload()
   const body = await request.json?.()
 

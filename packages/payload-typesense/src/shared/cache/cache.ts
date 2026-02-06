@@ -18,7 +18,7 @@ class SearchCache<T = unknown> {
   /**
    * Generate cache key from search parameters
    */
-  private generateKey(query: string, collection?: string, params?: Record<string, any>): string {
+  private generateKey(query: string, collection?: string, params?: Record<string, unknown>): string {
     const baseKey = `${collection || 'universal'}:${query}`
     if (params) {
       const sortedParams = Object.keys(params)
@@ -61,7 +61,7 @@ class SearchCache<T = unknown> {
   /**
    * Get cached search result
    */
-  get(query: string, collection?: string, params?: Record<string, any>): null | T {
+  get(query: string, collection?: string, params?: Record<string, unknown>): null | T {
     const key = this.generateKey(query, collection || '', params)
     const entry = this.cache.get(key)
 
@@ -91,14 +91,14 @@ class SearchCache<T = unknown> {
   /**
    * Check if cache has valid entry
    */
-  has(query: string, collection?: string, params?: Record<string, any>): boolean {
+  has(query: string, collection?: string, params?: Record<string, unknown>): boolean {
     return this.get(query, collection, params) !== null
   }
 
   /**
    * Set cached search result
    */
-  set(query: string, data: T, collection?: string, params?: Record<string, any>, ttl?: number): void {
+  set(query: string, data: T, collection?: string, params?: Record<string, unknown>, ttl?: number): void {
     const key = this.generateKey(query, collection || '', params)
 
     // Enforce max size by removing oldest entries

@@ -6,7 +6,7 @@ export interface LexicalBlockProps<T> {
     fields: T
   }
 }
-export type BlockRendererFunction = ({ node }: LexicalBlockProps<any>) => Promise<any> | any
+export type BlockRendererFunction = ({ node }: LexicalBlockProps<Record<string, unknown>>) => Promise<unknown> | unknown
 export type BlocksRendererFunctions<T extends string> = Record<T, BlockRendererFunction>
 
 export interface GenericStory<P> {
@@ -15,7 +15,7 @@ export interface GenericStory<P> {
 
 export type StoryArgs<T> = T extends GenericStory<infer P> ? P : never
 
-export const generateStoryForLexicalBlock = <T extends GenericStory<any>>(
+export const generateStoryForLexicalBlock = <T extends GenericStory<unknown>>(
   args: StoryArgs<T>
 ): { args: LexicalBlockProps<StoryArgs<T>> } => ({
   args: {

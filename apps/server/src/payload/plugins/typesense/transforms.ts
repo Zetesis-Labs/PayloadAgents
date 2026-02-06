@@ -38,9 +38,9 @@ export const transformCategories = async (categories?: (number | Taxonomy)[]): P
   // Buscar la última categoría que tenga breadcrumbs
   const lastWithBreadcrumbs = [...docs]
     .reverse()
-    .find(cat => cat && typeof cat === 'object' && Array.isArray((cat as any).breadcrumbs))
+    .find(cat => cat && typeof cat === 'object' && Array.isArray(cat.breadcrumbs))
   if (!lastWithBreadcrumbs) return []
-  const breadcrumbs = (lastWithBreadcrumbs as any).breadcrumbs
+  const breadcrumbs = lastWithBreadcrumbs.breadcrumbs
   if (!Array.isArray(breadcrumbs) || breadcrumbs.length === 0) return []
   // Tomar el último breadcrumb válido con url
   const last = [...breadcrumbs]

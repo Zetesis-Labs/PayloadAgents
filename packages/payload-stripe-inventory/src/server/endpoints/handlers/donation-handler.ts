@@ -38,7 +38,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
 
       const amount = parseInt(amountParam, 10)
 
-      if (isNaN(amount) || amount < 100) {
+      if (Number.isNaN(amount) || amount < 100) {
         return errorResponse('Minimum donation amount is 1 EUR (100 cents)', 400)
       }
 

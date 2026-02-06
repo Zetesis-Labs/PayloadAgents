@@ -4,8 +4,80 @@ import type {
   PublicAgentInfo,
   SendMessageContext,
   SessionSummary,
+  Source,
   StreamCallbacks
 } from './ChatAdapter'
+
+interface SSEEvent {
+  type: string
+  data?: unknown
+}
+
+function handleSSEEvent(event: SSEEvent, callbacks: StreamCallbacks): void {
+  switch (event.type) {
+    case 'conversation_id':
+      callbacks.onConversationId?.(event.data as string)
+      break
+
+    case 'token':
+      callbacks.onToken?.(event.data as string)
+      break
+
+    case 'sources':
+      if (Array.isArray(event.data)) {
+        callbacks.onSources?.(event.data)
+      }
+      break
+
+    case 'done':
+      callbacks.onDone?.()
+      break
+
+    case 'usage':
+      callbacks.onUsage?.(
+        event.data as { daily_limit: number; daily_used: number; daily_remaining: number; reset_at: string }
+      )
+      break
+
+    case 'error':
+      handleSSEError(event)
+      break
+  }
+}
+
+function handleSSEError(event: SSEEvent): never {
+  const errorData = event.data as Record<string, unknown> | undefined
+  if (errorData?.error === 'EXPIRED_CONVERSATION') {
+    const error = new Error((errorData?.message as string) || 'Esta conversación ha expirado') as Error & {
+      code: string
+      chatId: string
+    }
+    error.code = 'EXPIRED_CONVERSATION'
+    error.chatId = errorData?.chatId as string
+    throw error
+  }
+  throw new Error((errorData?.error as string) || 'Streaming error')
+}
+
+function parseSSELine(line: string): { done: boolean; event: SSEEvent | null } {
+  if (!line.startsWith('data: ')) {
+    return { done: false, event: null }
+  }
+
+  const data = line.slice(6)
+  if (data === '[DONE]') {
+    return { done: true, event: null }
+  }
+
+  try {
+    const event = JSON.parse(data) as SSEEvent
+    return { done: false, event }
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e
+    console.warn('Failed to parse SSE event:', data)
+    return { done: false, event: null }
+  }
+}
 
 export class NexoPayloadChatAdapter implements ChatAdapter {
   async sendMessage(
@@ -80,53 +152,13 @@ export class NexoPayloadChatAdapter implements ChatAdapter {
       buffer = lines.pop() || ''
 
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-
-        const data = line.slice(6)
-        if (data === '[DONE]') {
+        const result = parseSSELine(line)
+        if (result.done) {
           streamDone = true
           break
         }
-
-        try {
-          const event = JSON.parse(data)
-
-          switch (event.type) {
-            case 'conversation_id':
-              callbacks.onConversationId?.(event.data)
-              break
-
-            case 'token':
-              callbacks.onToken?.(event.data)
-              break
-
-            case 'sources':
-              if (Array.isArray(event.data)) {
-                callbacks.onSources?.(event.data)
-              }
-              break
-
-            case 'done':
-              callbacks.onDone?.()
-              break
-
-            case 'usage':
-              callbacks.onUsage?.(event.data)
-              break
-
-            case 'error':
-              // Check if it's an expired conversation error
-              if (event.data?.error === 'EXPIRED_CONVERSATION') {
-                const error = new Error(event.data?.message || 'Esta conversación ha expirado')
-                ;(error as any).code = 'EXPIRED_CONVERSATION'
-                ;(error as any).chatId = event.data?.chatId
-                throw error
-              }
-              throw new Error(event.data?.error || 'Streaming error')
-          }
-        } catch (e) {
-          if (!(e instanceof SyntaxError)) throw e
-          console.warn('Failed to parse SSE event:', data)
+        if (result.event) {
+          handleSSEEvent(result.event, callbacks)
         }
       }
     }
@@ -235,18 +267,18 @@ export class NexoPayloadChatAdapter implements ChatAdapter {
     }
   }
 
-  private parseBackendMessages(backendMessages: any[]): Message[] {
+  private parseBackendMessages(backendMessages: Record<string, unknown>[]): Message[] {
     if (!backendMessages) return []
-    return backendMessages.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content,
-      timestamp: new Date(msg.timestamp),
-      sources: msg.sources?.map((s: any) => ({
-        id: s.id,
-        title: s.title,
-        slug: s.slug,
-        type: s.type || 'article',
-        chunkIndex: s.chunk_index || 0,
+    return backendMessages.map((msg: Record<string, unknown>) => ({
+      role: msg.role as Message['role'],
+      content: msg.content as string,
+      timestamp: new Date(msg.timestamp as string),
+      sources: (msg.sources as Record<string, unknown>[])?.map((s: Record<string, unknown>) => ({
+        id: s.id as string,
+        title: s.title as string,
+        slug: s.slug as string,
+        type: (s.type as Source['type']) || 'article',
+        chunkIndex: (s.chunk_index as number) || 0,
         relevanceScore: 0,
         content: ''
       }))

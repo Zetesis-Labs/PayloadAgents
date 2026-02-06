@@ -1,6 +1,150 @@
 import type { Payload } from 'payload'
 import type { Taxonomy } from '@/payload-types'
 
+/**
+ * Resolve a taxonomy given as a numeric ID by verifying it exists
+ */
+async function resolveNumericTaxonomy(payload: Payload, id: number): Promise<Taxonomy> {
+  try {
+    const existing = await payload.findByID({
+      collection: 'taxonomy',
+      id
+    })
+    payload.logger.debug(`Taxonomy ${id} exists`)
+    return existing
+  } catch (_error) {
+    throw new Error(
+      `Taxonomy con ID ${id} no existe. Se necesita el objeto completo de la taxonomía para crearla automáticamente.`
+    )
+  }
+}
+
+/**
+ * Build search fields for finding an existing taxonomy by slug or name
+ */
+function buildTaxonomySearchFields(taxonomyData: Taxonomy): Record<string, { equals: string }>[] {
+  const searchFields: Record<string, { equals: string }>[] = []
+
+  if (taxonomyData.slug) {
+    searchFields.push({ slug: { equals: taxonomyData.slug } })
+  }
+
+  if (taxonomyData.name) {
+    searchFields.push({ name: { equals: taxonomyData.name } })
+  }
+
+  return searchFields
+}
+
+/**
+ * Find an existing taxonomy by slug or name
+ */
+async function findExistingTaxonomy(
+  payload: Payload,
+  searchFields: Record<string, { equals: string }>[]
+): Promise<Taxonomy | null> {
+  if (searchFields.length === 0) {
+    return null
+  }
+
+  const existingTaxonomies = await payload.find({
+    collection: 'taxonomy',
+    where: {
+      or: searchFields
+    },
+    limit: 1
+  })
+  return existingTaxonomies.docs[0] ?? null
+}
+
+/**
+ * Resolve the parent taxonomy ID, creating it recursively if needed
+ */
+async function resolveParentId(
+  payload: Payload,
+  mode: 'create' | 'upsert',
+  parent: Taxonomy['parent']
+): Promise<number | undefined> {
+  if (!parent) {
+    return undefined
+  }
+
+  if (typeof parent === 'number') {
+    try {
+      await payload.findByID({ collection: 'taxonomy', id: parent })
+      return parent
+    } catch (_error) {
+      throw new Error(
+        `Parent taxonomy con ID ${parent} no existe. Se necesita el objeto completo de la taxonomía padre para crearla automáticamente.`
+      )
+    }
+  }
+
+  // Recursively create parent taxonomy first
+  const parentSeeder = seedTaxonomy(payload, mode)
+  const createdParent = await parentSeeder(parent)
+  return createdParent.id
+}
+
+/**
+ * Build the data payload for creating or updating a taxonomy
+ */
+function buildTaxonomyPayload(taxonomyData: Taxonomy, parentId: number | undefined) {
+  return {
+    name: taxonomyData.name,
+    slug: taxonomyData.slug,
+    parent: parentId,
+    ...(taxonomyData.generateSlug !== undefined ? { generateSlug: taxonomyData.generateSlug } : {}),
+    ...(taxonomyData.payload ? { payload: taxonomyData.payload } : {})
+  }
+}
+
+/**
+ * Create or update a taxonomy in the database
+ */
+async function upsertTaxonomy(
+  payload: Payload,
+  taxonomyData: Taxonomy,
+  existingTaxonomy: Taxonomy | null,
+  taxonomyPayload: ReturnType<typeof buildTaxonomyPayload>
+): Promise<Taxonomy> {
+  if (existingTaxonomy) {
+    const updated = await payload.update({
+      collection: 'taxonomy',
+      id: existingTaxonomy.id,
+      data: taxonomyPayload
+    })
+    payload.logger.debug(`Taxonomy ${taxonomyData.name} actualizado`)
+    return updated
+  }
+
+  // Create new taxonomy
+  // NOTE: We DON'T preserve the ID from the source data because:
+  // - IDs from different datasets may have cross-references
+  // - Let PayloadCMS assign fresh IDs to avoid foreign key conflicts
+  const created = await payload.create({
+    collection: 'taxonomy',
+    data: taxonomyPayload
+  })
+  payload.logger.debug(`Nueva taxonomy creada con ID: ${created.id} (original ID was ${taxonomyData.id})`)
+  return created
+}
+
+/**
+ * Log detailed error information for seed failures
+ */
+function logSeedError(logger: Payload['logger'], error: unknown, identifier: string | number): void {
+  logger.error(`Error al procesar taxonomy ${identifier}:`)
+  logger.error(String(error))
+
+  if (error instanceof Error) {
+    logger.error(`Error message: ${error.message}`)
+  }
+  if (typeof error === 'object' && error !== null && 'data' in error) {
+    logger.error(`Error data: ${JSON.stringify((error as Record<string, unknown>).data)}`)
+  }
+}
+
 export const seedTaxonomy =
   (payload: Payload, mode: 'create' | 'upsert') =>
   async (taxonomyData?: Taxonomy | number | null): Promise<Taxonomy> => {
@@ -13,55 +157,15 @@ export const seedTaxonomy =
 
     // Handle number case - only verify it exists
     if (typeof taxonomyData === 'number') {
-      try {
-        const existing = await payload.findByID({
-          collection: 'taxonomy',
-          id: taxonomyData
-        })
-        logger.debug(`Taxonomy ${taxonomyData} exists`)
-        return existing
-      } catch (error) {
-        throw new Error(
-          `Taxonomy con ID ${taxonomyData} no existe. Se necesita el objeto completo de la taxonomía para crearla automáticamente.`
-        )
-      }
+      return resolveNumericTaxonomy(payload, taxonomyData)
     }
 
     // Handle object case
     logger.debug(`Processing taxonomy ${taxonomyData.id} with name ${taxonomyData.name}`)
 
     try {
-      // Check if taxonomy exists - search by slug or name (NOT by id from source data)
-      // The IDs from the source data are from a different system and should not be used for lookups
-      let existingTaxonomy = null
-      const searchFields = []
-
-      if (taxonomyData.slug) {
-        searchFields.push({
-          slug: {
-            equals: taxonomyData.slug
-          }
-        })
-      }
-
-      if (taxonomyData.name) {
-        searchFields.push({
-          name: {
-            equals: taxonomyData.name
-          }
-        })
-      }
-
-      if (searchFields.length > 0) {
-        const existingTaxonomies = await payload.find({
-          collection: 'taxonomy',
-          where: {
-            or: searchFields
-          },
-          limit: 1
-        })
-        existingTaxonomy = existingTaxonomies.docs[0]
-      }
+      const searchFields = buildTaxonomySearchFields(taxonomyData)
+      const existingTaxonomy = await findExistingTaxonomy(payload, searchFields)
 
       // If exists and mode is 'create', skip
       if (existingTaxonomy && mode === 'create') {
@@ -70,80 +174,16 @@ export const seedTaxonomy =
       }
 
       // Ensure parent taxonomy exists first (recursive)
-      let parentId: number | undefined
-      if (taxonomyData.parent) {
-        if (typeof taxonomyData.parent === 'number') {
-          // Verify parent exists
-          try {
-            await payload.findByID({
-              collection: 'taxonomy',
-              id: taxonomyData.parent
-            })
-            parentId = taxonomyData.parent
-          } catch (error) {
-            throw new Error(
-              `Parent taxonomy con ID ${taxonomyData.parent} no existe. Se necesita el objeto completo de la taxonomía padre para crearla automáticamente.`
-            )
-          }
-        } else {
-          // Recursively create parent taxonomy first
-          const parentSeeder = seedTaxonomy(payload, mode)
-          const createdParent = await parentSeeder(taxonomyData.parent)
-          parentId = createdParent.id
-        }
-      }
+      const parentId = await resolveParentId(payload, mode, taxonomyData.parent)
 
       // Prepare the data to insert/update
-      // Note: breadcrumbs are auto-generated by PayloadCMS, so we explicitly exclude them
-      const taxonomyPayload: any = {
-        name: taxonomyData.name,
-        slug: taxonomyData.slug,
-        parent: parentId
-      }
+      const taxonomyPayload = buildTaxonomyPayload(taxonomyData, parentId)
 
-      // Also include other fields that might be in the data, but exclude breadcrumbs
-      if (taxonomyData.generateSlug !== undefined) {
-        taxonomyPayload.generateSlug = taxonomyData.generateSlug
-      }
-      if (taxonomyData.payload) {
-        taxonomyPayload.payload = taxonomyData.payload
-      }
-
-      if (existingTaxonomy) {
-        // Update existing taxonomy
-        const updated = await payload.update({
-          collection: 'taxonomy',
-          id: existingTaxonomy.id,
-          data: taxonomyPayload
-        })
-        logger.debug(`Taxonomy ${taxonomyData.name} actualizado`)
-        return updated
-      } else {
-        // Create new taxonomy
-        // NOTE: We DON'T preserve the ID from the source data because:
-        // - IDs from different datasets may have cross-references
-        // - Let PayloadCMS assign fresh IDs to avoid foreign key conflicts
-        const created = await payload.create({
-          collection: 'taxonomy',
-          data: taxonomyPayload
-        })
-        logger.debug(`Nueva taxonomy creada con ID: ${created.id} (original ID was ${taxonomyData.id})`)
-        return created
-      }
-    } catch (error: any) {
+      return await upsertTaxonomy(payload, taxonomyData, existingTaxonomy, taxonomyPayload)
+    } catch (error: unknown) {
       const taxonomyId =
         typeof taxonomyData === 'number' ? taxonomyData : taxonomyData.id || taxonomyData.name || 'unknown'
-      logger.error(`Error al procesar taxonomy ${taxonomyId}:`)
-      logger.error(error)
-
-      // Log more detailed error information
-      if (error.data) {
-        logger.error('Error data:', error.data)
-      }
-      if (error.message) {
-        logger.error('Error message:', error.message)
-      }
-
+      logSeedError(logger, error, taxonomyId)
       throw error
     }
   }

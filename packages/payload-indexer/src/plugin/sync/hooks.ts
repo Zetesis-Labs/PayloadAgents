@@ -6,9 +6,74 @@
 import type { CollectionConfig } from 'payload'
 import type { IndexerAdapter } from '../../adapter/types'
 import { logger } from '../../core/logging/logger'
+import type { PayloadDocument, TableConfig } from '../../document/types'
 import type { EmbeddingService } from '../../embedding/types'
 import type { IndexerPluginConfig } from '../types'
 import { deleteDocumentFromIndex, syncDocumentToIndex } from './document-syncer'
+
+/**
+ * Processes a single table config during afterChange, handling shouldIndex and sync
+ */
+const processTableConfigAfterChange = async (
+  tableConfig: TableConfig,
+  adapter: IndexerAdapter,
+  collectionSlug: string,
+  doc: PayloadDocument,
+  operation: 'create' | 'update',
+  embeddingService?: EmbeddingService
+): Promise<void> => {
+  if (!tableConfig.enabled) return
+
+  if (tableConfig.shouldIndex) {
+    const shouldIndex = await tableConfig.shouldIndex(doc)
+    if (!shouldIndex) {
+      await deleteDocumentFromIndex(adapter, collectionSlug, doc.id, tableConfig)
+      return
+    }
+  }
+
+  await syncDocumentToIndex(adapter, collectionSlug, doc, operation, tableConfig, embeddingService)
+}
+
+/**
+ * Creates the afterChange hook handler for a collection
+ */
+const createAfterChangeHook = (
+  tableConfigs: TableConfig[],
+  adapter: IndexerAdapter,
+  collectionSlug: string,
+  embeddingService?: EmbeddingService
+) => {
+  return async ({
+    doc,
+    operation,
+    req
+  }: {
+    doc: PayloadDocument
+    operation: 'create' | 'update'
+    req: { context?: Record<string, unknown> }
+  }) => {
+    if (req.context?.skipIndexSync) return
+
+    for (const tableConfig of tableConfigs) {
+      await processTableConfigAfterChange(tableConfig, adapter, collectionSlug, doc, operation, embeddingService)
+    }
+  }
+}
+
+/**
+ * Creates the afterDelete hook handler for a collection
+ */
+const createAfterDeleteHook = (tableConfigs: TableConfig[], adapter: IndexerAdapter, collectionSlug: string) => {
+  return async ({ doc }: { doc: PayloadDocument; req: unknown }) => {
+    await deleteDocumentFromIndex(
+      adapter,
+      collectionSlug,
+      doc.id,
+      tableConfigs.filter(tableConfig => tableConfig.enabled)
+    )
+  }
+}
 
 /**
  * Applies sync hooks to Payload collections
@@ -34,56 +99,28 @@ export const applySyncHooks = (
     const hasEnabledTables =
       tableConfigs && Array.isArray(tableConfigs) && tableConfigs.some(tableConfig => tableConfig.enabled)
 
-    if (hasEnabledTables) {
-      logger.debug('Registering sync hooks for collection', {
-        collection: collection.slug,
-        tableCount: tableConfigs?.length || 0
-      })
-
-      return {
-        ...collection,
-        hooks: {
-          ...collection.hooks,
-          afterChange: [
-            ...(collection.hooks?.afterChange || []),
-            async ({ doc, operation, req }) => {
-              if (req.context?.skipIndexSync) return
-              if (!tableConfigs) return
-
-              for (const tableConfig of tableConfigs) {
-                if (!tableConfig.enabled) continue
-
-                // Check shouldIndex callback
-                if (tableConfig.shouldIndex) {
-                  const shouldIndex = await tableConfig.shouldIndex(doc)
-                  if (!shouldIndex) {
-                    await deleteDocumentFromIndex(adapter, collection.slug, doc.id, tableConfig)
-                    continue
-                  }
-                }
-
-                await syncDocumentToIndex(adapter, collection.slug, doc, operation, tableConfig, embeddingService)
-              }
-            }
-          ],
-          afterDelete: [
-            ...(collection.hooks?.afterDelete || []),
-            async ({ doc, req: _req }) => {
-              if (!tableConfigs) return
-
-              // Borra el documento y chunks en todas las tablas asociadas
-              await deleteDocumentFromIndex(
-                adapter,
-                collection.slug,
-                doc.id,
-                tableConfigs.filter(tableConfig => tableConfig.enabled)
-              )
-            }
-          ]
-        }
-      }
+    if (!hasEnabledTables) {
+      return collection
     }
 
-    return collection
+    logger.debug('Registering sync hooks for collection', {
+      collection: collection.slug,
+      tableCount: tableConfigs?.length || 0
+    })
+
+    return {
+      ...collection,
+      hooks: {
+        ...collection.hooks,
+        afterChange: [
+          ...(collection.hooks?.afterChange || []),
+          createAfterChangeHook(tableConfigs, adapter, collection.slug, embeddingService)
+        ],
+        afterDelete: [
+          ...(collection.hooks?.afterDelete || []),
+          createAfterDeleteHook(tableConfigs, adapter, collection.slug)
+        ]
+      }
+    }
   })
 }

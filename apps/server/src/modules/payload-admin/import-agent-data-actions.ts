@@ -1,10 +1,10 @@
 'use server'
 
+import fs from 'node:fs'
+import path from 'node:path'
 import type { PayloadDocument } from '@nexo-labs/payload-indexer'
 import { createEmbeddingService, createLogger, syncDocumentToIndex } from '@nexo-labs/payload-indexer'
 import { createTypesenseAdapter } from '@nexo-labs/payload-typesense'
-import fs from 'fs'
-import path from 'path'
 import type { Payload } from 'payload'
 import { getPayload } from '@/modules/get-payload'
 import { collections } from '@/payload/plugins/typesense/collections'
@@ -23,13 +23,16 @@ const BATCH_SIZE = 50
 /**
  * Convert Payload document to indexable format
  */
-const toIndexableDocument = (doc: any): PayloadDocument => ({
-  ...doc,
-  id: String(doc.id),
-  slug: doc.slug ?? undefined,
-  createdAt: doc.createdAt,
-  updatedAt: doc.updatedAt
-})
+const toIndexableDocument = <T extends { id: number | string }>(doc: T): PayloadDocument => {
+  const record = doc as unknown as Record<string, unknown>
+  return {
+    ...record,
+    id: String(doc.id),
+    slug: typeof record.slug === 'string' ? record.slug : undefined,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
+  } as PayloadDocument
+}
 
 /**
  * Sync all documents of a collection to Typesense (all table configs: chunked + full)
@@ -76,10 +79,10 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
         )
       }
       results.synced++
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMsg = `${doc.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
       results.errors.push(errorMsg)
-      payload.logger.error(`[Agent Data Sync] Error syncing ${collectionSlug} ${doc.id}:`, error)
+      payload.logger.error(`[Agent Data Sync] Error syncing ${collectionSlug} ${errorMsg}`)
     }
   }
 
@@ -124,7 +127,7 @@ async function processImportEntries(
 
     for (const entry of batch) {
       try {
-        await seeder(entry as any)
+        await seeder(entry as Post & Book)
         results.imported++
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'

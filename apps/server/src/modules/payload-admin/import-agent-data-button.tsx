@@ -3,7 +3,7 @@
 import { useTenantSelection } from '@payloadcms/plugin-multi-tenant/client'
 import { Button, useDocumentInfo, useField } from '@payloadcms/ui'
 import type { UIFieldClientComponent } from 'payload'
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { ImportIcon, SpinnerIcon, SyncIcon } from './admin-icons'
 import type { CollectionTarget, ImportMode, ImportResult } from './admin-types'
 import { loadingLabels, readFileAsText } from './admin-utils'
@@ -88,8 +88,11 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--theme-text)' }}>Colección:</label>
+        <label htmlFor="collection-select" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--theme-text)' }}>
+          Colección:
+        </label>
         <select
+          id="collection-select"
           value={selectedCollection}
           onChange={e => {
             setSelectedCollection(e.target.value as CollectionTarget)
@@ -167,7 +170,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           {activeAction === 'import' ? (
             <>
               <SpinnerIcon />
-              {loadingLabels['import']}
+              {loadingLabels.import}
             </>
           ) : (
             <>
@@ -195,7 +198,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           {activeAction === 'sync' ? (
             <>
               <SpinnerIcon />
-              {loadingLabels['sync']}
+              {loadingLabels.sync}
             </>
           ) : (
             <>

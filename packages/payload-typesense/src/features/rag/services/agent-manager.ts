@@ -67,7 +67,7 @@ export class AgentManager {
     }
   }
 
-  private async upsertConversationModel(modelConfig: any): Promise<boolean> {
+  private async upsertConversationModel(modelConfig: Record<string, unknown>): Promise<boolean> {
     // Get configuration from client
     const configuration = this.client.configuration
 

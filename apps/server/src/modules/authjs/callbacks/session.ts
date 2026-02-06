@@ -5,7 +5,6 @@
 import type { Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getPayload } from '../../get-payload'
-import { SESSION_STRATEGY } from '../constants'
 import { getIdToken, saveIdToken } from '../utils/save-id-token'
 
 interface SessionCallbackParams {

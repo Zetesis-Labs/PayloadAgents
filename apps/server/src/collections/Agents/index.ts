@@ -1,5 +1,5 @@
 import { COLLECTION_SLUG_TAXONOMY } from '@nexo-labs/payload-taxonomies'
-import type { CollectionConfig, CollectionSlug } from 'payload'
+import type { CollectionConfig } from 'payload'
 import { slugField } from 'payload'
 import { superAdminOrTenantAdminAccess } from '../access/superAdminOrTenantAdmin'
 import { importAgents } from './endpoints/importAgents'

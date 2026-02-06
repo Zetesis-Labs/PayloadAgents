@@ -17,8 +17,8 @@ export const subscriptionUpsert = async <TProduct = unknown>(
 ) => {
   const { id: stripeID, status, customer: stripeCustomer } = subscription
   const customer = await resolveStripeCustomer({ customer: stripeCustomer })
-  const error = (message: string) => payload.logger.error('Subscription Upsert: ', message as any)
-  const info = (message: string) => payload.logger.info('Subscription Upsert: ', message as any)
+  const error = (message: string) => payload.logger.error(`Subscription Upsert: ${message}`)
+  const info = (message: string) => payload.logger.info(`Subscription Upsert: ${message}`)
 
   if (!customer) {
     error('No stripe customer found for subscription')

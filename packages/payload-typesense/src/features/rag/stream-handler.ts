@@ -138,12 +138,51 @@ export function buildContextText(results: TypesenseRAGSearchResult[]): string {
     if (result.hits) {
       for (const hit of result.hits) {
         const doc = hit.document as TypesenseRAGChunkDocument
-        contextText += (doc.chunk_text || '') + '\n'
+        contextText += `${doc.chunk_text || ''}\n`
       }
     }
   }
 
   return contextText
+}
+
+/**
+ * Accumulator state for stream processing
+ */
+interface StreamAccumulator {
+  sources: ChunkSource[]
+  hasCollectedSources: boolean
+  conversationId: string | null
+  contextText: string
+  fullMessage: string
+}
+
+/**
+ * Process a single parsed conversation event, updating the accumulator state
+ */
+function processStreamEvent(
+  event: ConversationEvent,
+  state: StreamAccumulator,
+  onEvent: ((event: ConversationEvent) => void) | undefined,
+  documentTypeResolver: ((collectionName: string) => string) | undefined
+): void {
+  if (onEvent) {
+    onEvent(event)
+  }
+
+  if (!state.conversationId && event.conversationId) {
+    state.conversationId = event.conversationId
+  }
+
+  if (!state.hasCollectedSources && event.results) {
+    state.sources = extractSourcesFromResults(event.results, documentTypeResolver)
+    state.contextText = buildContextText(event.results)
+    state.hasCollectedSources = true
+  }
+
+  if (event.message) {
+    state.fullMessage += event.message
+  }
 }
 
 /**
@@ -159,15 +198,18 @@ export async function processConversationStream(
   onEvent?: (event: ConversationEvent) => void,
   documentTypeResolver?: (collectionName: string) => string
 ): Promise<StreamProcessingResult> {
-  const reader = response.body!.getReader()
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('No stream reader available')
   const decoder = new TextDecoder()
 
   let buffer = ''
-  let sources: ChunkSource[] = []
-  let hasCollectedSources = false
-  let conversationId: string | null = null
-  let contextText = ''
-  let fullMessage = ''
+  const state: StreamAccumulator = {
+    sources: [],
+    hasCollectedSources: false,
+    conversationId: null,
+    contextText: '',
+    fullMessage: ''
+  }
 
   while (true) {
     const { done, value } = await reader.read()
@@ -181,35 +223,15 @@ export async function processConversationStream(
       const event = parseConversationEvent(line)
       if (!event) continue
 
-      // Notify callback
-      if (onEvent) {
-        onEvent(event)
-      }
-
-      // Capture conversation ID
-      if (!conversationId && event.conversationId) {
-        conversationId = event.conversationId
-      }
-
-      // Extract sources from first results
-      if (!hasCollectedSources && event.results) {
-        sources = extractSourcesFromResults(event.results, documentTypeResolver)
-        contextText = buildContextText(event.results)
-        hasCollectedSources = true
-      }
-
-      // Accumulate message
-      if (event.message) {
-        fullMessage += event.message
-      }
+      processStreamEvent(event, state, onEvent, documentTypeResolver)
     }
   }
 
   return {
-    fullMessage,
-    conversationId,
-    sources,
-    contextText
+    fullMessage: state.fullMessage,
+    conversationId: state.conversationId,
+    sources: state.sources,
+    contextText: state.contextText
   }
 }
 
@@ -224,7 +246,8 @@ export function createSSEForwardStream(
   response: Response,
   onData?: (event: ConversationEvent) => void
 ): ReadableStream<Uint8Array> {
-  const reader = response.body!.getReader()
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('No stream reader available')
   const decoder = new TextDecoder()
   const encoder = new TextEncoder()
 
@@ -252,7 +275,7 @@ export function createSSEForwardStream(
 
           // Forward original line
           if (line) {
-            controller.enqueue(encoder.encode(line + '\n'))
+            controller.enqueue(encoder.encode(`${line}\n`))
           }
         }
       }

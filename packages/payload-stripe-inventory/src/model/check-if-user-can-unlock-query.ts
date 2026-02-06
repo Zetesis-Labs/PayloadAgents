@@ -7,7 +7,7 @@ import { permissionSlugs } from './constants'
  * @param permissions Permisos requeridos para el elemento
  * @returns Booleano indicando si el usuario puede desbloquear el elemento
  */
-export const checkIfUserCanUnlockQuery = (user: BaseUser, permissions: string[]): boolean => {
+export const checkIfUserCanUnlockQuery = (_user: BaseUser, permissions: string[]): boolean => {
   return (
     permissions.flatMap(item => item.split(' ')).includes(permissionSlugs.freemium) &&
     !permissions.includes(permissionSlugs.free)

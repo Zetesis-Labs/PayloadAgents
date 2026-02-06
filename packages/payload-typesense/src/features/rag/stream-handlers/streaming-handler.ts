@@ -6,9 +6,110 @@
 
 import { logger } from '../../../core/logging/logger'
 import type { ChunkSource, SpendingEntry } from '../../../shared/index'
+import type { ConversationEvent } from '../stream-handler'
 import { buildContextText, extractSourcesFromResults, parseConversationEvent } from '../stream-handler'
 import { sendSSEEvent } from '../utils/sse-utils'
 import { estimateTokensFromText, resolveDocumentType } from './utils'
+
+/**
+ * Mutable state accumulated during streaming
+ */
+interface StreamingState {
+  sources: ChunkSource[]
+  hasCollectedSources: boolean
+  conversationId: string | null
+  contextText: string
+  fullAssistantMessage: string
+}
+
+/**
+ * Handle a single parsed SSE event from the streaming response.
+ * Updates the streaming state and sends SSE events to the client.
+ */
+function handleStreamEvent(
+  event: ConversationEvent,
+  state: StreamingState,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder
+): void {
+  // Handle [DONE] event
+  if (event.raw === '[DONE]') {
+    logger.info('[DONE] event received, sending done event to client')
+    sendSSEEvent(controller, encoder, { type: 'done', data: '' })
+    return
+  }
+
+  // Capture conversation_id
+  if (!state.conversationId && event.conversationId) {
+    state.conversationId = event.conversationId
+    logger.info('Conversation ID captured', { conversationId: state.conversationId })
+    sendSSEEvent(controller, encoder, {
+      type: 'conversation_id',
+      data: state.conversationId
+    })
+  }
+
+  // Extract sources
+  if (!state.hasCollectedSources && event.results) {
+    state.sources = extractSourcesFromResults(event.results, resolveDocumentType)
+    state.contextText = buildContextText(event.results)
+
+    if (state.sources.length > 0) {
+      logger.info('Sources extracted and sent', {
+        sourceCount: state.sources.length
+      })
+      sendSSEEvent(controller, encoder, {
+        type: 'sources',
+        data: state.sources
+      })
+    }
+
+    state.hasCollectedSources = true
+  }
+
+  // Stream conversation tokens
+  if (event.message) {
+    state.fullAssistantMessage += event.message
+    logger.info('Token received', {
+      tokenLength: event.message.length,
+      totalMessageLength: state.fullAssistantMessage.length,
+      token: event.message.substring(0, 50)
+    })
+    sendSSEEvent(controller, encoder, {
+      type: 'token',
+      data: event.message
+    })
+  }
+}
+
+/**
+ * Calculate LLM spending based on context and response text
+ */
+function calculateLLMSpending(contextText: string, fullAssistantMessage: string): SpendingEntry {
+  const llmInputTokens = estimateTokensFromText(contextText)
+  const llmOutputTokens = estimateTokensFromText(fullAssistantMessage)
+
+  const llmSpending: SpendingEntry = {
+    service: 'openai_llm',
+    model: 'gpt-4o-mini',
+    tokens: {
+      input: llmInputTokens,
+      output: llmOutputTokens,
+      total: llmInputTokens + llmOutputTokens
+    },
+    cost_usd: llmInputTokens * 0.00000015 + llmOutputTokens * 0.0000006, // gpt-4o-mini pricing
+    timestamp: new Date().toISOString()
+  }
+
+  logger.info('LLM cost calculated', {
+    inputTokens: llmInputTokens,
+    outputTokens: llmOutputTokens,
+    totalTokens: llmSpending.tokens.total,
+    costUsd: llmSpending.cost_usd
+  })
+
+  return llmSpending
+}
 
 /**
  * Default implementation for handling streaming responses
@@ -32,11 +133,13 @@ export async function defaultHandleStreamingResponse(
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
-  let sources: ChunkSource[] = []
-  let hasCollectedSources = false
-  let conversationId: string | null = null
-  let contextText = '' // To estimate LLM tokens
-  let fullAssistantMessage = ''
+  const state: StreamingState = {
+    sources: [],
+    hasCollectedSources: false,
+    conversationId: null,
+    contextText: '',
+    fullAssistantMessage: ''
+  }
 
   try {
     let chunkCount = 0
@@ -45,7 +148,7 @@ export async function defaultHandleStreamingResponse(
       if (done) {
         logger.info('Streaming response completed', {
           totalChunks: chunkCount,
-          finalMessageLength: fullAssistantMessage.length
+          finalMessageLength: state.fullAssistantMessage.length
         })
         break
       }
@@ -73,88 +176,17 @@ export async function defaultHandleStreamingResponse(
           continue
         }
 
-        // Handle [DONE] event
-        if (event.raw === '[DONE]') {
-          logger.info('[DONE] event received, sending done event to client')
-          sendSSEEvent(controller, encoder, { type: 'done', data: '' })
-          continue
-        }
-
-        // Capture conversation_id
-        if (!conversationId && event.conversationId) {
-          conversationId = event.conversationId
-          logger.info('Conversation ID captured', { conversationId })
-          sendSSEEvent(controller, encoder, {
-            type: 'conversation_id',
-            data: conversationId
-          })
-        }
-
-        // Extract sources
-        if (!hasCollectedSources && event.results) {
-          sources = extractSourcesFromResults(event.results, resolveDocumentType)
-          contextText = buildContextText(event.results)
-
-          if (sources.length > 0) {
-            logger.info('Sources extracted and sent', {
-              sourceCount: sources.length
-            })
-            sendSSEEvent(controller, encoder, {
-              type: 'sources',
-              data: sources
-            })
-          }
-
-          hasCollectedSources = true
-        }
-
-        // Stream conversation tokens
-        if (event.message) {
-          fullAssistantMessage += event.message
-          logger.info('Token received', {
-            tokenLength: event.message.length,
-            totalMessageLength: fullAssistantMessage.length,
-            token: event.message.substring(0, 50)
-          })
-          sendSSEEvent(controller, encoder, {
-            type: 'token',
-            data: event.message
-          })
-        }
+        handleStreamEvent(event, state, controller, encoder)
       }
     }
   } finally {
     reader.releaseLock()
   }
 
-  // Estimate LLM tokens (context + user message + response)
-  const llmInputTokens = estimateTokensFromText(contextText)
-  const llmOutputTokens = estimateTokensFromText(fullAssistantMessage)
-
-  // Track LLM spending (defaults to a simple model)
-  const llmSpending: SpendingEntry = {
-    service: 'openai_llm',
-    model: 'gpt-4o-mini',
-    tokens: {
-      input: llmInputTokens,
-      output: llmOutputTokens,
-      total: llmInputTokens + llmOutputTokens
-    },
-    cost_usd: llmInputTokens * 0.00000015 + llmOutputTokens * 0.0000006, // gpt-4o-mini pricing
-    timestamp: new Date().toISOString()
-  }
-
-  logger.info('LLM cost calculated', {
-    inputTokens: llmInputTokens,
-    outputTokens: llmOutputTokens,
-    totalTokens: llmSpending.tokens.total,
-    costUsd: llmSpending.cost_usd
-  })
-
   return {
-    fullAssistantMessage,
-    conversationId,
-    sources,
-    llmSpending
+    fullAssistantMessage: state.fullAssistantMessage,
+    conversationId: state.conversationId,
+    sources: state.sources,
+    llmSpending: calculateLLMSpending(state.contextText, state.fullAssistantMessage)
   }
 }

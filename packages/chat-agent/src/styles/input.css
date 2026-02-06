@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @source "../**/*.{ts,tsx}";
 
@@ -54,7 +54,9 @@
 
 /* Typing indicator animation */
 @keyframes typing-bounce {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
   }
   30% {
@@ -107,7 +109,8 @@
 
 /* Pulse glow effect */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 hsl(var(--chat-accent) / 0);
   }
   50% {
@@ -121,7 +124,8 @@
 
 /* Breathing effect for avatar */
 @keyframes breathing {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 hsl(var(--chat-status-online) / 0.4);
   }
   50% {
@@ -135,7 +139,8 @@
 
 /* Status indicator pulse */
 @keyframes status-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -172,5 +177,5 @@
 
 /* Force markdown rendering to inherit color */
 .prose :where(h1, h2, h3, h4, h5, h6, p, strong, b, ul, ol, li) {
-  color: inherit !important;
+  color: inherit;
 }

@@ -27,8 +27,6 @@ interface ChatInterfaceProps {
 const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ generateHref, LinkComponent }, ref) => {
   const {
     isMaximized,
-    setMaximized,
-    updateTokenUsage,
     selectedAgent,
     agents,
     // Session props from context

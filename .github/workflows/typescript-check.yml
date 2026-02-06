@@ -26,4 +26,7 @@ jobs:
       - name: Run TypeScript check
         run: |
           cd apps/server
-          pnpm tsc --noEmit --skipLibCheck
+          npx tsc --noEmit 2>&1
+
+      - name: Run Biome lint and format check
+        run: pnpm lint

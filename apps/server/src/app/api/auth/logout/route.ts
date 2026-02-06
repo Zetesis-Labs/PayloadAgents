@@ -6,7 +6,7 @@ import { auth, signOut } from '@/modules/authjs/plugins'
  * POST /api/auth/logout
  * Custom logout endpoint that includes id_token_hint for proper Keycloak logout
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   console.log('[Logout API] ========== INICIO DEL PROCESO DE LOGOUT ==========')
 
   try {

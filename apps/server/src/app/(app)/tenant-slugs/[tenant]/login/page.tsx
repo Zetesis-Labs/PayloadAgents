@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Login } from '../../../../components/Login/client.page'
 
 type RouteParams = {

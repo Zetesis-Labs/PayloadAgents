@@ -21,7 +21,7 @@ export const typesenseConnection: TypesenseConnectionConfig = {
   nodes: [
     {
       host: process.env.TYPESENSE_HOST || 'localhost',
-      port: parseInt(process.env.TYPESENSE_PORT || '8108'),
+      port: parseInt(process.env.TYPESENSE_PORT || '8108', 10),
       protocol: (process.env.TYPESENSE_PROTOCOL as 'http' | 'https') || 'http'
     }
   ]

@@ -4,10 +4,89 @@ import OpenAI from 'openai'
 import type { SanitizedConfig } from 'payload'
 
 /**
+ * Lexical node structure for text extraction
+ */
+interface LexicalNode {
+  type?: string
+  text?: string
+  tag?: string
+  url?: string
+  fields?: Record<string, unknown>
+  children?: LexicalNode[]
+  [key: string]: unknown
+}
+
+/**
+ * Extracts text from a link node, formatting as markdown link if URL is present
+ */
+function extractLinkNodeText(node: LexicalNode): string {
+  const linkText = extractTextFromLexicalNodes(node.children || [])
+  const url = (node.fields?.url as string) || node.url || ''
+  if (url && linkText) {
+    return `[${linkText}](${url})`
+  }
+  return linkText
+}
+
+/**
+ * Extracts text from a heading node with markdown heading prefix
+ */
+function extractHeadingNodeText(node: LexicalNode): string {
+  const level = parseInt(node.tag?.replace('h', '') || '1', 10)
+  const prefix = `${'#'.repeat(Math.min(level, 6))} `
+  return `${prefix + extractTextFromLexicalNodes(node.children || [])}\n\n`
+}
+
+/**
+ * Extracts text from a quote node with markdown blockquote prefix
+ */
+function extractQuoteNodeText(node: LexicalNode): string {
+  const quoteText = extractTextFromLexicalNodes(node.children || [])
+  return `> ${quoteText.replace(/\n/g, '\n> ')}\n\n`
+}
+
+/**
+ * Extracts text from a generic block node with children
+ */
+function extractBlockNodeText(node: LexicalNode): string {
+  const childText = extractTextFromLexicalNodes(node.children || [])
+  const isBlockLevel = ['paragraph', 'heading', 'quote', 'list'].includes(node.type || '')
+  return isBlockLevel ? `${childText}\n\n` : childText
+}
+
+/**
+ * Extracts text from a single Lexical node based on its type
+ */
+function extractTextFromSingleNode(node: LexicalNode): string | null {
+  if (node.type === 'text' && typeof node.text === 'string') {
+    return node.text
+  }
+  if (node.type === 'linebreak') {
+    return '\n'
+  }
+  if (node.type === 'link' && node.children) {
+    return extractLinkNodeText(node)
+  }
+  if (node.type === 'heading' && node.children) {
+    return extractHeadingNodeText(node)
+  }
+  if (node.type === 'listitem' && node.children) {
+    return `- ${extractTextFromLexicalNodes(node.children)}\n`
+  }
+  if (node.type === 'quote' && node.children) {
+    return extractQuoteNodeText(node)
+  }
+  if (node.children) {
+    return extractBlockNodeText(node)
+  }
+  return null
+}
+
+/**
  * Recursively extracts plain text from Lexical nodes
  * Used as a fallback when proper Lexical conversion is not available
  */
-function extractTextFromLexicalNodes(nodes: any[]): string {
+function extractTextFromLexicalNodes(nodes: LexicalNode[]): string {
   if (!Array.isArray(nodes)) return ''
 
   const textParts: string[] = []
@@ -15,46 +94,9 @@ function extractTextFromLexicalNodes(nodes: any[]): string {
   for (const node of nodes) {
     if (!node) continue
 
-    // Text node
-    if (node.type === 'text' && typeof node.text === 'string') {
-      textParts.push(node.text)
-    }
-    // Linebreak node
-    else if (node.type === 'linebreak') {
-      textParts.push('\n')
-    }
-    // Link node - extract text and URL
-    else if (node.type === 'link' && node.children) {
-      const linkText = extractTextFromLexicalNodes(node.children)
-      const url = node.fields?.url || node.url || ''
-      if (url && linkText) {
-        textParts.push(`[${linkText}](${url})`)
-      } else {
-        textParts.push(linkText)
-      }
-    }
-    // Heading nodes - add markdown heading prefix
-    else if (node.type === 'heading' && node.children) {
-      const level = parseInt(node.tag?.replace('h', '') || '1', 10)
-      const prefix = '#'.repeat(Math.min(level, 6)) + ' '
-      textParts.push(prefix + extractTextFromLexicalNodes(node.children) + '\n\n')
-    }
-    // List items
-    else if (node.type === 'listitem' && node.children) {
-      textParts.push('- ' + extractTextFromLexicalNodes(node.children) + '\n')
-    }
-    // Quote blocks
-    else if (node.type === 'quote' && node.children) {
-      const quoteText = extractTextFromLexicalNodes(node.children)
-      textParts.push('> ' + quoteText.replace(/\n/g, '\n> ') + '\n\n')
-    }
-    // Paragraph and other block nodes
-    else if (node.children) {
-      textParts.push(extractTextFromLexicalNodes(node.children))
-      // Add paragraph break for block-level elements
-      if (['paragraph', 'heading', 'quote', 'list'].includes(node.type)) {
-        textParts.push('\n\n')
-      }
+    const text = extractTextFromSingleNode(node)
+    if (text !== null) {
+      textParts.push(text)
     }
   }
 

@@ -81,12 +81,13 @@ export class SchemaManager {
 
   private async updateCollectionSchema(
     tableName: string,
-    currentSchema: any, // Typesense retrieval response
+    currentSchema: { fields?: Array<{ name: string }> },
     targetSchema: CollectionCreateSchema
   ): Promise<void> {
     if (!currentSchema || !currentSchema.fields) return
 
-    const currentFields = new Set(currentSchema.fields.map((f: any) => f.name))
+    const fields = currentSchema.fields
+    const currentFields = new Set(fields.map(f => f.name))
     // Filter out fields that already exist OR are 'id' (which is immutable)
     const newFields = targetSchema.fields?.filter(f => !currentFields.has(f.name) && f.name !== 'id') || []
 

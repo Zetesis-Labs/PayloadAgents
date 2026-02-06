@@ -155,9 +155,9 @@ async function updateExistingSession<TSlug extends CollectionSlug>(
       last_activity: new Date().toISOString(),
       status: 'active',
       // Only update agentSlug if provided and session doesn't have one yet
-      ...(agentSlug && !(session as any).agentSlug ? { agentSlug } : {})
-    } as any
-  })
+      ...(agentSlug && !(session as unknown as Record<string, unknown>).agentSlug ? { agentSlug } : {})
+    }
+  } as Parameters<Payload['update']>[0])
 
   logger.info('Chat session updated successfully', {
     sessionId: session.id,
@@ -234,7 +234,7 @@ export async function markChatSessionAsExpired(
         data: {
           status: 'closed',
           closed_at: new Date().toISOString()
-        } as any
+        } as Record<string, unknown>
       })
 
       logger.info('Chat session marked as expired', {

@@ -95,6 +95,109 @@ export type ChatEndpointConfig = {
 }
 
 /**
+ * Resolve agents from RAG config (can be array or function)
+ */
+async function resolveAgents(config: ChatEndpointConfig, payload: Payload): Promise<AgentConfig<readonly string[]>[]> {
+  if (!config.rag?.agents) {
+    return []
+  }
+  if (typeof config.rag.agents === 'function') {
+    return await config.rag.agents(payload)
+  }
+  if (Array.isArray(config.rag.agents)) {
+    return config.rag.agents
+  }
+  return []
+}
+
+/**
+ * Build RAG search config from an agent
+ */
+function buildSearchConfigFromAgent(
+  agent: AgentConfig<readonly string[]>,
+  advancedConfig: RAGFeatureConfig['advanced']
+): RAGSearchConfig {
+  return {
+    modelId: agent.slug,
+    searchCollections: agent.searchCollections,
+    kResults: agent.kResults,
+    taxonomySlugs: agent.taxonomySlugs,
+    advancedConfig
+  }
+}
+
+/**
+ * Resolve agent and build search config, returning a Response on error
+ */
+function resolveSearchConfig(
+  agents: AgentConfig<readonly string[]>[],
+  agentSlug: string | undefined,
+  advancedConfig: RAGFeatureConfig['advanced']
+): RAGSearchConfig | Response {
+  if (agentSlug && agents.length > 0) {
+    const agent = agents.find(a => a.slug === agentSlug)
+    if (!agent) {
+      return new Response(JSON.stringify({ error: `Agent not found: ${agentSlug}` }), { status: 404 })
+    }
+    return buildSearchConfigFromAgent(agent, advancedConfig)
+  }
+  if (agents.length > 0) {
+    const agent = agents[0]
+    if (!agent) throw new Error('Default agent not found')
+    return buildSearchConfigFromAgent(agent, advancedConfig)
+  }
+  return new Response(JSON.stringify({ error: 'No RAG configuration available' }), { status: 500 })
+}
+
+/**
+ * Handle an expired conversation error inside the stream
+ */
+async function handleExpiredConversationError(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  payload: Payload,
+  userId: string | number,
+  chatId: string | undefined,
+  collectionName: CollectionSlug
+): Promise<void> {
+  logger.warn('Expired conversation detected', { userId, chatId })
+
+  if (chatId) {
+    await markChatSessionAsExpired(payload, chatId, collectionName)
+  }
+
+  sendSSEEvent(controller, encoder, {
+    type: 'error',
+    data: {
+      error: 'EXPIRED_CONVERSATION',
+      message: 'Esta conversación ha expirado (>24 horas de inactividad). Por favor, inicia una nueva conversación.',
+      chatId
+    }
+  })
+  controller.close()
+}
+
+/**
+ * Handle a generic stream error
+ */
+function handleGenericStreamError(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  error: unknown,
+  userId: string | number,
+  chatId: string | undefined
+): void {
+  logger.error('Fatal error in chat stream', error as Error, { userId, chatId })
+  sendSSEEvent(controller, encoder, {
+    type: 'error',
+    data: {
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    }
+  })
+  controller.close()
+}
+
+/**
  * Create a parameterizable POST handler for chat endpoint
  */
 export function createChatPOSTHandler(config: ChatEndpointConfig) {
@@ -107,47 +210,15 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
       }
 
       const { userId, userEmail, payload, userMessage, body } = validated
-
-      // Resolve Agent Configuration
-      let searchConfig: RAGSearchConfig
       const agentSlug = body.agentSlug
 
-      // Resolve agents - can be array or function
-      let agents: AgentConfig<readonly string[]>[] = []
-      if (config.rag?.agents) {
-        if (typeof config.rag.agents === 'function') {
-          agents = await config.rag.agents(payload)
-        } else if (Array.isArray(config.rag.agents)) {
-          agents = config.rag.agents
-        }
+      // Resolve Agent Configuration
+      const agents = await resolveAgents(config, payload)
+      const searchConfigOrError = resolveSearchConfig(agents, agentSlug, config.rag.advanced)
+      if (searchConfigOrError instanceof Response) {
+        return searchConfigOrError
       }
-
-      if (agentSlug && agents.length > 0) {
-        const agent = agents.find(a => a.slug === agentSlug)
-        if (!agent) {
-          return new Response(JSON.stringify({ error: `Agent not found: ${agentSlug}` }), { status: 404 })
-        }
-        searchConfig = {
-          modelId: agent.slug,
-          searchCollections: agent.searchCollections,
-          kResults: agent.kResults,
-          taxonomySlugs: agent.taxonomySlugs,
-          advancedConfig: config.rag.advanced
-        }
-      } else if (agents.length > 0) {
-        // Use first agent as default
-        const agent = agents[0]
-        if (!agent) throw new Error('Default agent not found')
-        searchConfig = {
-          modelId: agent.slug,
-          searchCollections: agent.searchCollections,
-          kResults: agent.kResults,
-          taxonomySlugs: agent.taxonomySlugs,
-          advancedConfig: config.rag.advanced
-        }
-      } else {
-        return new Response(JSON.stringify({ error: 'No RAG configuration available' }), { status: 500 })
-      }
+      const searchConfig = searchConfigOrError
 
       // Check token limits if configured
       const tokenLimitError = await checkTokenLimitsIfNeeded(config, payload, userId, userEmail, userMessage)
@@ -170,9 +241,6 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
       const stream = new ReadableStream({
         async start(controller) {
           const spendingEntries: SpendingEntry[] = []
-          let fullAssistantMessage = ''
-          let conversationIdCapture: string | null = null
-          let sourcesCapture: ChunkSource[] = []
 
           try {
             const sendEvent = (event: SSEEvent) => sendSSEEvent(controller, encoder, event)
@@ -195,9 +263,6 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
                 : await config.handleNonStreamingResponse(await searchResult.response.json(), controller, encoder)
 
             // Extract results
-            fullAssistantMessage = streamResult.fullAssistantMessage
-            conversationIdCapture = streamResult.conversationId
-            sourcesCapture = streamResult.sources
             spendingEntries.push(streamResult.llmSpending)
 
             // Calculate total usage
@@ -211,59 +276,33 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
               config,
               payload,
               userId,
-              conversationIdCapture,
+              streamResult.conversationId,
               userMessage,
-              fullAssistantMessage,
-              sourcesCapture,
+              streamResult.fullAssistantMessage,
+              streamResult.sources,
               spendingEntries,
               agentSlug
             )
 
             logger.info('Chat request completed successfully', {
               userId,
-              conversationId: conversationIdCapture,
+              conversationId: streamResult.conversationId,
               totalTokens: totalTokensUsed
             })
             controller.close()
           } catch (error) {
-            // Handle expired conversation error
             if (error instanceof Error && error.message === 'EXPIRED_CONVERSATION') {
-              logger.warn('Expired conversation detected', {
+              await handleExpiredConversationError(
+                controller,
+                encoder,
+                payload,
                 userId,
-                chatId: body.chatId
-              })
-
-              // Mark chat as expired in PayloadCMS
-              if (body.chatId) {
-                await markChatSessionAsExpired(payload, body.chatId, config.collectionName)
-              }
-
-              // Send specific error to client
-              sendSSEEvent(controller, encoder, {
-                type: 'error',
-                data: {
-                  error: 'EXPIRED_CONVERSATION',
-                  message:
-                    'Esta conversación ha expirado (>24 horas de inactividad). Por favor, inicia una nueva conversación.',
-                  chatId: body.chatId
-                }
-              })
-              controller.close()
+                body.chatId,
+                config.collectionName
+              )
               return
             }
-
-            // Generic error (maintain current behavior)
-            logger.error('Fatal error in chat stream', error as Error, {
-              userId,
-              chatId: body.chatId
-            })
-            sendSSEEvent(controller, encoder, {
-              type: 'error',
-              data: {
-                error: error instanceof Error ? error.message : 'Error desconocido'
-              }
-            })
-            controller.close()
+            handleGenericStreamError(controller, encoder, error, userId, body.chatId)
           }
         }
       })

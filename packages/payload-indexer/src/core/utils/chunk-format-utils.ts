@@ -51,7 +51,7 @@ export const formatChunkWithHeaders = (content: string, headers: string[]): stri
 
   // Get the last (most specific) header
   const fullPath = headers[headers.length - 1]
-  const section = (fullPath && fullPath.split(' > ').pop()) || fullPath || ''
+  const section = fullPath?.split(' > ').pop() || fullPath || ''
 
   // Format as key-value pairs
   const metadataLine = `section: ${section} | path: ${fullPath}`
@@ -104,7 +104,7 @@ export const parseChunkText = (chunkText: string): ParsedChunk => {
     }
 
     return { content: chunkText }
-  } catch (error) {
+  } catch (_error) {
     // If parsing fails, return the whole text as content
     return { content: chunkText }
   }

@@ -105,7 +105,7 @@ export const deleteDocumentFromIndex = async (
             documentId: docId,
             tableName
           })
-        } catch (docDeleteError: unknown) {
+        } catch (_docDeleteError: unknown) {
           logger.debug('Document not found, attempting to delete chunks', {
             documentId: docId,
             tableName
@@ -118,7 +118,7 @@ export const deleteDocumentFromIndex = async (
               documentId: docId,
               tableName
             })
-          } catch (chunkDeleteError: unknown) {
+          } catch (_chunkDeleteError: unknown) {
             logger.debug('No chunks found to delete', { documentId: docId })
           }
         }
@@ -155,7 +155,7 @@ export class DocumentSyncer {
     }
   }
 
-  private async syncDocument(doc: PayloadDocument, operation: 'create' | 'update'): Promise<void> {
+  private async syncDocument(doc: PayloadDocument, _operation: 'create' | 'update'): Promise<void> {
     // 1. Map fields
     const mappedFields = await mapPayloadDocumentToIndex(doc, this.config.fields)
 
@@ -288,7 +288,7 @@ export class DocumentSyncer {
 
     for (const sourceField of this.config.embedding.fields) {
       let fieldName: string
-      let transform: ((value: any) => any | Promise<any>) | undefined
+      let transform: ((value: unknown) => unknown | Promise<unknown>) | undefined
 
       if (typeof sourceField === 'string') {
         fieldName = sourceField

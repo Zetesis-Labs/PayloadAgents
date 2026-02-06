@@ -1,5 +1,3 @@
-import type { MutableRefObject } from 'react'
-
 export interface Source {
   id: string
   title: string
@@ -58,7 +56,7 @@ export interface StreamCallbacks {
   onToken?: (token: string) => void
   onSources?: (sources: Source[]) => void
   onDone?: () => void
-  onUsage?: (usage: any) => void // TODO: Type this properly if possible
+  onUsage?: (usage: { daily_limit: number; daily_used: number; daily_remaining: number; reset_at: string }) => void
   onError?: (error: Error) => void
 }
 

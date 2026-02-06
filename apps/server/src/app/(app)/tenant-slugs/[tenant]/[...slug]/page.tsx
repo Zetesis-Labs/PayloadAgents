@@ -3,7 +3,6 @@ import { headers as getHeaders } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import type { Where } from 'payload'
 import { getPayload } from 'payload'
-import React from 'react'
 
 import { RenderPage } from '../../../../components/RenderPage'
 
@@ -41,7 +40,7 @@ export default async function Page({
         )}`
       )
     }
-  } catch (e) {
+  } catch (_e) {
     // If the query fails, it means the user did not have access to query on the slug field
     // Show the login view
     redirect(

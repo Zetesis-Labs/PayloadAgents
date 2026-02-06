@@ -140,7 +140,7 @@ export function createSessionDELETEHandler<TSlug extends CollectionSlug>(config:
         return jsonResponse({ error: 'Sesión de chat no encontrada o no tienes permisos.' }, { status: 404 })
       }
 
-      const session = result.docs[0] as any
+      const _session = result.docs[0] as unknown as Record<string, unknown>
 
       logger.info('Chat session deleted successfully', {
         conversationId

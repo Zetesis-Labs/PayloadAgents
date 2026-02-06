@@ -29,7 +29,7 @@ export const LogoutButton: React.FC = () => {
   }
 
   return (
-    <button onClick={handleLogout} disabled={isLoggingOut}>
+    <button type="button" onClick={handleLogout} disabled={isLoggingOut}>
       {isLoggingOut ? 'Cerrando sesión...' : 'Logout'}
     </button>
   )

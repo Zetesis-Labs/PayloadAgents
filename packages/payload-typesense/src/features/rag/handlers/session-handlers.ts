@@ -170,22 +170,20 @@ export async function closeSession<TSlug extends CollectionSlug>(
     return null
   }
 
-  const session = chatSessions.docs[0] as unknown as ChatSessionData
-  if (!session) {
+  const doc = chatSessions.docs[0]
+  if (!doc) {
     return null
   }
+  const session = doc as unknown as ChatSessionData
+
   await payload.update({
     collection: collectionName,
-    where: {
-      conversation_id: {
-        equals: conversationId
-      }
-    },
+    id: doc.id,
     data: {
       status: 'closed',
       closed_at: new Date().toISOString()
-    } as any
-  })
+    }
+  } as Parameters<Payload['update']>[0])
 
   return {
     conversation_id: session.conversation_id,
@@ -228,7 +226,7 @@ export async function getUserSessions<TSlug extends CollectionSlug>(
 
   return chatSessions.docs.map(doc => ({
     ...doc,
-    title: (doc as any).title // Force type as schema might not be updated yet
+    title: (doc as unknown as Record<string, unknown>).title as string | undefined
   })) as unknown as ChatSessionData[]
 }
 
@@ -262,18 +260,16 @@ export async function renameSession<TSlug extends CollectionSlug>(
     limit: 1
   })
 
-  if (!chatSessions.docs.length) return null
+  const doc = chatSessions.docs[0]
+  if (!doc) return null
 
   const updated = await payload.update({
     collection: collectionName,
-    where: {
-      conversation_id: { equals: conversationId }
-    },
+    id: doc.id,
     data: {
       title: newTitle
-    } as any
-  })
+    }
+  } as Parameters<Payload['update']>[0])
 
-  if (!updated.docs.length) return null
-  return updated.docs[0] as unknown as ChatSessionData
+  return updated as unknown as ChatSessionData
 }

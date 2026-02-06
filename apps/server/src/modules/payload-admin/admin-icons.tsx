@@ -1,7 +1,6 @@
-import React from 'react'
-
 export const SpinnerIcon = () => (
   <svg
+    aria-hidden="true"
     style={{
       animation: 'spin 1s linear infinite',
       width: '16px',
@@ -18,6 +17,7 @@ export const SpinnerIcon = () => (
 
 export const ImportIcon = () => (
   <svg
+    aria-hidden="true"
     width="16"
     height="16"
     viewBox="0 0 24 24"
@@ -37,6 +37,7 @@ export const ImportIcon = () => (
 
 export const SyncIcon = () => (
   <svg
+    aria-hidden="true"
     width="16"
     height="16"
     viewBox="0 0 24 24"

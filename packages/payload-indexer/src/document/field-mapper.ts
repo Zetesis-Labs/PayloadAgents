@@ -24,6 +24,55 @@ const getValueByPath = (obj: unknown, path: string): unknown => {
 }
 
 /**
+ * Returns the default value for a given field type
+ */
+const getDefaultValueForType = (type: string): unknown => {
+  if (type === 'string') return ''
+  if (type === 'string[]') return []
+  if (type === 'bool') return false
+  if (type.startsWith('int') || type === 'float') return 0
+  return undefined
+}
+
+/**
+ * Converts a value to match the expected field type
+ */
+const coerceValueToType = (value: unknown, type: string): unknown => {
+  if (type === 'string' && typeof value !== 'string') {
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value)
+    }
+    return String(value)
+  }
+  if (type === 'string[]' && !Array.isArray(value)) {
+    return [String(value)]
+  }
+  if (type === 'bool') {
+    return Boolean(value)
+  }
+  return value
+}
+
+/**
+ * Resolves the value for a typed field, applying defaults and coercion.
+ * Returns `undefined` to signal the field should be skipped (optional with no value).
+ */
+const resolveTypedFieldValue = (value: unknown, extField: ExtendedFieldMapping): unknown | undefined => {
+  if (!extField.type) return value
+
+  let resolved = value
+
+  // Handle missing values
+  if (resolved === undefined || resolved === null) {
+    if (extField.optional) return undefined
+    resolved = getDefaultValueForType(extField.type)
+  }
+
+  // Type coercion
+  return coerceValueToType(resolved, extField.type)
+}
+
+/**
  * Maps a Payload document to an index document based on field configuration
  *
  * This function handles both base FieldMapping and extended mappings with
@@ -46,29 +95,9 @@ export const mapPayloadDocumentToIndex = async (
     if (field.transform) {
       value = await field.transform(value)
     } else if (extField.type) {
-      // Handle missing values (only if type is defined)
-      if (value === undefined || value === null) {
-        if (extField.optional) continue
-        // Default values based on type
-        if (extField.type === 'string') value = ''
-        else if (extField.type === 'string[]') value = []
-        else if (extField.type === 'bool') value = false
-        else if (extField.type.startsWith('int') || extField.type === 'float') value = 0
-      }
-
-      // Type conversion/validation (only if no transform was applied)
-      if (extField.type === 'string' && typeof value !== 'string') {
-        if (typeof value === 'object' && value !== null) {
-          // Try to extract text from rich text or objects
-          value = JSON.stringify(value)
-        } else {
-          value = String(value)
-        }
-      } else if (extField.type === 'string[]' && !Array.isArray(value)) {
-        value = [String(value)]
-      } else if (extField.type === 'bool') {
-        value = Boolean(value)
-      }
+      const resolved = resolveTypedFieldValue(value, extField)
+      if (resolved === undefined) continue
+      value = resolved
     }
 
     // Only add the field if we have a value (or if it was explicitly transformed)

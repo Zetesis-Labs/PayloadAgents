@@ -1,4 +1,5 @@
 import {
+  type EmbeddingProvider,
   EmbeddingServiceImpl,
   GeminiEmbeddingProvider,
   type GeminiProviderConfig,
@@ -26,7 +27,7 @@ export async function generateEmbeddingWithTracking(
     throw new Error('Embedding configuration missing')
   }
 
-  let provider
+  let provider: EmbeddingProvider | undefined
 
   // Use the strongly typed nested provider configuration
   const providerType = embeddingConfig.type
@@ -61,7 +62,7 @@ export async function generateEmbeddingWithTracking(
     )
   }
 
-  const service = new EmbeddingServiceImpl(provider, serviceLogger, embeddingConfig)
+  const _service = new EmbeddingServiceImpl(provider, serviceLogger, embeddingConfig)
 
   // We need usage info. The new service interface returns only embedding or array of embeddings.
   // We need to extend service or provider to return usage or get it from provider directly.

@@ -5,10 +5,6 @@ import type { ChatAdapter, Message, PublicAgentInfo, SessionSummary, TokenUsage 
 import { NexoPayloadChatAdapter } from '../adapters/NexoPayloadChatAdapter'
 import { useChatSession } from '../hooks/useChatSession'
 
-interface AgentsResponse {
-  agents: PublicAgentInfo[]
-}
-
 interface ChatContextType {
   adapter: ChatAdapter
   isPanelOpen: boolean
@@ -82,7 +78,7 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
     }
 
     loadAgents()
-  }, [adapter])
+  }, [adapter, selectedAgent])
 
   // Check if device is mobile or tablet (not desktop)
   const isMobileOrTablet = () => {

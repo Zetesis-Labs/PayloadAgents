@@ -17,8 +17,8 @@ export const buildHeaderHierarchy = (metadata?: Record<string, string>): string[
   const headerLevels = Object.keys(metadata)
     .filter(key => key.startsWith('Header '))
     .sort((a, b) => {
-      const levelA = parseInt(a.replace('Header ', ''))
-      const levelB = parseInt(b.replace('Header ', ''))
+      const levelA = parseInt(a.replace('Header ', ''), 10)
+      const levelB = parseInt(b.replace('Header ', ''), 10)
       return levelA - levelB
     })
 

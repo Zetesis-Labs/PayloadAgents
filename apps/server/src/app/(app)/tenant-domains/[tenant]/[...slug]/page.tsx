@@ -3,7 +3,6 @@ import { headers as getHeaders } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import type { Where } from 'payload'
 import { getPayload } from 'payload'
-import React from 'react'
 
 import { RenderPage } from '../../../../components/RenderPage'
 
@@ -14,7 +13,7 @@ export default async function Page({
   params: Promise<{ slug?: string[]; tenant: string }>
 }) {
   const params = await paramsPromise
-  let slug
+  let slug: string[] | undefined
   if (params?.slug) {
     // remove the domain route param
     params.slug.splice(0, 1)
@@ -44,7 +43,7 @@ export default async function Page({
         `/tenant-domains/login?redirect=${encodeURIComponent(`/tenant-domains${slug ? `/${slug.join('/')}` : ''}`)}`
       )
     }
-  } catch (e) {
+  } catch (_e) {
     // If the query fails, it means the user did not have access to query on the domain field
     // Show the login view
     redirect(

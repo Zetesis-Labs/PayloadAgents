@@ -157,9 +157,9 @@ const ThreadWelcome: FC<ThreadWelcomeProps> = ({ title, subtitle, suggestedQuest
 
       {suggestedQuestions && suggestedQuestions.length > 0 && (
         <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full" variants={containerVariants}>
-          {suggestedQuestions.map((question, index) => (
+          {suggestedQuestions.map(question => (
             <SuggestionCard
-              key={index}
+              key={question.prompt}
               prompt={question.prompt}
               title={question.title}
               description={question.description}
@@ -228,6 +228,7 @@ const LimitAlert: FC = () => {
           {resetTime && <p className="text-xs text-muted-foreground">Tu límite se restablecerá a las {resetTime}</p>}
         </div>
         <button
+          type="button"
           onClick={() => setLimitError(null)}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >

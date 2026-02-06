@@ -108,8 +108,7 @@ export async function executeRAGSearch(
 
     // Detect expired conversation error
     if (errorText.includes('conversation_id') && errorText.includes('invalid')) {
-      const error = new Error('EXPIRED_CONVERSATION')
-      ;(error as any).cause = errorText
+      const error = new Error('EXPIRED_CONVERSATION', { cause: errorText })
       throw error
     }
 

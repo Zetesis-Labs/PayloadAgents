@@ -9,7 +9,7 @@ import type { EmbeddingProvider, EmbeddingProviderConfig, EmbeddingService } fro
 export class EmbeddingServiceImpl implements EmbeddingService {
   constructor(
     private provider: EmbeddingProvider,
-    private logger: Logger,
+    _logger: Logger,
     private config: EmbeddingProviderConfig
   ) {}
 
@@ -26,7 +26,7 @@ export class EmbeddingServiceImpl implements EmbeddingService {
   }
 
   getDimensions(): number {
-    return this.config.dimensions!
+    return this.config.dimensions
   }
 }
 
@@ -44,7 +44,7 @@ export function createEmbeddingService(config: EmbeddingProviderConfig, logger: 
       provider = new GeminiEmbeddingProvider(config, logger)
       break
     default:
-      throw new Error(`Unsupported embedding provider: ${(config as any).type}`)
+      throw new Error(`Unsupported embedding provider: ${(config as Record<string, unknown>).type}`)
   }
 
   return new EmbeddingServiceImpl(provider, logger, config)

@@ -39,10 +39,10 @@ export const extractSearchParams = (
   const errors: string[] = []
 
   // Validate parsed numbers
-  if (isNaN(page) || page < 1) {
+  if (Number.isNaN(page) || page < 1) {
     errors.push('Invalid page parameter')
   }
-  if (isNaN(per_page) || per_page < 1 || per_page > 250) {
+  if (Number.isNaN(per_page) || per_page < 1 || per_page > 250) {
     errors.push('Invalid per_page parameter')
   }
 

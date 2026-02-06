@@ -62,9 +62,9 @@ export const processVectorSearchResults = (
           result.hits?.map((hit): SearchHit => {
             const doc = hit.document || {}
             const hint = doc.chunk_text
-              ? String(doc.chunk_text).substring(0, 300) + '...'
+              ? `${String(doc.chunk_text).substring(0, 300)}...`
               : doc.description
-                ? String(doc.description).substring(0, 300) + '...'
+                ? `${String(doc.description).substring(0, 300)}...`
                 : doc.hint
 
             return {

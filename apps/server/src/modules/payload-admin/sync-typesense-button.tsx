@@ -115,7 +115,7 @@ export const SyncTypesenseButton: React.FC = () => {
           {isLoading ? (
             <>
               <SpinnerIcon />
-              {loadingLabels[activeAction!]}
+              {activeAction ? loadingLabels[activeAction] : ''}
             </>
           ) : (
             <>Importar &#9662;</>

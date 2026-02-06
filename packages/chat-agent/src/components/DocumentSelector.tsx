@@ -59,7 +59,11 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
             <span className="text-sm font-medium text-foreground">
               {selectedDocuments.length} documento{selectedDocuments.length !== 1 ? 's' : ''}
             </span>
-            <button onClick={clearAllSelections} className="text-sm text-destructive hover:text-destructive/80">
+            <button
+              type="button"
+              onClick={clearAllSelections}
+              className="text-sm text-destructive hover:text-destructive/80"
+            >
               Limpiar
             </button>
           </div>
@@ -89,6 +93,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
                 const isSelected = selectedDocuments.some(d => d.id === doc.id)
                 return (
                   <button
+                    type="button"
                     key={doc.id}
                     onClick={() => toggleDocument(doc)}
                     className={cn(
@@ -132,6 +137,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
             />
           </div>
           <button
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="inline-flex items-center gap-1 h-9 rounded-r-md border border-l-0 border-input bg-background px-3 text-sm text-foreground hover:bg-accent transition-colors"
           >
@@ -142,14 +148,23 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
 
         {isExpanded && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsExpanded(false)} />
+            <button
+              type="button"
+              className="fixed inset-0 z-40 cursor-default bg-transparent border-none"
+              onClick={() => setIsExpanded(false)}
+              aria-label="Cerrar selector"
+            />
             <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-lg max-h-80 overflow-hidden z-50">
               {selectedDocuments.length > 0 && (
                 <div className="flex items-center justify-between p-3 border-b border-border bg-muted/50">
                   <span className="text-sm font-medium text-foreground">
                     {selectedDocuments.length} seleccionado{selectedDocuments.length !== 1 ? 's' : ''}
                   </span>
-                  <button onClick={clearAllSelections} className="text-sm text-destructive hover:text-destructive/80">
+                  <button
+                    type="button"
+                    onClick={clearAllSelections}
+                    className="text-sm text-destructive hover:text-destructive/80"
+                  >
                     Limpiar
                   </button>
                 </div>
@@ -169,6 +184,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
                       const isSelected = selectedDocuments.some(d => d.id === doc.id)
                       return (
                         <button
+                          type="button"
                           key={doc.id}
                           onClick={() => toggleDocument(doc)}
                           className={cn(

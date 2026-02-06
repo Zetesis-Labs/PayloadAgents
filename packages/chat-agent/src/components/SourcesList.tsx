@@ -115,6 +115,276 @@ const RelevanceBar: React.FC<{ score: number }> = ({ score }) => {
   )
 }
 
+// Helper to get source type label
+const getSourceTypeLabel = (type: 'article' | 'book') => (type === 'article' ? 'Articulo' : 'Libro')
+
+// Helper to get default icon
+const getDefaultIcon = (type: 'article' | 'book') =>
+  type === 'book' ? <BookOpen className="w-full h-full" /> : <FileText className="w-full h-full" />
+
+// Breadcrumb path segments component
+const BreadcrumbPath: React.FC<{ path: string }> = ({ path }) => (
+  <>
+    {path.split('>').map((segment, index, arr) => {
+      const text = segment.trim()
+      const truncated = text.length > 25 ? `${text.slice(0, 25)}...` : text
+      return (
+        // biome-ignore lint/suspicious/noArrayIndexKey: breadcrumb segments can repeat
+        <React.Fragment key={`${text}-${index}`}>
+          <motion.span
+            className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium text-foreground max-w-[150px]"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 }}
+            title={text}
+          >
+            <span className="truncate">{truncated}</span>
+          </motion.span>
+          {index < arr.length - 1 && <span className="text-muted-foreground text-xs">/</span>}
+        </React.Fragment>
+      )
+    })}
+  </>
+)
+
+// Section pill component
+const SectionPill: React.FC<{ section: string }> = ({ section }) => (
+  <span
+    className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium text-foreground max-w-[150px]"
+    title={section}
+  >
+    <span className="truncate">{section.length > 25 ? `${section.slice(0, 25)}...` : section}</span>
+  </span>
+)
+
+// Metadata pills component
+const MetadataPills: React.FC<{ metadata: { section?: string; path?: string } | null }> = ({ metadata }) => {
+  if (!metadata || (!metadata.path && !metadata.section)) return null
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 mb-3">
+      <span className="text-xs text-muted-foreground">Ubicacion:</span>
+      {metadata.path ? (
+        <BreadcrumbPath path={metadata.path} />
+      ) : metadata.section ? (
+        <SectionPill section={metadata.section} />
+      ) : null}
+    </div>
+  )
+}
+
+// Expanded content body component
+const ExpandedContentBody: React.FC<{
+  isLoading: boolean
+  error: string | null
+  displayContent: string
+  cleanContent: string
+  metadata: { section?: string; path?: string } | null
+  expandedSource: Source
+  renderViewMore?: SourcesListProps['renderViewMore']
+  handleViewMore: () => void
+  generateHref: SourcesListProps['generateHref']
+  LinkComponent?: LinkComponent
+}> = ({
+  isLoading,
+  error,
+  displayContent,
+  cleanContent,
+  metadata,
+  expandedSource,
+  renderViewMore,
+  handleViewMore,
+  generateHref,
+  LinkComponent
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Cargando contenido...
+      </div>
+    )
+  }
+  if (error) {
+    return <div className="text-sm text-destructive py-2">Error: {error}</div>
+  }
+  if (!displayContent) {
+    return <div className="text-sm text-muted-foreground py-2">No hay contenido disponible para este fragmento</div>
+  }
+  return (
+    <>
+      <MarkdownText text={cleanContent} />
+      <MetadataPills metadata={metadata} />
+      {renderViewMore ? (
+        renderViewMore({
+          type: expandedSource.type,
+          slug: expandedSource.slug,
+          title: expandedSource.title,
+          onClick: handleViewMore
+        })
+      ) : (
+        <ViewMoreLink
+          type={expandedSource.type}
+          slug={expandedSource.slug}
+          title={expandedSource.title}
+          onClick={handleViewMore}
+          generateHref={generateHref}
+          LinkComponent={LinkComponent}
+        />
+      )}
+    </>
+  )
+}
+
+// Expanded source card component
+const ExpandedSourceCard: React.FC<{
+  expandedSource: Source
+  expandedSourceId: string
+  loadedContent: string
+  getChunkState: ReturnType<typeof useChunkLoader>['getChunkState']
+  getIcon: (type: 'article' | 'book') => React.ReactNode
+  onClose: () => void
+  handleViewMore: () => void
+  renderViewMore?: SourcesListProps['renderViewMore']
+  generateHref: SourcesListProps['generateHref']
+  LinkComponent?: LinkComponent
+}> = ({
+  expandedSource,
+  expandedSourceId,
+  loadedContent,
+  getChunkState,
+  getIcon,
+  onClose,
+  handleViewMore,
+  renderViewMore,
+  generateHref,
+  LinkComponent
+}) => {
+  const chunkState = getChunkState(expandedSource.id, expandedSource.type)
+  const displayContent = loadedContent || expandedSource.content
+  const { text: cleanContent, metadata } = parseChunkContent(displayContent)
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={expandedSourceId}
+          variants={expandedCardVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          layoutId={`source-${expandedSourceId}`}
+        >
+          <div className="p-4 bg-muted rounded-lg border border-border shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-2 flex-1">
+                <motion.div
+                  className="flex-shrink-0 w-5 h-5 text-foreground mt-0.5"
+                  initial={{ rotate: -10 }}
+                  animate={{ rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {getIcon(expandedSource.type)}
+                </motion.div>
+                <div>
+                  <div className="text-foreground font-semibold text-sm">{expandedSource.title}</div>
+                  <div className="text-muted-foreground text-xs mt-1 flex items-center gap-2">
+                    <span>
+                      {getSourceTypeLabel(expandedSource.type)}
+                      {expandedSource.chunkIndex !== undefined && <> - Parte {expandedSource.chunkIndex + 1}</>}
+                    </span>
+                    {expandedSource.relevanceScore && <RelevanceBar score={expandedSource.relevanceScore} />}
+                  </div>
+                </div>
+              </div>
+              <motion.button
+                onClick={onClose}
+                className="flex-shrink-0 ml-2 h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                aria-label="Cerrar"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            </div>
+
+            <motion.div variants={contentVariants} initial="hidden" animate="visible">
+              <ExpandedContentBody
+                isLoading={chunkState.isLoading}
+                error={chunkState.error}
+                displayContent={displayContent}
+                cleanContent={cleanContent}
+                metadata={metadata}
+                expandedSource={expandedSource}
+                renderViewMore={renderViewMore}
+                handleViewMore={handleViewMore}
+                generateHref={generateHref}
+                LinkComponent={LinkComponent}
+              />
+            </motion.div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// Source list item component
+const SourceListItem: React.FC<{
+  source: Source
+  idx: number
+  getIcon: (type: 'article' | 'book') => React.ReactNode
+  onClick: (id: string) => void
+}> = ({ source, idx, getIcon, onClick }) => (
+  <motion.button
+    key={source.id || idx}
+    custom={idx}
+    variants={itemVariants}
+    initial="hidden"
+    animate="visible"
+    onClick={() => onClick(source.id)}
+    className="w-full text-left text-xs rounded-lg p-3 transition-all border border-transparent hover:border-primary/20 hover:bg-muted/50 group"
+    whileHover={{ x: 4 }}
+    layoutId={`source-${source.id}`}
+  >
+    <div className="flex items-start gap-2">
+      <motion.div className="flex-shrink-0 w-4 h-4 text-foreground mt-0.5" whileHover={{ scale: 1.1, rotate: 5 }}>
+        {getIcon(source.type)}
+      </motion.div>
+
+      <div className="flex-1 min-w-0">
+        <div className="text-foreground font-medium truncate group-hover:text-primary transition-colors">
+          {source.title}
+        </div>
+
+        <div className="text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+          <span className="text-xs">{getSourceTypeLabel(source.type)}</span>
+          {source.chunkIndex !== undefined && (
+            <>
+              <span>-</span>
+              <span className="text-xs">Parte {source.chunkIndex + 1}</span>
+            </>
+          )}
+          {source.relevanceScore && <RelevanceBar score={source.relevanceScore} />}
+        </div>
+
+        {source.excerpt && (
+          <div className="text-muted-foreground mt-1 text-xs line-clamp-2 italic">
+            <MarkdownText text={`"${source.excerpt}"`} />
+          </div>
+        )}
+      </div>
+
+      <motion.span
+        className="text-primary flex-shrink-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        initial={{ x: -5 }}
+        whileHover={{ x: 0 }}
+      >
+        Ver mas
+      </motion.span>
+    </div>
+  </motion.button>
+)
+
 export const SourcesList: React.FC<SourcesListProps> = ({
   sources,
   isMaximized = false,
@@ -142,7 +412,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
 
   const getIcon = (type: 'article' | 'book') => {
     if (renderSourceIcon) return renderSourceIcon(type)
-    return type === 'book' ? <BookOpen className="w-full h-full" /> : <FileText className="w-full h-full" />
+    return getDefaultIcon(type)
   }
 
   const handleSourceClick = async (sourceId: string) => {
@@ -171,133 +441,19 @@ export const SourcesList: React.FC<SourcesListProps> = ({
     const expandedSource = sources.find(s => s.id === expandedSourceId)
     if (!expandedSource) return null
 
-    const chunkState = getChunkState(expandedSource.id, expandedSource.type)
-    const displayContent = loadedContent || expandedSource.content
-    const { text: cleanContent, metadata } = parseChunkContent(displayContent)
-
     return (
-      <div className="mt-3 pt-3 border-t border-border">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={expandedSourceId}
-            variants={expandedCardVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            layoutId={`source-${expandedSourceId}`}
-          >
-            <div className="p-4 bg-muted rounded-lg border border-border shadow-sm">
-              {/* Header with close button */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-2 flex-1">
-                  <motion.div
-                    className="flex-shrink-0 w-5 h-5 text-foreground mt-0.5"
-                    initial={{ rotate: -10 }}
-                    animate={{ rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {getIcon(expandedSource.type)}
-                  </motion.div>
-                  <div>
-                    <div className="text-foreground font-semibold text-sm">{expandedSource.title}</div>
-                    <div className="text-muted-foreground text-xs mt-1 flex items-center gap-2">
-                      <span>
-                        {expandedSource.type === 'article' ? 'Articulo' : 'Libro'}
-                        {expandedSource.chunkIndex !== undefined && <> - Parte {expandedSource.chunkIndex + 1}</>}
-                      </span>
-                      {expandedSource.relevanceScore && <RelevanceBar score={expandedSource.relevanceScore} />}
-                    </div>
-                  </div>
-                </div>
-                <motion.button
-                  onClick={handleCloseExpanded}
-                  className="flex-shrink-0 ml-2 h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  aria-label="Cerrar"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <X className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              {/* Content - rendered markdown */}
-              <motion.div variants={contentVariants} initial="hidden" animate="visible">
-                {chunkState.isLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Cargando contenido...
-                  </div>
-                ) : chunkState.error ? (
-                  <div className="text-sm text-destructive py-2">Error: {chunkState.error}</div>
-                ) : displayContent ? (
-                  <>
-                    <MarkdownText text={cleanContent} />
-
-                    {/* Metadata Pills - Breadcrumb hierarchy */}
-                    {metadata && (metadata.path || metadata.section) && (
-                      <div className="mt-4 flex flex-wrap items-center gap-2 mb-3">
-                        <span className="text-xs text-muted-foreground">Ubicacion:</span>
-                        {metadata.path ? (
-                          metadata.path.split('>').map((segment, index, arr) => {
-                            const text = segment.trim()
-                            const truncated = text.length > 25 ? text.slice(0, 25) + '...' : text
-                            return (
-                              <React.Fragment key={index}>
-                                <motion.span
-                                  className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium text-foreground max-w-[150px]"
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ delay: index * 0.05 }}
-                                  title={text}
-                                >
-                                  <span className="truncate">{truncated}</span>
-                                </motion.span>
-                                {index < arr.length - 1 && <span className="text-muted-foreground text-xs">/</span>}
-                              </React.Fragment>
-                            )
-                          })
-                        ) : metadata.section ? (
-                          <span
-                            className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium text-foreground max-w-[150px]"
-                            title={metadata.section}
-                          >
-                            <span className="truncate">
-                              {metadata.section.length > 25 ? metadata.section.slice(0, 25) + '...' : metadata.section}
-                            </span>
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {/* Link to full document */}
-                    {renderViewMore ? (
-                      renderViewMore({
-                        type: expandedSource.type,
-                        slug: expandedSource.slug,
-                        title: expandedSource.title,
-                        onClick: handleViewMore
-                      })
-                    ) : (
-                      <ViewMoreLink
-                        type={expandedSource.type}
-                        slug={expandedSource.slug}
-                        title={expandedSource.title}
-                        onClick={handleViewMore}
-                        generateHref={generateHref}
-                        LinkComponent={LinkComponent}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="text-sm text-muted-foreground py-2">
-                    No hay contenido disponible para este fragmento
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      <ExpandedSourceCard
+        expandedSource={expandedSource}
+        expandedSourceId={expandedSourceId}
+        loadedContent={loadedContent}
+        getChunkState={getChunkState}
+        getIcon={getIcon}
+        onClose={handleCloseExpanded}
+        handleViewMore={handleViewMore}
+        renderViewMore={renderViewMore}
+        generateHref={generateHref}
+        LinkComponent={LinkComponent}
+      />
     )
   }
 
@@ -339,57 +495,13 @@ export const SourcesList: React.FC<SourcesListProps> = ({
             className="mt-2 space-y-2 overflow-hidden"
           >
             {sources.map((source, idx) => (
-              <motion.button
+              <SourceListItem
                 key={source.id || idx}
-                custom={idx}
-                variants={itemVariants}
-                initial="hidden"
-                animate="visible"
-                onClick={() => handleSourceClick(source.id)}
-                className="w-full text-left text-xs rounded-lg p-3 transition-all border border-transparent hover:border-primary/20 hover:bg-muted/50 group"
-                whileHover={{ x: 4 }}
-                layoutId={`source-${source.id}`}
-              >
-                <div className="flex items-start gap-2">
-                  <motion.div
-                    className="flex-shrink-0 w-4 h-4 text-foreground mt-0.5"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                  >
-                    {getIcon(source.type)}
-                  </motion.div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="text-foreground font-medium truncate group-hover:text-primary transition-colors">
-                      {source.title}
-                    </div>
-
-                    <div className="text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-xs">{source.type === 'article' ? 'Articulo' : 'Libro'}</span>
-                      {source.chunkIndex !== undefined && (
-                        <>
-                          <span>-</span>
-                          <span className="text-xs">Parte {source.chunkIndex + 1}</span>
-                        </>
-                      )}
-                      {source.relevanceScore && <RelevanceBar score={source.relevanceScore} />}
-                    </div>
-
-                    {source.excerpt && (
-                      <div className="text-muted-foreground mt-1 text-xs line-clamp-2 italic">
-                        <MarkdownText text={`"${source.excerpt}"`} />
-                      </div>
-                    )}
-                  </div>
-
-                  <motion.span
-                    className="text-primary flex-shrink-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    initial={{ x: -5 }}
-                    whileHover={{ x: 0 }}
-                  >
-                    Ver mas
-                  </motion.span>
-                </div>
-              </motion.button>
+                source={source}
+                idx={idx}
+                getIcon={getIcon}
+                onClick={handleSourceClick}
+              />
             ))}
           </motion.div>
         )}

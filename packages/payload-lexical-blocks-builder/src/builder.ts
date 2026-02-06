@@ -3,7 +3,9 @@ import type { Block, Config } from 'payload'
 
 export type LexicalBuilder = (blocks: () => Block[]) => Config['editor']
 
-export function buildLexicalByFeatures(features: () => FeatureProviderServer<any, any, any>[]): LexicalBuilder {
+export function buildLexicalByFeatures(
+  features: () => FeatureProviderServer<unknown, unknown, unknown>[]
+): LexicalBuilder {
   return (blocks: () => Block[]) =>
     lexicalEditor({
       features: () => {

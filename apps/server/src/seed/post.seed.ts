@@ -74,8 +74,9 @@ export const seedPost =
         })
         logger.debug(`Nuevo post creado con ID: ${postData.id}`)
       }
-    } catch (error: any) {
-      logger.error(`Error al procesar post ${postData.id}:`, error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`Error al procesar post ${postData.id}: ${errorMessage}`)
       throw error
     }
   }

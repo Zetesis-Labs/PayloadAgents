@@ -12,7 +12,7 @@ export const externalUsersLogin: Endpoint = {
       if (typeof req.json === 'function') {
         data = await req.json()
       }
-    } catch (error) {
+    } catch (_error) {
       // swallow error, data is already empty object
     }
     const { password, tenantSlug, tenantDomain, username } = data
@@ -86,7 +86,7 @@ export const externalUsersLogin: Endpoint = {
         })
 
         if (loginAttempt?.token) {
-          const collection = (req.payload.collections as { [key: string]: Collection })['users']
+          const collection = (req.payload.collections as { [key: string]: Collection }).users
           const cookie =
             collection &&
             generatePayloadCookie({
@@ -110,7 +110,7 @@ export const externalUsersLogin: Endpoint = {
         }
 
         throw new APIError('Unable to login with the provided username and password.', 400, null, true)
-      } catch (e) {
+      } catch (_e) {
         throw new APIError('Unable to login with the provided username and password.', 400, null, true)
       }
     }

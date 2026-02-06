@@ -174,12 +174,13 @@ export function useAssistantRuntime({
 
         // Clear any previous limit error
         setLimitError(null)
-      } catch (err: any) {
-        console.error('[useAssistantRuntime] Error:', err)
+      } catch (err: unknown) {
+        const error = err as Error & { code?: string; chatId?: string; message: string }
+        console.error('[useAssistantRuntime] Error:', error)
 
         // Handle expired conversation error
-        if (err.code === 'EXPIRED_CONVERSATION') {
-          console.warn('[useAssistantRuntime] Conversation expired:', err.chatId)
+        if (error.code === 'EXPIRED_CONVERSATION') {
+          console.warn('[useAssistantRuntime] Conversation expired:', error.chatId)
 
           // Replace placeholder with error message
           setMessages(prev => {
@@ -188,7 +189,7 @@ export function useAssistantRuntime({
             if (lastIdx >= 0 && updated[lastIdx]?.role === 'assistant') {
               updated[lastIdx] = {
                 ...updated[lastIdx],
-                content: `⚠️ **Conversación Expirada**\n\n${err.message}\n\nLas conversaciones expiran después de 24 horas de inactividad por motivos de seguridad y privacidad.`
+                content: `⚠️ **Conversación Expirada**\n\n${error.message}\n\nLas conversaciones expiran después de 24 horas de inactividad por motivos de seguridad y privacidad.`
               }
             }
             return updated
@@ -206,8 +207,8 @@ export function useAssistantRuntime({
         }
 
         // Handle 429 - Token limit exceeded (propagated from adapter)
-        if (err.message === 'Has alcanzado tu límite diario de tokens.') {
-          setLimitError(err.message)
+        if (error.message === 'Has alcanzado tu límite diario de tokens.') {
+          setLimitError(error.message)
           // Remove placeholder message
           setMessages(prev => prev.slice(0, -1))
           return
@@ -228,7 +229,8 @@ export function useAssistantRuntime({
       selectedAgent,
       setLimitError,
       updateTokenUsage,
-      adapter
+      adapter,
+      loadHistory
     ]
   )
 

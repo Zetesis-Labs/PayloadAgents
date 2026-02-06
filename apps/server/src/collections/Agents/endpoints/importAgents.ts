@@ -1,4 +1,4 @@
-import type { CollectionSlug, Endpoint } from 'payload'
+import type { Endpoint } from 'payload'
 import { APIError } from 'payload'
 import { isSuperAdmin } from '@/access/isSuperAdmin'
 import { agents as hardcodedAgents } from '@/payload/plugins/typesense/agents'

@@ -39,7 +39,7 @@ export const invoiceSucceeded = async (invoiceIntent: Stripe.Invoice, payload: P
 
     await payload.update({
       collection: COLLECTION_SLUG_CUSTOMERS,
-      data: { inventory: inventory as unknown as { [x: string]: {} } },
+      data: { inventory: inventory as unknown as Record<string, Record<string, unknown>> },
       where: { email: { equals: stripeCustomer.email } }
     })
 

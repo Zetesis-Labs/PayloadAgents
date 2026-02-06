@@ -3,13 +3,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { DefaultImage, type ImageComponent as ImageComponentType } from '../../types/components'
 
 interface FloatingChatButtonProps {
   onOpen: () => void
   aiIcon?: string
   isOpen?: boolean
   className?: string
-  ImageComponent?: any
+  ImageComponent?: ImageComponentType
 }
 
 export const FloatingChatButton = ({
@@ -17,7 +18,7 @@ export const FloatingChatButton = ({
   aiIcon,
   isOpen = false,
   className,
-  ImageComponent = (props: any) => <img {...props} />
+  ImageComponent = DefaultImage
 }: FloatingChatButtonProps) => {
   return (
     <AnimatePresence>

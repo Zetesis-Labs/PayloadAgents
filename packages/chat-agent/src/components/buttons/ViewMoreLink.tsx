@@ -23,7 +23,7 @@ export const ViewMoreLink = ({
   const contentType = type === 'article' ? 'articulos' : 'libros'
   const href = generateHref({
     type: contentType,
-    value: { id: parseInt(slug.split('-')?.[0] || '0'), slug }
+    value: { id: parseInt(slug.split('-')?.[0] || '0', 10), slug }
   })
   if (!href) return null
 

@@ -116,4 +116,5 @@ export interface UniversalSearchOptions {
   collections?: string[]
   exclude_fields?: string
   query_by?: string
+  [key: string]: unknown
 }

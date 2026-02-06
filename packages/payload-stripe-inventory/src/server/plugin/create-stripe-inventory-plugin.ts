@@ -94,7 +94,7 @@ export function createStripeInventoryPlugin<TProduct = unknown, TContent = unkno
     })
 
   // Required callbacks for permission resolution
-  const { resolveSubscriptionPermissions, resolveContentPermissions } = config
+  const { resolveSubscriptionPermissions } = config
 
   return (incomingConfig: Config): Config => {
     // 1. Create and register Stripe endpoints
