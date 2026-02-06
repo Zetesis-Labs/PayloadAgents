@@ -17,21 +17,22 @@
     "build:server": "turbo run build --filter=server",
     "start:server": "turbo run start --filter=server",
     "storybook": "turbo run storybook --filter=server",
-    "lint": "turbo run lint",
-    "format": "prettier --write ."
+    "lint": "biome check apps/server/src packages/*/src --no-errors-on-unmatched",
+    "lint:fix": "biome check --write apps/server/src packages/*/src --no-errors-on-unmatched",
+    "format": "biome format --write apps/server/src packages/*/src --no-errors-on-unmatched"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.14",
     "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.1",
     "@types/react": "^19.0.12",
-    "eslint": "^9.19.0",
-    "prettier": "^3.4.2",
     "tsdown": "^0.16.5",
     "turbo": "^2.4.0"
   },
   "engines": {
     "node": "25.x || 22.x || 23.x || 24.x"
   },
+  "type": "module",
   "name": "keycloak-multi-tenant",
   "packageManager": "pnpm@10.14.0",
   "dependencies": {

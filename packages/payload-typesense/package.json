@@ -22,8 +22,6 @@
     "dev": "tsdown --watch",
     "clean": "rimraf -g {dist,*.tsbuildinfo}",
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/ || true",
-    "lint": "eslint ./src",
-    "lint:fix": "eslint ./src --fix",
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "devDependencies": {
@@ -34,7 +32,6 @@
     "bundle-analyzer": "^0.0.6",
     "copyfiles": "2.4.1",
     "cross-env": "^7.0.3",
-    "eslint": "^9.23.0",
     "graphql": "^16.8.1",
     "jsdom": "^24.0.0",
     "next": "^16",

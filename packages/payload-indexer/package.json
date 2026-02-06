@@ -21,8 +21,6 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "clean": "rimraf -g {dist,*.tsbuildinfo}",
-    "lint": "eslint ./src",
-    "lint:fix": "eslint ./src --fix",
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "dependencies": {
