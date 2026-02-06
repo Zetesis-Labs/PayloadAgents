@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.9.0
+
+### Minor Changes
+
+- d1f6374: Updated to nextjs 16 and payload cms 3.75.0
+
 ## 1.8.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-indexer",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Generic document indexing library for Payload CMS with support for multiple search backends, embedding providers, and chunking strategies.",
   "license": "MIT",
   "sideEffects": false,
@@ -60,12 +60,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nexo-Labs/PayloadAgents.git",
+    "url": "git+https://github.com/Zetesis-Labs/PayloadAgents.git",
     "directory": "packages/payload-indexer"
   },
-  "homepage": "https://github.com/Nexo-Labs/PayloadAgents/tree/main/packages/payload-indexer#readme",
+  "homepage": "https://github.com/Zetesis-Labs/PayloadAgents/tree/main/packages/payload-indexer#readme",
   "bugs": {
-    "url": "https://github.com/Nexo-Labs/PayloadAgents/issues"
+    "url": "https://github.com/Zetesis-Labs/PayloadAgents/issues"
   },
   "author": {
     "name": "Rubén Garcia",

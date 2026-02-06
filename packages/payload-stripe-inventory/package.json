@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-stripe-inventory",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Sistema de inventario y suscripciones con Stripe para Payload CMS",
   "keywords": [
     "payload-cms",
@@ -14,7 +14,7 @@
   "author": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nexo-Labs/PayloadAgents",
+    "url": "https://github.com/Zetesis-Labs/PayloadAgents",
     "directory": "packages/payload-stripe-inventory"
   },
   "sideEffects": false,

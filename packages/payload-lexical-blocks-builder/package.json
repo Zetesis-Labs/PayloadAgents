@@ -1,6 +1,6 @@
 {
   "name": "@nexo-labs/payload-lexical-blocks-builder",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Builder y renderer de bloques para Payload CMS Lexical",
   "keywords": [
     "payload-cms",
@@ -13,7 +13,7 @@
   "author": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nexo-Labs/PayloadAgents",
+    "url": "https://github.com/Zetesis-Labs/PayloadAgents",
     "directory": "packages/payload-lexical-blocks-builder"
   },
   "sideEffects": false,
