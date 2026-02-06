@@ -3,6 +3,7 @@
 import { BookOpen, ChevronDown, FileText, Loader2, Search, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { cn } from '../lib/utils'
+import { useChat } from './chat-context'
 import { type Document, useCombinedDocuments, useDocumentSearch, useDocumentSelection } from './useDocumentSelector'
 
 interface DocumentSelectorProps {
@@ -13,6 +14,7 @@ interface DocumentSelectorProps {
 
 const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSelectorProps) => {
   const [isExpanded, setIsExpanded] = useState(isSidePanel)
+  const { searchCollections } = useChat()
 
   const {
     searchQuery,
@@ -20,7 +22,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
     isLoading,
     error,
     handleSearchChange: baseHandleSearchChange
-  } = useDocumentSearch()
+  } = useDocumentSearch(searchCollections)
   const { selectedDocuments, toggleDocument, clearAllSelections } = useDocumentSelection(onSelectionChange)
   const allDocuments = useCombinedDocuments(selectedDocuments, searchResults)
 

@@ -42,4 +42,6 @@ export interface ModularPluginConfig {
   typesense: TypesenseConnectionConfig
   features: FeatureFlags
   collections: Record<CollectionSlug | string, TableConfig[]>
+  /** Resolve document type from Typesense collection name */
+  documentTypeResolver?: (collectionName: string) => string
 }

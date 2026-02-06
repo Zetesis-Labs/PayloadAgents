@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { DefaultLink, type LinkComponent } from '../../types/components'
 
 interface ViewMoreLinkProps {
-  type: 'article' | 'book'
+  contentType: string
   slug: string
   title: string
   onClick?: () => void
@@ -13,14 +13,13 @@ interface ViewMoreLinkProps {
 }
 
 export const ViewMoreLink = ({
-  type,
+  contentType,
   slug,
   title,
   onClick,
   generateHref,
   LinkComponent: Link = DefaultLink
 }: ViewMoreLinkProps) => {
-  const contentType = type === 'article' ? 'articulos' : 'libros'
   const href = generateHref({
     type: contentType,
     value: { id: parseInt(slug.split('-')?.[0] || '0', 10), slug }

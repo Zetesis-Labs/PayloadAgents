@@ -8,7 +8,7 @@ import { logger } from '../../../core/logging/logger'
 import type { ChunkSource, SpendingEntry, TypesenseRAGSearchResult } from '../../../shared/index'
 import { buildContextText, extractSourcesFromResults } from '../stream-handler'
 import { sendSSEEvent } from '../utils/sse-utils'
-import { estimateTokensFromText, resolveDocumentType } from './utils'
+import { estimateTokensFromText } from './utils'
 
 /**
  * Default implementation for handling non-streaming responses
@@ -16,7 +16,8 @@ import { estimateTokensFromText, resolveDocumentType } from './utils'
 export async function defaultHandleNonStreamingResponse(
   data: Record<string, unknown>,
   controller: ReadableStreamDefaultController<Uint8Array>,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  documentTypeResolver?: (collectionName: string) => string
 ): Promise<{
   fullAssistantMessage: string
   conversationId: string | null
@@ -50,7 +51,7 @@ export async function defaultHandleNonStreamingResponse(
 
   const sources = extractSourcesFromResults(
     (typedData.results || []) as TypesenseRAGSearchResult[],
-    resolveDocumentType
+    documentTypeResolver
   )
   const contextText = buildContextText((typedData.results || []) as TypesenseRAGSearchResult[])
 

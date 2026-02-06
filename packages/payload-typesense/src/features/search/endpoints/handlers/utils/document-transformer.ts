@@ -1,13 +1,8 @@
 import type { CombinedSearchResult, SearchHit } from '../../../types'
 
-/**
- * Helper to resolve document type from collection name
- */
-function resolveDocumentType(collectionName: string): string {
-  if (collectionName.includes('article')) return 'article'
-  if (collectionName.includes('book')) return 'book'
-  return 'document'
-}
+/** Default: strip _chunk suffix from collection name */
+const defaultDocumentTypeResolver = (collectionName: string): string =>
+  collectionName.replace(/_chunk$/, '') || 'document'
 
 /**
  * Simplified document format for API responses
@@ -23,12 +18,17 @@ type SimplifiedDocument = {
 /**
  * Transform search response to simplified format
  */
-export function transformToSimpleFormat(data: CombinedSearchResult): {
+export function transformToSimpleFormat(
+  data: CombinedSearchResult,
+  documentTypeResolver?: (collectionName: string) => string
+): {
   documents: SimplifiedDocument[]
 } {
   if (!data.hits) {
     return { documents: [] }
   }
+
+  const resolver = documentTypeResolver ?? defaultDocumentTypeResolver
 
   const documents = data.hits.map((hit: SearchHit) => {
     const doc = hit.document || {}
@@ -39,7 +39,7 @@ export function transformToSimpleFormat(data: CombinedSearchResult): {
       id: String(doc.id || ''),
       title: String(doc.title || 'Sin título'),
       slug: String(doc.slug || ''),
-      type: resolveDocumentType(collection),
+      type: resolver(collection),
       collection: collection
     }
   })

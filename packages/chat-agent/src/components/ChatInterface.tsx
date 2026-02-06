@@ -6,14 +6,7 @@ import type { LinkComponent } from '../types/components'
 import { Thread } from './assistant-ui/thread'
 import { useChat } from './chat-context'
 import DocumentSelector from './DocumentSelector'
-
-interface Document {
-  id: string
-  title: string
-  slug: string
-  type: 'article' | 'book'
-  collection: string
-}
+import type { Document } from './useDocumentSelector'
 
 export interface ChatInterfaceRef {
   handleNewConversation: () => void

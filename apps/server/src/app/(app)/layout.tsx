@@ -2,6 +2,7 @@ import { ChatProvider } from '@nexo-labs/chat-agent'
 import type React from 'react'
 import { FloatingChatWrapper } from '@/components/organisms/floating-chat-wrapper'
 import { UserProvider } from '@/components/organisms/user-context'
+import { SEARCH_COLLECTIONS } from '@/payload/plugins/typesense'
 import './index.css'
 
 const baseClass = 'multi-tenant'
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html className={baseClass} lang="en">
       <body>
         <UserProvider>
-          <ChatProvider>
+          <ChatProvider searchCollections={SEARCH_COLLECTIONS}>
             {children}
             <FloatingChatWrapper />
           </ChatProvider>

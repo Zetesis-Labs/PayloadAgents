@@ -2,7 +2,7 @@ export interface Source {
   id: string
   title: string
   slug: string
-  type: 'article' | 'book'
+  type: string
   chunkIndex: number
   relevanceScore: number
   content: string

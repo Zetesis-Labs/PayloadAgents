@@ -7,11 +7,11 @@ export interface Document {
   id: string
   title: string
   slug: string
-  type: 'article' | 'book'
+  type: string
   collection: string
 }
 
-function buildSearchParams(query: string): URLSearchParams {
+function buildSearchParams(query: string, collections: string[]): URLSearchParams {
   const params = new URLSearchParams({
     q: query,
     exclude_fields: 'embedding,content,lexical_richtext',
@@ -20,8 +20,9 @@ function buildSearchParams(query: string): URLSearchParams {
     mode: 'simple',
     per_page: '15'
   })
-  params.append('collection', 'book')
-  params.append('collection', 'article_web')
+  for (const collection of collections) {
+    params.append('collection', collection)
+  }
   return params
 }
 
@@ -37,8 +38,8 @@ function logSearchResponse(data: { documents?: Document[] }): void {
   }
 }
 
-async function fetchSearchResults(query: string): Promise<Document[]> {
-  const params = buildSearchParams(query)
+async function fetchSearchResults(query: string, collections: string[]): Promise<Document[]> {
+  const params = buildSearchParams(query, collections)
   const url = `/api/search?${params}`
   if (isDev) console.log('[DocumentSelector] Fetching URL:', url)
 
@@ -59,36 +60,40 @@ async function fetchSearchResults(query: string): Promise<Document[]> {
 
 /**
  * Hook for managing document search functionality
+ * @param collections - Typesense collection names to search in
  */
-export function useDocumentSearch() {
+export function useDocumentSearch(collections: string[]) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Search function (not debounced)
-  const performSearch = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([])
-      setIsLoading(false)
-      return
-    }
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 2) {
+        setSearchResults([])
+        setIsLoading(false)
+        return
+      }
 
-    if (isDev) console.log('[DocumentSelector] Searching for:', query)
-    setIsLoading(true)
-    setError(null)
+      if (isDev) console.log('[DocumentSelector] Searching for:', query)
+      setIsLoading(true)
+      setError(null)
 
-    try {
-      const documents = await fetchSearchResults(query)
-      setSearchResults(documents)
-    } catch (err) {
-      if (isDev) console.error('[DocumentSelector] Error searching documents:', err)
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-      setSearchResults([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+      try {
+        const documents = await fetchSearchResults(query, collections)
+        setSearchResults(documents)
+      } catch (err) {
+        if (isDev) console.error('[DocumentSelector] Error searching documents:', err)
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+        setSearchResults([])
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [collections]
+  )
 
   // Create debounced version using useMemo
   const debouncedSearch = useMemo(() => debounce(performSearch, 300), [performSearch])

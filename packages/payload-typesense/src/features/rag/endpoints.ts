@@ -43,10 +43,6 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
 
   const { agents, callbacks, typesense } = config
 
-  // Get valid collections from agents configuration
-  const agentCollections = Array.isArray(agents) ? agents.flatMap(agent => agent.searchCollections) : []
-  const validCollections = Array.from(new Set(agentCollections))
-
   // Build RAG feature config for handlers that still need it
   const ragFeatureConfig = {
     enabled: true,
@@ -74,7 +70,8 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
       handleNonStreamingResponse: defaultHandleNonStreamingResponse,
       createEmbeddingSpending: callbacks.createEmbeddingSpending,
       estimateTokensFromText: callbacks.estimateTokensFromText,
-      embeddingConfig: config.embeddingConfig
+      embeddingConfig: config.embeddingConfig,
+      documentTypeResolver: config.documentTypeResolver
     })
   })
 
@@ -124,7 +121,7 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
     handler: createChunksGETHandler({
       typesense,
       checkPermissions: callbacks.checkPermissions,
-      validCollections
+      agents
     })
   })
 

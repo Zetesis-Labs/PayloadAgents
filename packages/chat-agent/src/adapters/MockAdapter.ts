@@ -64,7 +64,7 @@ export class MockAdapter implements ChatAdapter {
         id: 'mock-source-1',
         title: 'Mock Source Article',
         slug: 'mock-source-article',
-        type: 'article',
+        type: 'posts',
         chunkIndex: 0,
         relevanceScore: 0.95,
         content: 'Mock content for the source.'
