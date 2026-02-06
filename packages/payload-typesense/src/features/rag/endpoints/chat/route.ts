@@ -70,7 +70,8 @@ export type ChatEndpointConfig = {
   handleStreamingResponse: (
     response: Response,
     controller: ReadableStreamDefaultController<Uint8Array>,
-    encoder: TextEncoder
+    encoder: TextEncoder,
+    documentTypeResolver?: (collectionName: string) => string
   ) => Promise<{
     fullAssistantMessage: string
     conversationId: string | null
@@ -81,13 +82,16 @@ export type ChatEndpointConfig = {
   handleNonStreamingResponse: (
     data: Record<string, unknown>,
     controller: ReadableStreamDefaultController<Uint8Array>,
-    encoder: TextEncoder
+    encoder: TextEncoder,
+    documentTypeResolver?: (collectionName: string) => string
   ) => Promise<{
     fullAssistantMessage: string
     conversationId: string | null
     sources: ChunkSource[]
     llmSpending: SpendingEntry
   }>
+  /** Resolve document type from Typesense collection name */
+  documentTypeResolver?: (collectionName: string) => string
   /** Create embedding spending function */
   createEmbeddingSpending?: (model: string, tokens: number) => SpendingEntry
   /** Estimate tokens from text function */
@@ -259,8 +263,18 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
             // Handle streaming or non-streaming response
             const streamResult =
               searchResult.isStreaming && searchResult.response.body
-                ? await config.handleStreamingResponse(searchResult.response, controller, encoder)
-                : await config.handleNonStreamingResponse(await searchResult.response.json(), controller, encoder)
+                ? await config.handleStreamingResponse(
+                    searchResult.response,
+                    controller,
+                    encoder,
+                    config.documentTypeResolver
+                  )
+                : await config.handleNonStreamingResponse(
+                    await searchResult.response.json(),
+                    controller,
+                    encoder,
+                    config.documentTypeResolver
+                  )
 
             // Extract results
             spendingEntries.push(streamResult.llmSpending)

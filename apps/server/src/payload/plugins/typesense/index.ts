@@ -5,12 +5,14 @@ import { loadAgentsFromPayload } from './agents/agent-loader'
 import { importHardcodedAgents } from './agents/importer'
 import { callbacks } from './callbacks'
 import { collections } from './collections'
-// Configuration modules
-import { embeddingConfig, SEARCH_COLLECTIONS, typesenseConnection } from './config'
+import { embeddingConfig, typesenseConnection } from './config'
 
 export { collections, getTableConfig } from './collections'
-// Re-export constants
-export { SEARCH_COLLECTIONS } from './config'
+
+// Derive enabled non-chunk table names from collections config (chunks are for RAG, not document search)
+export const SEARCH_COLLECTIONS = Object.entries(collections).flatMap(([slug, tableConfigs]) =>
+  (tableConfigs || []).filter(t => t.enabled && !t.tableName?.endsWith('_chunk')).map(t => t.tableName ?? slug)
+)
 
 // ============================================================================
 // PLUGIN COMPOSITION

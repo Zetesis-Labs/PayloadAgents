@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useChat } from '../components/chat-context'
 
 interface ChunkData {
   chunk_text: string
@@ -21,19 +22,13 @@ interface ChunkCache {
  */
 export function useChunkLoader() {
   const [chunkCache, setChunkCache] = useState<ChunkCache>({})
-
-  /**
-   * Get the collection name based on document type
-   */
-  const getCollectionName = useCallback((type: 'article' | 'book'): string => {
-    return type === 'book' ? 'books_chunk' : 'posts_chunk'
-  }, [])
+  const { collectionResolver } = useChat()
 
   /**
    * Load chunk content from the API
    */
   const loadChunkContent = useCallback(
-    async (chunkId: string, type: 'article' | 'book'): Promise<string> => {
+    async (chunkId: string, type: string): Promise<string> => {
       const cacheKey = `${type}_${chunkId}`
 
       // Return cached content if available
@@ -57,7 +52,7 @@ export function useChunkLoader() {
       }))
 
       try {
-        const collectionName = getCollectionName(type)
+        const collectionName = collectionResolver.chunkCollection(type)
         const url = `/api/chat/chunks/${encodeURIComponent(chunkId)}?collection=${encodeURIComponent(collectionName)}`
 
         const response = await fetch(url)
@@ -97,14 +92,14 @@ export function useChunkLoader() {
         return ''
       }
     },
-    [chunkCache, getCollectionName]
+    [chunkCache, collectionResolver]
   )
 
   /**
    * Get the current state of a chunk
    */
   const getChunkState = useCallback(
-    (chunkId: string, type: 'article' | 'book') => {
+    (chunkId: string, type: string) => {
       const cacheKey = `${type}_${chunkId}`
       return (
         chunkCache[cacheKey] || {

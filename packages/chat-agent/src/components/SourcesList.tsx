@@ -1,19 +1,20 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { BookOpen, ChevronDown, FileText, List, Loader2, X } from 'lucide-react'
+import { ChevronDown, FileText, List, Loader2, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useChunkLoader } from '../hooks/useChunkLoader'
 import { cn } from '../lib/utils'
 import type { LinkComponent } from '../types/components'
 import { MarkdownText } from './assistant-ui/markdown-text'
 import { ViewMoreLink } from './buttons/ViewMoreLink'
+import { useChat } from './chat-context'
 
 interface Source {
   id: string
   title: string
   slug: string
-  type: 'article' | 'book'
+  type: string
   chunkIndex: number
   relevanceScore: number
   content: string
@@ -26,13 +27,8 @@ interface SourcesListProps {
   onMinimize?: () => void
   generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
   LinkComponent?: LinkComponent
-  renderSourceIcon?: (type: 'article' | 'book') => React.ReactNode
-  renderViewMore?: (props: {
-    type: 'article' | 'book'
-    slug: string
-    title: string
-    onClick?: () => void
-  }) => React.ReactNode
+  renderSourceIcon?: (type: string) => React.ReactNode
+  renderViewMore?: (props: { type: string; slug: string; title: string; onClick?: () => void }) => React.ReactNode
 }
 
 // Animation variants
@@ -115,12 +111,8 @@ const RelevanceBar: React.FC<{ score: number }> = ({ score }) => {
   )
 }
 
-// Helper to get source type label
-const getSourceTypeLabel = (type: 'article' | 'book') => (type === 'article' ? 'Articulo' : 'Libro')
-
-// Helper to get default icon
-const getDefaultIcon = (type: 'article' | 'book') =>
-  type === 'book' ? <BookOpen className="w-full h-full" /> : <FileText className="w-full h-full" />
+// Fallback icon when collectionResolver.icon returns null
+const fallbackIcon = () => <FileText className="w-full h-full" />
 
 // Breadcrumb path segments component
 const BreadcrumbPath: React.FC<{ path: string }> = ({ path }) => (
@@ -180,6 +172,7 @@ const ExpandedContentBody: React.FC<{
   cleanContent: string
   metadata: { section?: string; path?: string } | null
   expandedSource: Source
+  getContentType: (type: string) => string
   renderViewMore?: SourcesListProps['renderViewMore']
   handleViewMore: () => void
   generateHref: SourcesListProps['generateHref']
@@ -191,6 +184,7 @@ const ExpandedContentBody: React.FC<{
   cleanContent,
   metadata,
   expandedSource,
+  getContentType,
   renderViewMore,
   handleViewMore,
   generateHref,
@@ -223,7 +217,7 @@ const ExpandedContentBody: React.FC<{
         })
       ) : (
         <ViewMoreLink
-          type={expandedSource.type}
+          contentType={getContentType(expandedSource.type)}
           slug={expandedSource.slug}
           title={expandedSource.title}
           onClick={handleViewMore}
@@ -241,7 +235,9 @@ const ExpandedSourceCard: React.FC<{
   expandedSourceId: string
   loadedContent: string
   getChunkState: ReturnType<typeof useChunkLoader>['getChunkState']
-  getIcon: (type: 'article' | 'book') => React.ReactNode
+  getIcon: (type: string) => React.ReactNode
+  getLabel: (type: string) => string
+  getContentType: (type: string) => string
   onClose: () => void
   handleViewMore: () => void
   renderViewMore?: SourcesListProps['renderViewMore']
@@ -253,6 +249,8 @@ const ExpandedSourceCard: React.FC<{
   loadedContent,
   getChunkState,
   getIcon,
+  getLabel,
+  getContentType,
   onClose,
   handleViewMore,
   renderViewMore,
@@ -289,7 +287,7 @@ const ExpandedSourceCard: React.FC<{
                   <div className="text-foreground font-semibold text-sm">{expandedSource.title}</div>
                   <div className="text-muted-foreground text-xs mt-1 flex items-center gap-2">
                     <span>
-                      {getSourceTypeLabel(expandedSource.type)}
+                      {getLabel(expandedSource.type)}
                       {expandedSource.chunkIndex !== undefined && <> - Parte {expandedSource.chunkIndex + 1}</>}
                     </span>
                     {expandedSource.relevanceScore && <RelevanceBar score={expandedSource.relevanceScore} />}
@@ -315,6 +313,7 @@ const ExpandedSourceCard: React.FC<{
                 cleanContent={cleanContent}
                 metadata={metadata}
                 expandedSource={expandedSource}
+                getContentType={getContentType}
                 renderViewMore={renderViewMore}
                 handleViewMore={handleViewMore}
                 generateHref={generateHref}
@@ -332,9 +331,10 @@ const ExpandedSourceCard: React.FC<{
 const SourceListItem: React.FC<{
   source: Source
   idx: number
-  getIcon: (type: 'article' | 'book') => React.ReactNode
+  getIcon: (type: string) => React.ReactNode
+  getLabel: (type: string) => string
   onClick: (id: string) => void
-}> = ({ source, idx, getIcon, onClick }) => (
+}> = ({ source, idx, getIcon, getLabel, onClick }) => (
   <motion.button
     key={source.id || idx}
     custom={idx}
@@ -357,7 +357,7 @@ const SourceListItem: React.FC<{
         </div>
 
         <div className="text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-          <span className="text-xs">{getSourceTypeLabel(source.type)}</span>
+          <span className="text-xs">{getLabel(source.type)}</span>
           {source.chunkIndex !== undefined && (
             <>
               <span>-</span>
@@ -399,6 +399,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
   const [loadedContent, setLoadedContent] = useState<string>('')
 
   const { loadChunkContent, getChunkState } = useChunkLoader()
+  const { collectionResolver } = useChat()
 
   const handleViewMore = () => {
     if (isMaximized && onMinimize) {
@@ -410,10 +411,13 @@ export const SourcesList: React.FC<SourcesListProps> = ({
     return null
   }
 
-  const getIcon = (type: 'article' | 'book') => {
+  const getIcon = (type: string) => {
     if (renderSourceIcon) return renderSourceIcon(type)
-    return getDefaultIcon(type)
+    return collectionResolver.icon(type) || fallbackIcon()
   }
+
+  const getLabel = collectionResolver.label
+  const getContentType = collectionResolver.contentType
 
   const handleSourceClick = async (sourceId: string) => {
     setExpandedSourceId(sourceId)
@@ -448,6 +452,8 @@ export const SourcesList: React.FC<SourcesListProps> = ({
         loadedContent={loadedContent}
         getChunkState={getChunkState}
         getIcon={getIcon}
+        getLabel={getLabel}
+        getContentType={getContentType}
         onClose={handleCloseExpanded}
         handleViewMore={handleViewMore}
         renderViewMore={renderViewMore}
@@ -500,6 +506,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                 source={source}
                 idx={idx}
                 getIcon={getIcon}
+                getLabel={getLabel}
                 onClick={handleSourceClick}
               />
             ))}

@@ -2,7 +2,7 @@
   "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
   "files": {
     "ignoreUnknown": true,
-    "includes": ["!**/payload-types.ts"]
+    "includes": ["apps/**", "packages/**", "!**/payload-types.ts", "!**/importMap.js"]
   },
   "css": {
     "parser": { "cssModules": true, "tailwindDirectives": true }

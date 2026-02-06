@@ -4,7 +4,6 @@ import type {
   PublicAgentInfo,
   SendMessageContext,
   SessionSummary,
-  Source,
   StreamCallbacks
 } from './ChatAdapter'
 
@@ -277,7 +276,7 @@ export class NexoPayloadChatAdapter implements ChatAdapter {
         id: s.id as string,
         title: s.title as string,
         slug: s.slug as string,
-        type: (s.type as Source['type']) || 'article',
+        type: (s.type as string) || 'document',
         chunkIndex: (s.chunk_index as number) || 0,
         relevanceScore: 0,
         content: ''

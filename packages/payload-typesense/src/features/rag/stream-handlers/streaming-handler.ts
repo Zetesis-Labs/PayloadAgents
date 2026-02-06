@@ -9,7 +9,7 @@ import type { ChunkSource, SpendingEntry } from '../../../shared/index'
 import type { ConversationEvent } from '../stream-handler'
 import { buildContextText, extractSourcesFromResults, parseConversationEvent } from '../stream-handler'
 import { sendSSEEvent } from '../utils/sse-utils'
-import { estimateTokensFromText, resolveDocumentType } from './utils'
+import { estimateTokensFromText } from './utils'
 
 /**
  * Mutable state accumulated during streaming
@@ -30,7 +30,8 @@ function handleStreamEvent(
   event: ConversationEvent,
   state: StreamingState,
   controller: ReadableStreamDefaultController<Uint8Array>,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  documentTypeResolver?: (collectionName: string) => string
 ): void {
   // Handle [DONE] event
   if (event.raw === '[DONE]') {
@@ -51,7 +52,7 @@ function handleStreamEvent(
 
   // Extract sources
   if (!state.hasCollectedSources && event.results) {
-    state.sources = extractSourcesFromResults(event.results, resolveDocumentType)
+    state.sources = extractSourcesFromResults(event.results, documentTypeResolver)
     state.contextText = buildContextText(event.results)
 
     if (state.sources.length > 0) {
@@ -117,7 +118,8 @@ function calculateLLMSpending(contextText: string, fullAssistantMessage: string)
 export async function defaultHandleStreamingResponse(
   response: Response,
   controller: ReadableStreamDefaultController<Uint8Array>,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  documentTypeResolver?: (collectionName: string) => string
 ): Promise<{
   fullAssistantMessage: string
   conversationId: string | null
@@ -176,7 +178,7 @@ export async function defaultHandleStreamingResponse(
           continue
         }
 
-        handleStreamEvent(event, state, controller, encoder)
+        handleStreamEvent(event, state, controller, encoder, documentTypeResolver)
       }
     }
   } finally {

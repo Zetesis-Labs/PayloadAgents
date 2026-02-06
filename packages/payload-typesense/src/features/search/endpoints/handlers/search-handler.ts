@@ -58,7 +58,7 @@ export const createSearchHandler = (typesenseClient: Client, pluginOptions: Modu
 
       // 5. Format Response
       if (searchParams.simple) {
-        return Response.json(transformToSimpleFormat(searchResult))
+        return Response.json(transformToSimpleFormat(searchResult, pluginOptions.documentTypeResolver))
       }
 
       return Response.json(searchResult)

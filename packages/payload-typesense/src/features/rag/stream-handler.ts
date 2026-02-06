@@ -80,6 +80,28 @@ export function parseConversationEvent(line: string): ConversationEvent | null {
   }
 }
 
+const defaultResolveType = (collectionName: string): string => collectionName.replace(/_chunk$/, '') || 'document'
+
+function mapHitToSource(
+  hit: { document: unknown; vector_distance?: number; text_match?: number },
+  collectionName: string,
+  resolveType: (name: string) => string
+): ChunkSource {
+  const doc = hit.document as TypesenseRAGChunkDocument
+  const fullContent = doc.chunk_text || ''
+
+  return {
+    id: doc.id || '',
+    title: doc.title || 'Sin título',
+    slug: doc.slug || '',
+    type: resolveType(collectionName),
+    chunkIndex: doc.chunk_index ?? 0,
+    relevanceScore: hit.vector_distance || hit.text_match || 0,
+    content: '',
+    excerpt: fullContent.substring(0, 200) + (fullContent.length > 200 ? '...' : '')
+  }
+}
+
 /**
  * Extract sources from Typesense search results
  *
@@ -91,38 +113,11 @@ export function extractSourcesFromResults(
   results: TypesenseRAGSearchResult[],
   documentTypeResolver?: (collectionName: string) => string
 ): ChunkSource[] {
-  const allSources: ChunkSource[] = []
+  const resolveType = documentTypeResolver ?? defaultResolveType
 
-  for (const result of results) {
-    if (result.hits) {
-      for (const hit of result.hits) {
-        const doc = hit.document as TypesenseRAGChunkDocument
-        const score = hit.vector_distance || hit.text_match || 0
-        const collectionName = result.request_params?.collection_name || ''
-
-        const type = documentTypeResolver
-          ? documentTypeResolver(collectionName)
-          : getDefaultDocumentType(collectionName)
-
-        const fullContent = doc.chunk_text || ''
-
-        const source: ChunkSource = {
-          id: doc.id || '',
-          title: doc.title || 'Sin título',
-          slug: doc.slug || '',
-          type,
-          chunkIndex: doc.chunk_index ?? 0,
-          relevanceScore: score,
-          content: '', // Empty by default - can be loaded separately
-          excerpt: fullContent.substring(0, 200) + (fullContent.length > 200 ? '...' : '')
-        }
-
-        allSources.push(source)
-      }
-    }
-  }
-
-  return allSources
+  return results.flatMap(result =>
+    (result.hits || []).map(hit => mapHitToSource(hit, result.request_params?.collection_name || '', resolveType))
+  )
 }
 
 /**
@@ -284,26 +279,4 @@ export function createSSEForwardStream(
       reader.cancel()
     }
   })
-}
-
-/**
- * Default document type resolver based on collection name
- *
- * @param collectionName - Name of the Typesense collection
- * @returns Document type string
- */
-function getDefaultDocumentType(collectionName: string): string {
-  if (collectionName.includes('article')) {
-    return 'article'
-  }
-  if (collectionName.includes('book')) {
-    return 'book'
-  }
-  if (collectionName.includes('post')) {
-    return 'post'
-  }
-  if (collectionName.includes('page')) {
-    return 'page'
-  }
-  return 'document'
 }

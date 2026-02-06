@@ -69,4 +69,7 @@ export interface TypesenseRAGPluginConfig<TSlug extends CollectionSlug> {
 
   /** Advanced search configuration */
   advanced?: AdvancedSearchConfig
+
+  /** Resolve document type from Typesense collection name (e.g. 'posts_chunk' → 'post') */
+  documentTypeResolver?: (collectionName: string) => string
 }

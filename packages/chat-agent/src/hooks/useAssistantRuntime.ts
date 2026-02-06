@@ -4,14 +4,7 @@ import { type AppendMessage, type ThreadMessage, useExternalStoreRuntime } from 
 import { useCallback, useMemo, useState } from 'react'
 import type { Message, Source } from '../adapters/ChatAdapter'
 import { useChat } from '../components/chat-context'
-
-interface Document {
-  id: string
-  title: string
-  slug: string
-  type: 'article' | 'book'
-  collection: string
-}
+import type { Document } from '../components/useDocumentSelector'
 
 interface UseAssistantRuntimeProps {
   messages: Message[]

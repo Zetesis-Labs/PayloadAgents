@@ -78,7 +78,8 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
           embedding: config.embeddingConfig,
           search: config.search
         },
-        collections: config.collections || {}
+        collections: config.collections || {},
+        documentTypeResolver: config.documentTypeResolver
       })
 
       payloadConfig.endpoints = [...(payloadConfig.endpoints || []), ...searchEndpoints]
@@ -89,7 +90,9 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
     }
 
     // 2. Add RAG endpoints if agents and callbacks are configured
-    if (config.agents && config.agents.length > 0 && config.callbacks) {
+    const hasAgents = typeof config.agents === 'function' || (Array.isArray(config.agents) && config.agents.length > 0)
+
+    if (hasAgents && config.callbacks) {
       const ragEndpoints = createRAGPayloadHandlers({
         typesense: config.typesense,
         collectionName: config.collectionName,
@@ -98,14 +101,14 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
         callbacks: config.callbacks,
         hybrid: config.hybrid,
         hnsw: config.hnsw,
-        advanced: config.advanced
+        advanced: config.advanced,
+        documentTypeResolver: config.documentTypeResolver
       })
 
       payloadConfig.endpoints = [...(payloadConfig.endpoints || []), ...ragEndpoints]
 
       logger.debug('RAG endpoints registered', {
-        endpointsCount: ragEndpoints.length,
-        agentsCount: config.agents.length
+        endpointsCount: ragEndpoints.length
       })
     }
 

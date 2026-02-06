@@ -5,8 +5,34 @@ import type { ChatAdapter, Message, PublicAgentInfo, SessionSummary, TokenUsage 
 import { NexoPayloadChatAdapter } from '../adapters/NexoPayloadChatAdapter'
 import { useChatSession } from '../hooks/useChatSession'
 
+/**
+ * Resolves collection type metadata for UI rendering.
+ * All fields are optional — sensible defaults are applied.
+ */
+export interface CollectionTypeResolver {
+  /** Human-readable label (e.g. 'posts' → 'Artículo') */
+  label?: (type: string) => string
+  /** Icon component (e.g. 'books' → <BookOpen />) */
+  icon?: (type: string) => React.ReactNode
+  /** URL route segment for link generation (e.g. 'posts' → 'articulos') */
+  contentType?: (type: string) => string
+  /** Typesense chunk collection name (e.g. 'posts' → 'posts_chunk') */
+  chunkCollection?: (type: string) => string
+}
+
+const defaultCollectionResolver: Required<CollectionTypeResolver> = {
+  label: (type: string) => type.charAt(0).toUpperCase() + type.slice(1),
+  icon: () => null,
+  contentType: (type: string) => type,
+  chunkCollection: (type: string) => `${type}_chunk`
+}
+
 interface ChatContextType {
   adapter: ChatAdapter
+  /** Typesense collection names available for document search */
+  searchCollections: string[]
+  /** Resolved collection type config (with defaults applied) */
+  collectionResolver: Required<CollectionTypeResolver>
   isPanelOpen: boolean
   isMaximized: boolean
   openPanel: () => void
@@ -40,12 +66,32 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
-export const ChatProvider = ({ children, adapter: customAdapter }: { children: ReactNode; adapter?: ChatAdapter }) => {
+interface ChatProviderProps {
+  children: ReactNode
+  adapter?: ChatAdapter
+  /** Typesense collection names available for document search */
+  searchCollections?: string[]
+  /** Collection type resolver for UI labels, icons, and URL mapping */
+  collectionResolver?: CollectionTypeResolver
+}
+
+export const ChatProvider = ({
+  children,
+  adapter: customAdapter,
+  searchCollections = [],
+  collectionResolver: customResolver
+}: ChatProviderProps) => {
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
 
   // Initialize adapter (memoize default to avoid re-creation)
   const adapter = useMemo(() => customAdapter || new NexoPayloadChatAdapter(), [customAdapter])
+
+  // Merge custom resolver with defaults
+  const collectionResolver = useMemo<Required<CollectionTypeResolver>>(
+    () => ({ ...defaultCollectionResolver, ...customResolver }),
+    [customResolver]
+  )
 
   // Use session hook with adapter
   const chatSession = useChatSession(adapter)
@@ -153,6 +199,8 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
     <ChatContext.Provider
       value={{
         adapter,
+        searchCollections,
+        collectionResolver,
         isPanelOpen,
         isMaximized,
         openPanel,

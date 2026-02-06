@@ -7,12 +7,6 @@ import type { EmbeddingProviderConfig } from '@nexo-labs/payload-indexer'
 import type { TypesenseConnectionConfig } from '@nexo-labs/payload-typesense'
 
 // ============================================================================
-// CONSTANTS
-// ============================================================================
-
-export const SEARCH_COLLECTIONS = ['posts_chunk', 'books_chunk']
-
-// ============================================================================
 // TYPESENSE CONNECTION
 // ============================================================================
 
