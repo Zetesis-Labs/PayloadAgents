@@ -3,9 +3,8 @@
  * Callbacks passed to the Typesense RAG plugin
  */
 
-import type { Payload } from 'payload'
-import { PayloadRequest } from 'payload'
 import { saveChatSession } from '@nexo-labs/payload-typesense'
+import type { Payload, PayloadRequest } from 'payload'
 import { getPayload } from '@/modules/get-payload'
 import { getTokenUsage } from './limits'
 import { createEmbeddingSpending, estimateTokensFromText } from './token-utils'
@@ -23,7 +22,7 @@ export const callbacks = {
     const user = await payload.findByID({
       collection: 'users',
       id: request.user.id,
-      depth: 1,
+      depth: 1
     })
     return user !== null
   },
@@ -38,7 +37,7 @@ export const callbacks = {
       limit: usage.limit,
       used: usage.used,
       remaining: usage.remaining,
-      reset_at: usage.reset_at,
+      reset_at: usage.reset_at
     }
   },
 
@@ -51,11 +50,11 @@ export const callbacks = {
       limit: usage.limit,
       used: usage.used,
       remaining: usage.remaining,
-      reset_at: usage.reset_at,
+      reset_at: usage.reset_at
     }
   },
 
   saveChatSession,
   createEmbeddingSpending,
-  estimateTokensFromText,
+  estimateTokensFromText
 }

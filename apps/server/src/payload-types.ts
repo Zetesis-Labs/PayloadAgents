@@ -59,262 +59,262 @@ export type SupportedTimezones =
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
-  | 'Pacific/Fiji';
+  | 'Pacific/Fiji'
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
-    'payload-mcp-api-keys': PayloadMcpApiKeyAuthOperations;
-  };
-  blocks: {};
+    users: UserAuthOperations
+    'payload-mcp-api-keys': PayloadMcpApiKeyAuthOperations
+  }
+  blocks: {}
   collections: {
-    posts: Post;
-    books: Book;
-    users: User;
-    tenants: Tenant;
-    'chat-sessions': ChatSession;
-    agents: Agent;
-    media: Media;
-    taxonomy: Taxonomy;
-    exports: Export;
-    imports: Import;
-    'payload-mcp-api-keys': PayloadMcpApiKey;
-    'payload-kv': PayloadKv;
-    'payload-jobs': PayloadJob;
-    'payload-locked-documents': PayloadLockedDocument;
-    'payload-preferences': PayloadPreference;
-    'payload-migrations': PayloadMigration;
-  };
-  collectionsJoins: {};
+    posts: Post
+    books: Book
+    users: User
+    tenants: Tenant
+    'chat-sessions': ChatSession
+    agents: Agent
+    media: Media
+    taxonomy: Taxonomy
+    exports: Export
+    imports: Import
+    'payload-mcp-api-keys': PayloadMcpApiKey
+    'payload-kv': PayloadKv
+    'payload-jobs': PayloadJob
+    'payload-locked-documents': PayloadLockedDocument
+    'payload-preferences': PayloadPreference
+    'payload-migrations': PayloadMigration
+  }
+  collectionsJoins: {}
   collectionsSelect: {
-    posts: PostsSelect<false> | PostsSelect<true>;
-    books: BooksSelect<false> | BooksSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
-    tenants: TenantsSelect<false> | TenantsSelect<true>;
-    'chat-sessions': ChatSessionsSelect<false> | ChatSessionsSelect<true>;
-    agents: AgentsSelect<false> | AgentsSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
-    taxonomy: TaxonomySelect<false> | TaxonomySelect<true>;
-    exports: ExportsSelect<false> | ExportsSelect<true>;
-    imports: ImportsSelect<false> | ImportsSelect<true>;
-    'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
-    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
-    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
-    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
-    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
-    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
-  };
+    posts: PostsSelect<false> | PostsSelect<true>
+    books: BooksSelect<false> | BooksSelect<true>
+    users: UsersSelect<false> | UsersSelect<true>
+    tenants: TenantsSelect<false> | TenantsSelect<true>
+    'chat-sessions': ChatSessionsSelect<false> | ChatSessionsSelect<true>
+    agents: AgentsSelect<false> | AgentsSelect<true>
+    media: MediaSelect<false> | MediaSelect<true>
+    taxonomy: TaxonomySelect<false> | TaxonomySelect<true>
+    exports: ExportsSelect<false> | ExportsSelect<true>
+    imports: ImportsSelect<false> | ImportsSelect<true>
+    'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>
+  }
   db: {
-    defaultIDType: number;
-  };
-  fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
-  locale: null;
-  user: User | PayloadMcpApiKey;
+    defaultIDType: number
+  }
+  fallbackLocale: null
+  globals: {}
+  globalsSelect: {}
+  locale: null
+  user: User | PayloadMcpApiKey
   jobs: {
     tasks: {
-      createCollectionExport: TaskCreateCollectionExport;
-      createCollectionImport: TaskCreateCollectionImport;
+      createCollectionExport: TaskCreateCollectionExport
+      createCollectionImport: TaskCreateCollectionImport
       inline: {
-        input: unknown;
-        output: unknown;
-      };
-    };
-    workflows: unknown;
-  };
+        input: unknown
+        output: unknown
+      }
+    }
+    workflows: unknown
+  }
 }
 export interface UserAuthOperations {
   forgotPassword: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   login: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   registerFirstUser: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   unlock: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
 }
 export interface PayloadMcpApiKeyAuthOperations {
   forgotPassword: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   login: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   registerFirstUser: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
   unlock: {
-    email: string;
-    password: string;
-  };
+    email: string
+    password: string
+  }
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
-  id: number;
-  tenant?: (number | null) | Tenant;
-  title?: string | null;
+  id: number
+  tenant?: (number | null) | Tenant
+  title?: string | null
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
-  generateSlug?: boolean | null;
-  slug: string;
+  generateSlug?: boolean | null
+  slug: string
   /**
    * ID externo del contenido importado (ej: ID de tweet)
    */
-  external_id?: string | null;
+  external_id?: string | null
   /**
    * URL original del contenido
    */
-  url?: string | null;
+  url?: string | null
   /**
    * Fecha de publicación del contenido
    */
-  publishedAt: string;
+  publishedAt: string
   /**
    * Contenido de la pagina. Se indexa para busqueda y RAG.
    */
   content?: {
     root: {
-      type: string;
+      type: string
       children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  categories?: (number | Taxonomy)[] | null;
+        type: any
+        version: number
+        [k: string]: unknown
+      }[]
+      direction: ('ltr' | 'rtl') | null
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | ''
+      indent: number
+      version: number
+    }
+    [k: string]: unknown
+  } | null
+  categories?: (number | Taxonomy)[] | null
   related_links_videos?:
     | {
-        url: string;
-        title?: string | null;
-        id?: string | null;
+        url: string
+        title?: string | null
+        id?: string | null
       }[]
-    | null;
+    | null
   related_links_books?:
     | {
         /**
          * Libro relacionado de la colección
          */
-        book?: (number | null) | Book;
-        url?: string | null;
-        title?: string | null;
-        id?: string | null;
+        book?: (number | null) | Book
+        url?: string | null
+        title?: string | null
+        id?: string | null
       }[]
-    | null;
+    | null
   related_links_other?:
     | {
-        url: string;
-        title?: string | null;
-        id?: string | null;
+        url: string
+        title?: string | null
+        id?: string | null
       }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tenants".
  */
 export interface Tenant {
-  id: number;
-  name: string;
+  id: number
+  name: string
   /**
    * Used for domain-based tenant handling
    */
-  domain?: string | null;
+  domain?: string | null
   /**
    * Used for url paths, example: /tenant-slug/page-slug
    */
-  slug: string;
+  slug: string
   /**
    * If checked, logging in is not required to read. Useful for building public pages.
    */
-  allowPublicRead?: boolean | null;
+  allowPublicRead?: boolean | null
   /**
    * ID de la organizacion en Keycloak (sincronizado automaticamente)
    */
-  keycloakOrgId?: string | null;
-  updatedAt: string;
-  createdAt: string;
+  keycloakOrgId?: string | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "taxonomy".
  */
 export interface Taxonomy {
-  id: number;
-  name: string;
+  id: number
+  name: string
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
-  generateSlug?: boolean | null;
-  slug: string;
+  generateSlug?: boolean | null
+  slug: string
   /**
    * Metadata: types, permissions, selectable, etc.
    */
   payload?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
-  parent?: (number | null) | Taxonomy;
+    | null
+  parent?: (number | null) | Taxonomy
   breadcrumbs?:
     | {
-        doc?: (number | null) | Taxonomy;
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
+        doc?: (number | null) | Taxonomy
+        url?: string | null
+        label?: string | null
+        id?: string | null
       }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "books".
  */
 export interface Book {
-  id: number;
-  tenant?: (number | null) | Tenant;
+  id: number
+  tenant?: (number | null) | Tenant
   /**
    * Título del libro
    */
-  title: string;
+  title: string
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
-  generateSlug?: boolean | null;
-  slug: string;
+  generateSlug?: boolean | null
+  slug: string
   /**
    * Fecha de publicación del libro
    */
-  publishedAt: string;
-  categories?: (number | Taxonomy)[] | null;
+  publishedAt: string
+  categories?: (number | Taxonomy)[] | null
   /**
    * Capítulos del libro
    */
@@ -323,186 +323,186 @@ export interface Book {
         /**
          * Título del capítulo (opcional)
          */
-        title?: string | null;
+        title?: string | null
         /**
          * Contenido del capítulo en formato markdown
          */
-        content: string;
-        id?: string | null;
+        content: string
+        id?: string | null
       }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
-  email: string;
-  emailVerified?: string | null;
-  name?: string | null;
-  image?: string | null;
-  password?: string | null;
-  roles?: ('superadmin' | 'user')[] | null;
+  id: string
+  email: string
+  emailVerified?: string | null
+  name?: string | null
+  image?: string | null
+  password?: string | null
+  roles?: ('superadmin' | 'user')[] | null
   /**
    * OpenID Connect ID Token (usado para logout con Keycloak)
    */
-  id_token?: string | null;
-  username?: string | null;
+  id_token?: string | null
+  username?: string | null
   tenants?:
     | {
-        tenant: number | Tenant;
-        roles: ('tenant-admin' | 'tenant-viewer')[];
-        id?: string | null;
+        tenant: number | Tenant
+        roles: ('tenant-admin' | 'tenant-viewer')[]
+        id?: string | null
       }[]
-    | null;
+    | null
   accounts?:
     | {
-        provider: string;
-        providerAccountId: string;
-        type: 'oidc' | 'oauth' | 'email' | 'webauthn';
-        id?: string | null;
+        provider: string
+        providerAccountId: string
+        type: 'oidc' | 'oauth' | 'email' | 'webauthn'
+        id?: string | null
       }[]
-    | null;
+    | null
   sessions?:
     | {
-        sessionToken: string;
-        expires: string;
-        id?: string | null;
+        sessionToken: string
+        expires: string
+        id?: string | null
       }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  collection: 'users';
+    | null
+  updatedAt: string
+  createdAt: string
+  collection: 'users'
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chat-sessions".
  */
 export interface ChatSession {
-  id: number;
-  user: string | User;
+  id: number
+  user: string | User
   /**
    * ID de conversación de Typesense
    */
-  conversation_id: string;
+  conversation_id: string
   /**
    * Active = en uso. Closed = cerrada por el usuario. La expiración (>24h inactiva) se calcula dinámicamente.
    */
-  status: 'active' | 'closed';
+  status: 'active' | 'closed'
   /**
    * Slug del agente utilizado en esta conversación
    */
-  agentSlug?: string | null;
+  agentSlug?: string | null
   /**
    * Historial de mensajes en formato JSON: [{role, content, timestamp, sources}]
    */
   messages:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
+    | null
   /**
    * Detalle de gastos por servicio: [{service, model, tokens, cost_usd, timestamp}]
    */
   spending:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
+    | null
   /**
    * Total de tokens usados en esta conversación
    */
-  total_tokens: number;
+  total_tokens: number
   /**
    * Costo total estimado en USD
    */
-  total_cost: number;
+  total_cost: number
   /**
    * Última actividad. Se actualiza automáticamente en cada mensaje. Las sesiones con >24h de inactividad se consideran expiradas (calculado dinámicamente).
    */
-  last_activity: string;
+  last_activity: string
   /**
    * Fecha de cierre manual
    */
-  closed_at?: string | null;
-  updatedAt: string;
-  createdAt: string;
+  closed_at?: string | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "agents".
  */
 export interface Agent {
-  id: number;
-  tenant?: (number | null) | Tenant;
+  id: number
+  tenant?: (number | null) | Tenant
   /**
    * Display name for the agent
    */
-  name: string;
+  name: string
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
-  generateSlug?: boolean | null;
-  slug: string;
+  generateSlug?: boolean | null
+  slug: string
   /**
    * Enable or disable this agent
    */
-  isActive?: boolean | null;
+  isActive?: boolean | null
   /**
    * LLM model to use (e.g., google/gemini-2.0-flash, openai/gpt-4o-mini)
    */
-  llmModel: string;
+  llmModel: string
   /**
    * API Key for the LLM provider (encrypted at rest)
    */
-  apiKey: string;
+  apiKey: string
   /**
    * System prompt that defines the agent personality and constraints
    */
-  systemPrompt: string;
+  systemPrompt: string
   /**
    * Colecciones donde buscar contexto para RAG
    */
-  searchCollections?: ('posts_chunk' | 'books_chunk')[] | null;
+  searchCollections?: ('posts_chunk' | 'books_chunk')[] | null
   /**
    * Taxonomies that filter the RAG content. REQUIRED: if empty, agent will not search any content (prevents global searches).
    */
-  taxonomies?: (number | Taxonomy)[] | null;
+  taxonomies?: (number | Taxonomy)[] | null
   /**
    * Number of chunks to retrieve for RAG context
    */
-  kResults?: number | null;
+  kResults?: number | null
   /**
    * Maximum context size in bytes (default: 64KB)
    */
-  maxContextBytes?: number | null;
+  maxContextBytes?: number | null
   /**
    * TTL for conversation history in seconds (default: 24h)
    */
-  ttl?: number | null;
+  ttl?: number | null
   /**
    * Avatar image for the agent
    */
-  avatar?: (number | null) | Media;
+  avatar?: (number | null) | Media
   /**
    * Welcome message title displayed when starting a new chat
    */
-  welcomeTitle?: string | null;
+  welcomeTitle?: string | null
   /**
    * Welcome message subtitle displayed when starting a new chat
    */
-  welcomeSubtitle?: string | null;
+  welcomeSubtitle?: string | null
   /**
    * Suggested questions displayed to help users get started
    */
@@ -511,150 +511,150 @@ export interface Agent {
         /**
          * The full prompt text to send when clicked
          */
-        prompt: string;
+        prompt: string
         /**
          * Short title for the suggestion
          */
-        title: string;
+        title: string
         /**
          * Brief description of what the question is about
          */
-        description?: string | null;
-        id?: string | null;
+        description?: string | null
+        id?: string | null
       }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
+  id: number
   /**
    * Alternative text for accessibility
    */
-  alt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+  alt?: string | null
+  updatedAt: string
+  createdAt: string
+  url?: string | null
+  thumbnailURL?: string | null
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  width?: number | null
+  height?: number | null
+  focalX?: number | null
+  focalY?: number | null
   sizes?: {
     thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
+      url?: string | null
+      width?: number | null
+      height?: number | null
+      mimeType?: string | null
+      filesize?: number | null
+      filename?: string | null
+    }
     avatar?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
+      url?: string | null
+      width?: number | null
+      height?: number | null
+      mimeType?: string | null
+      filesize?: number | null
+      filename?: string | null
+    }
     small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
+      url?: string | null
+      width?: number | null
+      height?: number | null
+      mimeType?: string | null
+      filesize?: number | null
+      filename?: string | null
+    }
     medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
+      url?: string | null
+      width?: number | null
+      height?: number | null
+      mimeType?: string | null
+      filesize?: number | null
+      filename?: string | null
+    }
+  }
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
-  id: number;
-  name?: string | null;
-  format?: ('csv' | 'json') | null;
-  limit?: number | null;
-  page?: number | null;
-  sort?: string | null;
-  sortOrder?: ('asc' | 'desc') | null;
-  drafts?: ('yes' | 'no') | null;
-  selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
-  fields?: string[] | null;
-  collectionSlug: string;
+  id: number
+  name?: string | null
+  format?: ('csv' | 'json') | null
+  limit?: number | null
+  page?: number | null
+  sort?: string | null
+  sortOrder?: ('asc' | 'desc') | null
+  drafts?: ('yes' | 'no') | null
+  selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null
+  fields?: string[] | null
+  collectionSlug: string
   where?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+    | null
+  updatedAt: string
+  createdAt: string
+  url?: string | null
+  thumbnailURL?: string | null
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  width?: number | null
+  height?: number | null
+  focalX?: number | null
+  focalY?: number | null
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "imports".
  */
 export interface Import {
-  id: number;
-  collectionSlug: 'agents' | 'taxonomy' | 'posts' | 'books';
-  importMode?: ('create' | 'update' | 'upsert') | null;
-  matchField?: string | null;
-  status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+  id: number
+  collectionSlug: 'agents' | 'taxonomy' | 'posts' | 'books'
+  importMode?: ('create' | 'update' | 'upsert') | null
+  matchField?: string | null
+  status?: ('pending' | 'completed' | 'partial' | 'failed') | null
   summary?: {
-    imported?: number | null;
-    updated?: number | null;
-    total?: number | null;
-    issues?: number | null;
+    imported?: number | null
+    updated?: number | null
+    total?: number | null
+    issues?: number | null
     issueDetails?:
       | {
-          [k: string]: unknown;
+          [k: string]: unknown
         }
       | unknown[]
       | string
       | number
       | boolean
-      | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+      | null
+  }
+  updatedAt: string
+  createdAt: string
+  url?: string | null
+  thumbnailURL?: string | null
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  width?: number | null
+  height?: number | null
+  focalX?: number | null
+  focalY?: number | null
 }
 /**
  * API keys control which collections, resources, tools, and prompts MCP clients can access
@@ -663,695 +663,695 @@ export interface Import {
  * via the `definition` "payload-mcp-api-keys".
  */
 export interface PayloadMcpApiKey {
-  id: number;
+  id: number
   /**
    * The user that the API key is associated with.
    */
-  user: string | User;
+  user: string | User
   /**
    * A useful label for the API key.
    */
-  label?: string | null;
+  label?: string | null
   /**
    * The purpose of the API key.
    */
-  description?: string | null;
+  description?: string | null
   posts?: {
     /**
      * Allow clients to find posts.
      */
-    find?: boolean | null;
+    find?: boolean | null
     /**
      * Allow clients to create posts.
      */
-    create?: boolean | null;
+    create?: boolean | null
     /**
      * Allow clients to update posts.
      */
-    update?: boolean | null;
+    update?: boolean | null
     /**
      * Allow clients to delete posts.
      */
-    delete?: boolean | null;
-  };
+    delete?: boolean | null
+  }
   books?: {
     /**
      * Allow clients to find books.
      */
-    find?: boolean | null;
+    find?: boolean | null
     /**
      * Allow clients to create books.
      */
-    create?: boolean | null;
+    create?: boolean | null
     /**
      * Allow clients to update books.
      */
-    update?: boolean | null;
+    update?: boolean | null
     /**
      * Allow clients to delete books.
      */
-    delete?: boolean | null;
-  };
+    delete?: boolean | null
+  }
   taxonomy?: {
     /**
      * Allow clients to find taxonomy.
      */
-    find?: boolean | null;
+    find?: boolean | null
     /**
      * Allow clients to create taxonomy.
      */
-    create?: boolean | null;
+    create?: boolean | null
     /**
      * Allow clients to update taxonomy.
      */
-    update?: boolean | null;
+    update?: boolean | null
     /**
      * Allow clients to delete taxonomy.
      */
-    delete?: boolean | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  collection: 'payload-mcp-api-keys';
+    delete?: boolean | null
+  }
+  updatedAt: string
+  createdAt: string
+  enableAPIKey?: boolean | null
+  apiKey?: string | null
+  apiKeyIndex?: string | null
+  collection: 'payload-mcp-api-keys'
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
-  key: string;
+  id: number
+  key: string
   data:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
+    | null
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs".
  */
 export interface PayloadJob {
-  id: number;
+  id: number
   /**
    * Input data provided to the job
    */
   input?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
+    | null
   taskStatus?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
-  completedAt?: string | null;
-  totalTried?: number | null;
+    | null
+  completedAt?: string | null
+  totalTried?: number | null
   /**
    * If hasError is true this job will not be retried
    */
-  hasError?: boolean | null;
+  hasError?: boolean | null
   /**
    * If hasError is true, this is the error that caused it
    */
   error?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
+    | null
   /**
    * Task execution log
    */
   log?:
     | {
-        executedAt: string;
-        completedAt: string;
-        taskSlug: 'inline' | 'createCollectionExport' | 'createCollectionImport';
-        taskID: string;
+        executedAt: string
+        completedAt: string
+        taskSlug: 'inline' | 'createCollectionExport' | 'createCollectionImport'
+        taskID: string
         input?:
           | {
-              [k: string]: unknown;
+              [k: string]: unknown
             }
           | unknown[]
           | string
           | number
           | boolean
-          | null;
+          | null
         output?:
           | {
-              [k: string]: unknown;
+              [k: string]: unknown
             }
           | unknown[]
           | string
           | number
           | boolean
-          | null;
-        state: 'failed' | 'succeeded';
+          | null
+        state: 'failed' | 'succeeded'
         error?:
           | {
-              [k: string]: unknown;
+              [k: string]: unknown
             }
           | unknown[]
           | string
           | number
           | boolean
-          | null;
-        id?: string | null;
+          | null
+        id?: string | null
       }[]
-    | null;
-  taskSlug?: ('inline' | 'createCollectionExport' | 'createCollectionImport') | null;
-  queue?: string | null;
-  waitUntil?: string | null;
-  processing?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  taskSlug?: ('inline' | 'createCollectionExport' | 'createCollectionImport') | null
+  queue?: string | null
+  waitUntil?: string | null
+  processing?: boolean | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: number
   document?:
     | ({
-        relationTo: 'posts';
-        value: number | Post;
+        relationTo: 'posts'
+        value: number | Post
       } | null)
     | ({
-        relationTo: 'books';
-        value: number | Book;
+        relationTo: 'books'
+        value: number | Book
       } | null)
     | ({
-        relationTo: 'users';
-        value: string | User;
+        relationTo: 'users'
+        value: string | User
       } | null)
     | ({
-        relationTo: 'tenants';
-        value: number | Tenant;
+        relationTo: 'tenants'
+        value: number | Tenant
       } | null)
     | ({
-        relationTo: 'chat-sessions';
-        value: number | ChatSession;
+        relationTo: 'chat-sessions'
+        value: number | ChatSession
       } | null)
     | ({
-        relationTo: 'agents';
-        value: number | Agent;
+        relationTo: 'agents'
+        value: number | Agent
       } | null)
     | ({
-        relationTo: 'media';
-        value: number | Media;
+        relationTo: 'media'
+        value: number | Media
       } | null)
     | ({
-        relationTo: 'taxonomy';
-        value: number | Taxonomy;
+        relationTo: 'taxonomy'
+        value: number | Taxonomy
       } | null)
     | ({
-        relationTo: 'payload-mcp-api-keys';
-        value: number | PayloadMcpApiKey;
-      } | null);
-  globalSlug?: string | null;
+        relationTo: 'payload-mcp-api-keys'
+        value: number | PayloadMcpApiKey
+      } | null)
+  globalSlug?: string | null
   user:
     | {
-        relationTo: 'users';
-        value: string | User;
+        relationTo: 'users'
+        value: string | User
       }
     | {
-        relationTo: 'payload-mcp-api-keys';
-        value: number | PayloadMcpApiKey;
-      };
-  updatedAt: string;
-  createdAt: string;
+        relationTo: 'payload-mcp-api-keys'
+        value: number | PayloadMcpApiKey
+      }
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: number
   user:
     | {
-        relationTo: 'users';
-        value: string | User;
+        relationTo: 'users'
+        value: string | User
       }
     | {
-        relationTo: 'payload-mcp-api-keys';
-        value: number | PayloadMcpApiKey;
-      };
-  key?: string | null;
+        relationTo: 'payload-mcp-api-keys'
+        value: number | PayloadMcpApiKey
+      }
+  key?: string | null
   value?:
     | {
-        [k: string]: unknown;
+        [k: string]: unknown
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
+    | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
-  name?: string | null;
-  batch?: number | null;
-  updatedAt: string;
-  createdAt: string;
+  id: number
+  name?: string | null
+  batch?: number | null
+  updatedAt: string
+  createdAt: string
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  tenant?: T;
-  title?: T;
-  generateSlug?: T;
-  slug?: T;
-  external_id?: T;
-  url?: T;
-  publishedAt?: T;
-  content?: T;
-  categories?: T;
+  tenant?: T
+  title?: T
+  generateSlug?: T
+  slug?: T
+  external_id?: T
+  url?: T
+  publishedAt?: T
+  content?: T
+  categories?: T
   related_links_videos?:
     | T
     | {
-        url?: T;
-        title?: T;
-        id?: T;
-      };
+        url?: T
+        title?: T
+        id?: T
+      }
   related_links_books?:
     | T
     | {
-        book?: T;
-        url?: T;
-        title?: T;
-        id?: T;
-      };
+        book?: T
+        url?: T
+        title?: T
+        id?: T
+      }
   related_links_other?:
     | T
     | {
-        url?: T;
-        title?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+        url?: T
+        title?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "books_select".
  */
 export interface BooksSelect<T extends boolean = true> {
-  tenant?: T;
-  title?: T;
-  generateSlug?: T;
-  slug?: T;
-  publishedAt?: T;
-  categories?: T;
+  tenant?: T
+  title?: T
+  generateSlug?: T
+  slug?: T
+  publishedAt?: T
+  categories?: T
   chapters?:
     | T
     | {
-        title?: T;
-        content?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+        title?: T
+        content?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  id?: T;
-  email?: T;
-  emailVerified?: T;
-  name?: T;
-  image?: T;
-  password?: T;
-  roles?: T;
-  id_token?: T;
-  username?: T;
+  id?: T
+  email?: T
+  emailVerified?: T
+  name?: T
+  image?: T
+  password?: T
+  roles?: T
+  id_token?: T
+  username?: T
   tenants?:
     | T
     | {
-        tenant?: T;
-        roles?: T;
-        id?: T;
-      };
+        tenant?: T
+        roles?: T
+        id?: T
+      }
   accounts?:
     | T
     | {
-        provider?: T;
-        providerAccountId?: T;
-        type?: T;
-        id?: T;
-      };
+        provider?: T
+        providerAccountId?: T
+        type?: T
+        id?: T
+      }
   sessions?:
     | T
     | {
-        sessionToken?: T;
-        expires?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+        sessionToken?: T
+        expires?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tenants_select".
  */
 export interface TenantsSelect<T extends boolean = true> {
-  name?: T;
-  domain?: T;
-  slug?: T;
-  allowPublicRead?: T;
-  keycloakOrgId?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  name?: T
+  domain?: T
+  slug?: T
+  allowPublicRead?: T
+  keycloakOrgId?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chat-sessions_select".
  */
 export interface ChatSessionsSelect<T extends boolean = true> {
-  user?: T;
-  conversation_id?: T;
-  status?: T;
-  agentSlug?: T;
-  messages?: T;
-  spending?: T;
-  total_tokens?: T;
-  total_cost?: T;
-  last_activity?: T;
-  closed_at?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  user?: T
+  conversation_id?: T
+  status?: T
+  agentSlug?: T
+  messages?: T
+  spending?: T
+  total_tokens?: T
+  total_cost?: T
+  last_activity?: T
+  closed_at?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "agents_select".
  */
 export interface AgentsSelect<T extends boolean = true> {
-  tenant?: T;
-  name?: T;
-  generateSlug?: T;
-  slug?: T;
-  isActive?: T;
-  llmModel?: T;
-  apiKey?: T;
-  systemPrompt?: T;
-  searchCollections?: T;
-  taxonomies?: T;
-  kResults?: T;
-  maxContextBytes?: T;
-  ttl?: T;
-  avatar?: T;
-  welcomeTitle?: T;
-  welcomeSubtitle?: T;
+  tenant?: T
+  name?: T
+  generateSlug?: T
+  slug?: T
+  isActive?: T
+  llmModel?: T
+  apiKey?: T
+  systemPrompt?: T
+  searchCollections?: T
+  taxonomies?: T
+  kResults?: T
+  maxContextBytes?: T
+  ttl?: T
+  avatar?: T
+  welcomeTitle?: T
+  welcomeSubtitle?: T
   suggestedQuestions?:
     | T
     | {
-        prompt?: T;
-        title?: T;
-        description?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+        prompt?: T
+        title?: T
+        description?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
+  alt?: T
+  updatedAt?: T
+  createdAt?: T
+  url?: T
+  thumbnailURL?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  width?: T
+  height?: T
+  focalX?: T
+  focalY?: T
   sizes?:
     | T
     | {
         thumbnail?:
           | T
           | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
+              url?: T
+              width?: T
+              height?: T
+              mimeType?: T
+              filesize?: T
+              filename?: T
+            }
         avatar?:
           | T
           | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
+              url?: T
+              width?: T
+              height?: T
+              mimeType?: T
+              filesize?: T
+              filename?: T
+            }
         small?:
           | T
           | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
+              url?: T
+              width?: T
+              height?: T
+              mimeType?: T
+              filesize?: T
+              filename?: T
+            }
         medium?:
           | T
           | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
+              url?: T
+              width?: T
+              height?: T
+              mimeType?: T
+              filesize?: T
+              filename?: T
+            }
+      }
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "taxonomy_select".
  */
 export interface TaxonomySelect<T extends boolean = true> {
-  name?: T;
-  generateSlug?: T;
-  slug?: T;
-  payload?: T;
-  parent?: T;
+  name?: T
+  generateSlug?: T
+  slug?: T
+  payload?: T
+  parent?: T
   breadcrumbs?:
     | T
     | {
-        doc?: T;
-        url?: T;
-        label?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+        doc?: T
+        url?: T
+        label?: T
+        id?: T
+      }
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
-  name?: T;
-  format?: T;
-  limit?: T;
-  page?: T;
-  sort?: T;
-  sortOrder?: T;
-  drafts?: T;
-  selectionToUse?: T;
-  fields?: T;
-  collectionSlug?: T;
-  where?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
+  name?: T
+  format?: T
+  limit?: T
+  page?: T
+  sort?: T
+  sortOrder?: T
+  drafts?: T
+  selectionToUse?: T
+  fields?: T
+  collectionSlug?: T
+  where?: T
+  updatedAt?: T
+  createdAt?: T
+  url?: T
+  thumbnailURL?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  width?: T
+  height?: T
+  focalX?: T
+  focalY?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "imports_select".
  */
 export interface ImportsSelect<T extends boolean = true> {
-  collectionSlug?: T;
-  importMode?: T;
-  matchField?: T;
-  status?: T;
+  collectionSlug?: T
+  importMode?: T
+  matchField?: T
+  status?: T
   summary?:
     | T
     | {
-        imported?: T;
-        updated?: T;
-        total?: T;
-        issues?: T;
-        issueDetails?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
+        imported?: T
+        updated?: T
+        total?: T
+        issues?: T
+        issueDetails?: T
+      }
+  updatedAt?: T
+  createdAt?: T
+  url?: T
+  thumbnailURL?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  width?: T
+  height?: T
+  focalX?: T
+  focalY?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-mcp-api-keys_select".
  */
 export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
-  user?: T;
-  label?: T;
-  description?: T;
+  user?: T
+  label?: T
+  description?: T
   posts?:
     | T
     | {
-        find?: T;
-        create?: T;
-        update?: T;
-        delete?: T;
-      };
+        find?: T
+        create?: T
+        update?: T
+        delete?: T
+      }
   books?:
     | T
     | {
-        find?: T;
-        create?: T;
-        update?: T;
-        delete?: T;
-      };
+        find?: T
+        create?: T
+        update?: T
+        delete?: T
+      }
   taxonomy?:
     | T
     | {
-        find?: T;
-        create?: T;
-        update?: T;
-        delete?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  enableAPIKey?: T;
-  apiKey?: T;
-  apiKeyIndex?: T;
+        find?: T
+        create?: T
+        update?: T
+        delete?: T
+      }
+  updatedAt?: T
+  createdAt?: T
+  enableAPIKey?: T
+  apiKey?: T
+  apiKeyIndex?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
-  key?: T;
-  data?: T;
+  key?: T
+  data?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs_select".
  */
 export interface PayloadJobsSelect<T extends boolean = true> {
-  input?: T;
-  taskStatus?: T;
-  completedAt?: T;
-  totalTried?: T;
-  hasError?: T;
-  error?: T;
+  input?: T
+  taskStatus?: T
+  completedAt?: T
+  totalTried?: T
+  hasError?: T
+  error?: T
   log?:
     | T
     | {
-        executedAt?: T;
-        completedAt?: T;
-        taskSlug?: T;
-        taskID?: T;
-        input?: T;
-        output?: T;
-        state?: T;
-        error?: T;
-        id?: T;
-      };
-  taskSlug?: T;
-  queue?: T;
-  waitUntil?: T;
-  processing?: T;
-  updatedAt?: T;
-  createdAt?: T;
+        executedAt?: T
+        completedAt?: T
+        taskSlug?: T
+        taskID?: T
+        input?: T
+        output?: T
+        state?: T
+        error?: T
+        id?: T
+      }
+  taskSlug?: T
+  queue?: T
+  waitUntil?: T
+  processing?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
-  document?: T;
-  globalSlug?: T;
-  user?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  document?: T
+  globalSlug?: T
+  user?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
 export interface PayloadPreferencesSelect<T extends boolean = true> {
-  user?: T;
-  key?: T;
-  value?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  user?: T
+  key?: T
+  value?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
 export interface PayloadMigrationsSelect<T extends boolean = true> {
-  name?: T;
-  batch?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  name?: T
+  batch?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1359,30 +1359,30 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface TaskCreateCollectionExport {
   input: {
-    name?: string | null;
-    format?: ('csv' | 'json') | null;
-    limit?: number | null;
-    page?: number | null;
-    sort?: string | null;
-    sortOrder?: ('asc' | 'desc') | null;
-    drafts?: ('yes' | 'no') | null;
-    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
-    fields?: string[] | null;
-    collectionSlug: string;
+    name?: string | null
+    format?: ('csv' | 'json') | null
+    limit?: number | null
+    page?: number | null
+    sort?: string | null
+    sortOrder?: ('asc' | 'desc') | null
+    drafts?: ('yes' | 'no') | null
+    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null
+    fields?: string[] | null
+    collectionSlug: string
     where?:
       | {
-          [k: string]: unknown;
+          [k: string]: unknown
         }
       | unknown[]
       | string
       | number
       | boolean
-      | null;
-    userID?: string | null;
-    userCollection?: string | null;
-    exportsCollection?: string | null;
-  };
-  output?: unknown;
+      | null
+    userID?: string | null
+    userCollection?: string | null
+    exportsCollection?: string | null
+  }
+  output?: unknown
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1400,46 +1400,45 @@ export interface TaskCreateCollectionImport {
       | 'media'
       | 'taxonomy'
       | 'exports'
-      | 'imports';
-    importMode?: ('create' | 'update' | 'upsert') | null;
-    matchField?: string | null;
-    status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+      | 'imports'
+    importMode?: ('create' | 'update' | 'upsert') | null
+    matchField?: string | null
+    status?: ('pending' | 'completed' | 'partial' | 'failed') | null
     summary?: {
-      imported?: number | null;
-      updated?: number | null;
-      total?: number | null;
-      issues?: number | null;
+      imported?: number | null
+      updated?: number | null
+      total?: number | null
+      issues?: number | null
       issueDetails?:
         | {
-            [k: string]: unknown;
+            [k: string]: unknown
           }
         | unknown[]
         | string
         | number
         | boolean
-        | null;
-    };
-    user?: string | null;
-    userCollection?: string | null;
-    importsCollection?: string | null;
+        | null
+    }
+    user?: string | null
+    userCollection?: string | null
+    importsCollection?: string | null
     file?: {
-      data?: string | null;
-      mimetype?: string | null;
-      name?: string | null;
-    };
-    format?: ('csv' | 'json') | null;
-    debug?: boolean | null;
-  };
-  output?: unknown;
+      data?: string | null
+      mimetype?: string | null
+      name?: string | null
+    }
+    format?: ('csv' | 'json') | null
+    debug?: boolean | null
+  }
+  output?: unknown
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
-  [k: string]: unknown;
+  [k: string]: unknown
 }
-
 
 declare module 'payload' {
   export interface GeneratedTypes extends Config {}

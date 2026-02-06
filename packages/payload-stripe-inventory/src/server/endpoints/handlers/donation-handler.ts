@@ -1,14 +1,10 @@
-import type { PayloadHandler, PayloadRequest } from "payload";
-import type Stripe from "stripe";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
-import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user";
-import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create";
-import { stripeBuilder } from "../../utils/stripe/stripe-builder";
-import {
-  errorResponse,
-  jsonResponse,
-  validateAuthenticatedRequest,
-} from "../validators/request-validator";
+import type { PayloadHandler, PayloadRequest } from 'payload'
+import type Stripe from 'stripe'
+import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
+import { upsertCustomerInventoryAndSyncWithUser } from '../../utils/payload/upsert-customer-inventory-and-sync-with-user'
+import { getCustomerFromStripeOrCreate } from '../../utils/stripe/get-customer-from-stripe-or-create'
+import { stripeBuilder } from '../../utils/stripe/stripe-builder'
+import { errorResponse, jsonResponse, validateAuthenticatedRequest } from '../validators/request-validator'
 
 /**
  * Creates a handler for one-time donation payments
@@ -16,98 +12,81 @@ import {
  * @param config - Endpoint configuration
  * @returns PayloadHandler for donation endpoint
  */
-export function createDonationHandler(
-  config: StripeEndpointConfig,
-): PayloadHandler {
+export function createDonationHandler(config: StripeEndpointConfig): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
       // Validate authenticated user
-      const validated = await validateAuthenticatedRequest(request, config);
+      const validated = await validateAuthenticatedRequest(request, config)
       if (!validated.success) {
-        return validated.error;
+        return validated.error
       }
 
-      const { user, payload } = validated;
+      const { user, payload } = validated
 
       // Validate user email
       if (!user.email) {
-        return errorResponse("User email is required", 400);
+        return errorResponse('User email is required', 400)
       }
 
       // Extract amount from query params
-      const url = new URL(request.url || "");
-      const amountParam = url.searchParams.get("amount");
+      const url = new URL(request.url || '')
+      const amountParam = url.searchParams.get('amount')
 
       if (!amountParam) {
-        return errorResponse("amount is required", 400);
+        return errorResponse('amount is required', 400)
       }
 
-      const amount = parseInt(amountParam, 10);
+      const amount = parseInt(amountParam, 10)
 
       if (isNaN(amount) || amount < 100) {
-        return errorResponse(
-          "Minimum donation amount is 1 EUR (100 cents)",
-          400,
-        );
+        return errorResponse('Minimum donation amount is 1 EUR (100 cents)', 400)
       }
 
-      const stripe = stripeBuilder();
+      const stripe = stripeBuilder()
 
       // Get or create Stripe customer
-      const customerId = await getCustomerFromStripeOrCreate(
-        user.email,
-        user.name,
-      );
+      const customerId = await getCustomerFromStripeOrCreate(user.email, user.name)
 
       // Sync customer inventory
-      await upsertCustomerInventoryAndSyncWithUser(
-        payload,
-        user.customer?.inventory,
-        user.email,
-        customerId,
-      );
+      await upsertCustomerInventoryAndSyncWithUser(payload, user.customer?.inventory, user.email, customerId)
 
       // Determine redirect URLs
-      const donationPageHref =
-        config.routes.donationPageHref || config.routes.subscriptionPageHref;
+      const donationPageHref = config.routes.donationPageHref || config.routes.subscriptionPageHref
 
       // Prepare metadata
       const metadata: Stripe.MetadataParam = {
-        type: "donation",
-      };
+        type: 'donation'
+      }
 
       // Create checkout session for one-time payment
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        payment_method_types: ["card"],
+        payment_method_types: ['card'],
         line_items: [
           {
             price_data: {
-              currency: "eur",
+              currency: 'eur',
               product_data: {
-                name: "Donation",
-                description: "One-time donation",
+                name: 'Donation',
+                description: 'One-time donation'
               },
-              unit_amount: amount,
+              unit_amount: amount
             },
-            quantity: 1,
-          },
+            quantity: 1
+          }
         ],
-        mode: "payment",
+        mode: 'payment',
         success_url: `${process.env.DOMAIN}${donationPageHref}?success=donation`,
         cancel_url: `${process.env.DOMAIN}${donationPageHref}?error=donation_cancelled`,
         metadata,
         payment_intent_data: { metadata },
-        invoice_creation: { enabled: true, invoice_data: { metadata } },
-      });
+        invoice_creation: { enabled: true, invoice_data: { metadata } }
+      })
 
-      return jsonResponse({ url: session.url });
+      return jsonResponse({ url: session.url })
     } catch (error) {
-      console.error("[Stripe Donation Error]", error);
-      return errorResponse(
-        error instanceof Error ? error.message : "Unknown error occurred",
-        500,
-      );
+      console.error('[Stripe Donation Error]', error)
+      return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
-  };
+  }
 }

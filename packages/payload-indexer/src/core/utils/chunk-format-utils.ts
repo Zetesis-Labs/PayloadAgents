@@ -5,16 +5,16 @@
 /**
  * Separator used between chunk content and header metadata
  */
-export const CHUNK_HEADER_SEPARATOR = '.________________________________________.';
+export const CHUNK_HEADER_SEPARATOR = '.________________________________________.'
 
 /**
  * Header metadata structure embedded in chunk_text
  */
 export interface ChunkHeaderMetadata {
   /** Current section (last header in hierarchy) */
-  section: string;
+  section: string
   /** Full hierarchical path */
-  path: string;
+  path: string
 }
 
 /**
@@ -22,9 +22,9 @@ export interface ChunkHeaderMetadata {
  */
 export interface ParsedChunk {
   /** Header metadata (if present) */
-  metadata?: ChunkHeaderMetadata;
+  metadata?: ChunkHeaderMetadata
   /** The actual chunk content */
-  content: string;
+  content: string
 }
 
 /**
@@ -44,23 +44,20 @@ export interface ParsedChunk {
  * // ._________________________________________.
  * // section: Installation | path: Introduction > Getting Started > Installation
  */
-export const formatChunkWithHeaders = (
-  content: string,
-  headers: string[]
-): string => {
+export const formatChunkWithHeaders = (content: string, headers: string[]): string => {
   if (!headers || headers.length === 0) {
-    return content;
+    return content
   }
 
   // Get the last (most specific) header
-  const fullPath = headers[headers.length - 1];
-  const section = (fullPath && fullPath.split(' > ').pop()) || fullPath || '';
+  const fullPath = headers[headers.length - 1]
+  const section = (fullPath && fullPath.split(' > ').pop()) || fullPath || ''
 
   // Format as key-value pairs
-  const metadataLine = `section: ${section} | path: ${fullPath}`;
+  const metadataLine = `section: ${section} | path: ${fullPath}`
 
-  return `${content}\n${CHUNK_HEADER_SEPARATOR}\n${metadataLine}`;
-};
+  return `${content}\n${CHUNK_HEADER_SEPARATOR}\n${metadataLine}`
+}
 
 /**
  * Parses chunk text to extract header metadata and content separately
@@ -75,43 +72,43 @@ export const formatChunkWithHeaders = (
  */
 export const parseChunkText = (chunkText: string): ParsedChunk => {
   if (!chunkText.includes(CHUNK_HEADER_SEPARATOR)) {
-    return { content: chunkText };
+    return { content: chunkText }
   }
 
-  const [contentPart, ...metadataParts] = chunkText.split(CHUNK_HEADER_SEPARATOR);
-  const content = contentPart ? contentPart.trim() : '';
-  const metadataLine = metadataParts.join(CHUNK_HEADER_SEPARATOR).trim();
+  const [contentPart, ...metadataParts] = chunkText.split(CHUNK_HEADER_SEPARATOR)
+  const content = contentPart ? contentPart.trim() : ''
+  const metadataLine = metadataParts.join(CHUNK_HEADER_SEPARATOR).trim()
 
   try {
     // Parse key-value format: "section: X | path: Y"
-    const pairs = metadataLine.split(' | ');
+    const pairs = metadataLine.split(' | ')
     const metadata: ChunkHeaderMetadata = {
       section: '',
-      path: '',
-    };
+      path: ''
+    }
 
     for (const pair of pairs) {
-      const [key, ...valueParts] = pair.split(': ');
-      const value = valueParts.join(': ').trim(); // In case value contains ':'
+      const [key, ...valueParts] = pair.split(': ')
+      const value = valueParts.join(': ').trim() // In case value contains ':'
 
       if (key?.trim() === 'section') {
-        metadata.section = value;
+        metadata.section = value
       } else if (key?.trim() === 'path') {
-        metadata.path = value;
+        metadata.path = value
       }
     }
 
     // Only return metadata if we found at least one field
     if (metadata.section || metadata.path) {
-      return { metadata, content };
+      return { metadata, content }
     }
 
-    return { content: chunkText };
+    return { content: chunkText }
   } catch (error) {
     // If parsing fails, return the whole text as content
-    return { content: chunkText };
+    return { content: chunkText }
   }
-};
+}
 
 /**
  * Extracts only the content from a formatted chunk (removes header metadata)
@@ -120,8 +117,8 @@ export const parseChunkText = (chunkText: string): ParsedChunk => {
  * @returns Just the content without header metadata
  */
 export const extractContentOnly = (chunkText: string): string => {
-  return parseChunkText(chunkText).content;
-};
+  return parseChunkText(chunkText).content
+}
 
 /**
  * Extracts only the header metadata from a formatted chunk
@@ -130,5 +127,5 @@ export const extractContentOnly = (chunkText: string): string => {
  * @returns Header metadata or undefined if not present
  */
 export const extractHeaderMetadata = (chunkText: string): ChunkHeaderMetadata | undefined => {
-  return parseChunkText(chunkText).metadata;
-};
+  return parseChunkText(chunkText).metadata
+}

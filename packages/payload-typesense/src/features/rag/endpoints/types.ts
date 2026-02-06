@@ -10,7 +10,6 @@ export type ApiContext<T = Record<string, string>> = {
   params: Promise<T>
 }
 
-export type AuthenticateMethod = (options?: { depth?: number }) => Promise<
-  | { id: string | number; email?: string }
-  | { error: string; status: number }
->
+export type AuthenticateMethod = (options?: {
+  depth?: number
+}) => Promise<{ id: string | number; email?: string } | { error: string; status: number }>

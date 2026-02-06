@@ -1,30 +1,30 @@
-import Stripe from "stripe";
-import { stripeBuilder } from "./stripe-builder";
+import type Stripe from 'stripe'
+import { stripeBuilder } from './stripe-builder'
 
 export async function getCustomer({
   stripe,
-  email,
+  email
 }: {
-  stripe?: Stripe;
-  email: string;
+  stripe?: Stripe
+  email: string
 }): Promise<Stripe.Customer | null> {
-  stripe = stripe ?? stripeBuilder();
+  stripe = stripe ?? stripeBuilder()
   // Escape single quotes in email to prevent query injection
-  const sanitizedEmail = email.replace(/'/g, "\\'");
+  const sanitizedEmail = email.replace(/'/g, "\\'")
   const customers = await stripe.customers.search({
-    query: `email:'${sanitizedEmail}'`,
-  });
-  return customers.data.length ? (customers.data[0] as Stripe.Customer) : null;
+    query: `email:'${sanitizedEmail}'`
+  })
+  return customers.data.length ? (customers.data[0] as Stripe.Customer) : null
 }
 
 export async function resolveStripeCustomer({
-  customer,
+  customer
 }: {
-  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null
 }): Promise<Stripe.Customer | Stripe.DeletedCustomer | null> {
-  const stripe = stripeBuilder();
-  if (typeof customer === "string") {
-    return await stripe.customers.retrieve(customer);
+  const stripe = stripeBuilder()
+  if (typeof customer === 'string') {
+    return await stripe.customers.retrieve(customer)
   }
-  return customer;
+  return customer
 }

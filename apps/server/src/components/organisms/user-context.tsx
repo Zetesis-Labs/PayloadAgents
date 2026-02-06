@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
 // ============================================================================
 // TYPES
@@ -29,7 +29,7 @@ const UserContext = createContext<UserContextType>({
   user: null,
   isLoading: true,
   refreshUser: async () => {},
-  clearUser: () => {},
+  clearUser: () => {}
 })
 
 // ============================================================================
@@ -46,8 +46,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/users/me', {
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       if (response.ok) {
@@ -77,11 +77,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     fetchUser()
   }, [fetchUser])
 
-  return (
-    <UserContext.Provider value={{ user, isLoading, refreshUser, clearUser }}>
-      {children}
-    </UserContext.Provider>
-  )
+  return <UserContext.Provider value={{ user, isLoading, refreshUser, clearUser }}>{children}</UserContext.Provider>
 }
 
 // ============================================================================

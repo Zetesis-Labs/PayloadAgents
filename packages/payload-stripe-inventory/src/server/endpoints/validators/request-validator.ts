@@ -1,15 +1,15 @@
-import type { Payload, PayloadRequest } from "payload";
-import type { BaseUser } from "../../../types";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
+import type { Payload, PayloadRequest } from 'payload'
+import type { BaseUser } from '../../../types'
+import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
 
 /**
  * Creates a JSON response using Web API Response
  */
 export function jsonResponse(data: unknown, options?: ResponseInit): Response {
   return new Response(JSON.stringify(data), {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  })
 }
 
 /**
@@ -20,15 +20,15 @@ export function jsonResponse(data: unknown, options?: ResponseInit): Response {
 export function redirectResponse(url: string, status: number = 303): Response {
   return new Response(null, {
     status,
-    headers: { Location: url },
-  });
+    headers: { Location: url }
+  })
 }
 
 /**
  * Creates an error response
  */
 export function errorResponse(message: string, status: number = 400): Response {
-  return jsonResponse({ error: message }, { status });
+  return jsonResponse({ error: message }, { status })
 }
 
 /**
@@ -37,10 +37,10 @@ export function errorResponse(message: string, status: number = 400): Response {
 export type AuthenticatedRequestResult =
   | { success: false; error: Response }
   | {
-      success: true;
-      user: BaseUser;
-      payload: Payload;
-    };
+      success: true
+      user: BaseUser
+      payload: Payload
+    }
 
 /**
  * Validates that the request has an authenticated user
@@ -48,48 +48,45 @@ export type AuthenticatedRequestResult =
  */
 export async function validateAuthenticatedRequest(
   request: PayloadRequest,
-  config: StripeEndpointConfig,
+  config: StripeEndpointConfig
 ): Promise<AuthenticatedRequestResult> {
   // Check custom permissions if provided
   if (config.checkPermissions) {
-    const hasPermission = await config.checkPermissions(request);
+    const hasPermission = await config.checkPermissions(request)
     if (!hasPermission) {
       return {
         success: false,
-        error: errorResponse("Permission denied", 403),
-      };
+        error: errorResponse('Permission denied', 403)
+      }
     }
   }
 
   // Resolve user
-  let user: BaseUser | null = null;
+  let user: BaseUser | null = null
 
   if (config.resolveUser) {
-    user = await config.resolveUser(request);
+    user = await config.resolveUser(request)
   } else {
-    user = request.user as BaseUser | null;
+    user = request.user as BaseUser | null
   }
 
   if (!user) {
     return {
       success: false,
-      error: errorResponse(
-        "You must be logged in to access this endpoint",
-        401,
-      ),
-    };
+      error: errorResponse('You must be logged in to access this endpoint', 401)
+    }
   }
 
   if (!user.email) {
     return {
       success: false,
-      error: errorResponse("User email is required", 400),
-    };
+      error: errorResponse('User email is required', 400)
+    }
   }
 
   return {
     success: true,
     user,
-    payload: request.payload,
-  };
+    payload: request.payload
+  }
 }

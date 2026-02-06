@@ -2,10 +2,10 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { useAssistantRuntime } from '../hooks/useAssistantRuntime'
-import { LinkComponent } from '../types/components'
-import DocumentSelector from './DocumentSelector'
+import type { LinkComponent } from '../types/components'
 import { Thread } from './assistant-ui/thread'
 import { useChat } from './chat-context'
+import DocumentSelector from './DocumentSelector'
 
 interface Document {
   id: string
@@ -38,7 +38,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     setMessages,
     isLoadingSession,
     handleNewConversation,
-    isLoadingAgents,
+    isLoadingAgents
   } = useChat()
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([])
   const [isDesktop, setIsDesktop] = useState(false)
@@ -53,7 +53,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     conversationId,
     setConversationId,
     selectedDocuments,
-    selectedAgent,
+    selectedAgent
   })
 
   // Detect if device is desktop (window width >= 1024px)
@@ -73,7 +73,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
 
   // Expose handleNewConversation to parent via ref
   useImperativeHandle(ref, () => ({
-    handleNewConversation,
+    handleNewConversation
   }))
 
   // Show loading state while restoring session or loading agents
@@ -87,7 +87,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
             <div className="w-3 h-3 rounded-full bg-primary animate-bounce delay-150" />
           </div>
           <p className="text-muted-foreground">
-            {isLoadingSession ? "Cargando conversación..." : "Cargando asistente..."}
+            {isLoadingSession ? 'Cargando conversación...' : 'Cargando asistente...'}
           </p>
         </div>
       </div>
@@ -100,9 +100,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
       <div className="flex items-center justify-center h-full">
         <div className="text-center max-w-md p-6">
           <p className="text-lg font-medium text-muted-foreground mb-2">No hay asistentes disponibles</p>
-          <p className="text-sm text-muted-foreground">
-            Por favor, contacta con el administrador del sistema.
-          </p>
+          <p className="text-sm text-muted-foreground">Por favor, contacta con el administrador del sistema.</p>
         </div>
       </div>
     )
@@ -114,11 +112,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
       <div className="flex h-full">
         {/* Document Selector Side Panel (1/4 width) */}
         <div className="w-1/4 flex-shrink-0">
-          <DocumentSelector
-            onSelectionChange={setSelectedDocuments}
-            isMaximized={isMaximized}
-            isSidePanel={true}
-          />
+          <DocumentSelector onSelectionChange={setSelectedDocuments} isMaximized={isMaximized} isSidePanel={true} />
         </div>
 
         {/* Chat Area (3/4 width) */}
@@ -142,11 +136,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ genera
     <div className="flex flex-col h-full">
       {/* Document Selector */}
       <div className="border-b border-border p-4 bg-background">
-        <DocumentSelector
-          onSelectionChange={setSelectedDocuments}
-          isMaximized={isMaximized}
-          isSidePanel={false}
-        />
+        <DocumentSelector onSelectionChange={setSelectedDocuments} isMaximized={isMaximized} isSidePanel={false} />
       </div>
 
       {/* Chat Thread */}

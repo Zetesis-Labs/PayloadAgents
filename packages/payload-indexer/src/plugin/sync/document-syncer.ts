@@ -2,15 +2,15 @@
  * Document syncer - syncs Payload documents to the index using the adapter
  */
 
-import type { IndexDocument, IndexerAdapter } from "../../adapter/types";
-import { logger } from "../../core/logging/logger";
-import { formatChunkWithHeaders } from "../../core/utils/chunk-format-utils";
-import { buildHeaderHierarchy } from "../../core/utils/header-utils";
-import { mapPayloadDocumentToIndex } from "../../document/field-mapper";
-import type { PayloadDocument, TableConfig } from "../../document/types";
-import { chunkMarkdown, chunkText } from "../../embedding/chunking/strategies";
-import type { EmbeddingService } from "../../embedding/types";
-import { getIndexCollectionName } from "../utils/naming";
+import type { IndexDocument, IndexerAdapter } from '../../adapter/types'
+import { logger } from '../../core/logging/logger'
+import { formatChunkWithHeaders } from '../../core/utils/chunk-format-utils'
+import { buildHeaderHierarchy } from '../../core/utils/header-utils'
+import { mapPayloadDocumentToIndex } from '../../document/field-mapper'
+import type { PayloadDocument, TableConfig } from '../../document/types'
+import { chunkMarkdown, chunkText } from '../../embedding/chunking/strategies'
+import type { EmbeddingService } from '../../embedding/types'
+import { getIndexCollectionName } from '../utils/naming'
 
 /**
  * Syncs a Payload document to the index
@@ -27,35 +27,29 @@ export const syncDocumentToIndex = async (
   adapter: IndexerAdapter,
   collectionSlug: string,
   doc: PayloadDocument,
-  operation: "create" | "update",
+  operation: 'create' | 'update',
   tableConfig: TableConfig,
-  embeddingService?: EmbeddingService,
+  embeddingService?: EmbeddingService
 ) => {
-  const tableName = getIndexCollectionName(collectionSlug, tableConfig);
+  const tableName = getIndexCollectionName(collectionSlug, tableConfig)
 
-  logger.debug("Syncing document to index", {
+  logger.debug('Syncing document to index', {
     documentId: doc.id,
     collection: collectionSlug,
     tableName,
-    operation,
-  });
+    operation
+  })
 
-  const syncer = new DocumentSyncer(
-    adapter,
-    collectionSlug,
-    tableName,
-    tableConfig,
-    embeddingService,
-  );
-  await syncer.sync(doc, operation);
+  const syncer = new DocumentSyncer(adapter, collectionSlug, tableName, tableConfig, embeddingService)
+  await syncer.sync(doc, operation)
 
-  logger.info("Document synced successfully to index", {
+  logger.info('Document synced successfully to index', {
     documentId: doc.id,
     collection: collectionSlug,
     tableName,
-    operation,
-  });
-};
+    operation
+  })
+}
 
 /**
  * Deletes a document from the index
@@ -84,60 +78,60 @@ export const deleteDocumentFromIndex = async (
   adapter: IndexerAdapter,
   collectionSlug: string,
   docId: string,
-  tableConfigs: TableConfig | TableConfig[],
+  tableConfigs: TableConfig | TableConfig[]
 ) => {
-  const configs = Array.isArray(tableConfigs) ? tableConfigs : [tableConfigs];
+  const configs = Array.isArray(tableConfigs) ? tableConfigs : [tableConfigs]
   for (const tableConfig of configs) {
-    const tableName = getIndexCollectionName(collectionSlug, tableConfig);
+    const tableName = getIndexCollectionName(collectionSlug, tableConfig)
     try {
       // Si la tabla es de chunks (embedding.chunking), borra solo por parent_doc_id
       if (tableConfig.embedding?.chunking) {
-        logger.debug("Deleting all chunks by parent_doc_id", {
+        logger.debug('Deleting all chunks by parent_doc_id', {
           parent_doc_id: docId,
-          tableName,
-        });
+          tableName
+        })
         await adapter.deleteDocumentsByFilter(tableName, {
-          parent_doc_id: docId,
-        });
-        logger.info("All chunks deleted for document", {
+          parent_doc_id: docId
+        })
+        logger.info('All chunks deleted for document', {
           documentId: docId,
-          tableName,
-        });
+          tableName
+        })
       } else {
         // Tabla principal: borra por id y si no existe, intenta por parent_doc_id
         try {
-          await adapter.deleteDocument(tableName, docId);
-          logger.info("Document deleted from index", {
+          await adapter.deleteDocument(tableName, docId)
+          logger.info('Document deleted from index', {
             documentId: docId,
-            tableName,
-          });
+            tableName
+          })
         } catch (docDeleteError: unknown) {
-          logger.debug("Document not found, attempting to delete chunks", {
+          logger.debug('Document not found, attempting to delete chunks', {
             documentId: docId,
-            tableName,
-          });
+            tableName
+          })
           try {
             await adapter.deleteDocumentsByFilter(tableName, {
-              parent_doc_id: docId,
-            });
-            logger.info("All chunks deleted for document", {
+              parent_doc_id: docId
+            })
+            logger.info('All chunks deleted for document', {
               documentId: docId,
-              tableName,
-            });
+              tableName
+            })
           } catch (chunkDeleteError: unknown) {
-            logger.debug("No chunks found to delete", { documentId: docId });
+            logger.debug('No chunks found to delete', { documentId: docId })
           }
         }
       }
     } catch (error: unknown) {
-      logger.error("Failed to delete document from index", error as Error, {
+      logger.error('Failed to delete document from index', error as Error, {
         documentId: docId,
         collection: collectionSlug,
-        tableName,
-      });
+        tableName
+      })
     }
   }
-};
+}
 
 /**
  * Document syncer class that handles the actual sync logic
@@ -148,110 +142,89 @@ export class DocumentSyncer {
     private collectionSlug: string,
     private tableName: string,
     private config: TableConfig,
-    private embeddingService?: EmbeddingService,
+    private embeddingService?: EmbeddingService
   ) {}
 
-  async sync(
-    doc: PayloadDocument,
-    operation: "create" | "update",
-  ): Promise<void> {
-    logger.debug(`Syncing document ${doc.id} to table ${this.tableName}`);
+  async sync(doc: PayloadDocument, operation: 'create' | 'update'): Promise<void> {
+    logger.debug(`Syncing document ${doc.id} to table ${this.tableName}`)
 
     if (this.config.embedding?.chunking) {
-      await this.syncChunked(doc, operation);
+      await this.syncChunked(doc, operation)
     } else {
-      await this.syncDocument(doc, operation);
+      await this.syncDocument(doc, operation)
     }
   }
 
-  private async syncDocument(
-    doc: PayloadDocument,
-    operation: "create" | "update",
-  ): Promise<void> {
+  private async syncDocument(doc: PayloadDocument, operation: 'create' | 'update'): Promise<void> {
     // 1. Map fields
-    const mappedFields = await mapPayloadDocumentToIndex(
-      doc,
-      this.config.fields,
-    );
+    const mappedFields = await mapPayloadDocumentToIndex(doc, this.config.fields)
 
     // 2. Build index document with standard fields
     const indexDoc = {
       ...mappedFields,
       id: String(doc.id),
-      slug: doc.slug || "",
+      slug: doc.slug || '',
       createdAt: new Date(doc.createdAt).getTime(),
       updatedAt: new Date(doc.updatedAt).getTime(),
       ...(doc.publishedAt && {
-        publishedAt: new Date(doc.publishedAt).getTime(),
-      }),
-    };
+        publishedAt: new Date(doc.publishedAt).getTime()
+      })
+    }
 
     // 3. Generate embedding if configured
     if (this.config.embedding?.fields && this.embeddingService) {
-      const sourceText = await this.extractSourceText(doc);
+      const sourceText = await this.extractSourceText(doc)
       if (sourceText) {
-        const embedding = await this.embeddingService.getEmbedding(sourceText);
+        const embedding = await this.embeddingService.getEmbedding(sourceText)
         if (embedding) {
-          (indexDoc as Record<string, unknown>).embedding = embedding;
+          ;(indexDoc as Record<string, unknown>).embedding = embedding
         } else {
-          logger.warn("Embedding generation failed for document", {
+          logger.warn('Embedding generation failed for document', {
             documentId: doc.id,
             collection: this.collectionSlug,
             textLength: sourceText.length,
-            textPreview:
-              sourceText.substring(0, 200) +
-              (sourceText.length > 200 ? "..." : ""),
-          });
+            textPreview: sourceText.substring(0, 200) + (sourceText.length > 200 ? '...' : '')
+          })
         }
       }
     }
 
     // 4. Upsert using adapter
-    await this.adapter.upsertDocument(
-      this.tableName,
-      indexDoc as IndexDocument,
-    );
+    await this.adapter.upsertDocument(this.tableName, indexDoc as IndexDocument)
 
-    logger.info(`Synced document ${doc.id} to ${this.tableName}`);
+    logger.info(`Synced document ${doc.id} to ${this.tableName}`)
   }
 
-  private async syncChunked(
-    doc: PayloadDocument,
-    operation: "create" | "update",
-  ): Promise<void> {
+  private async syncChunked(doc: PayloadDocument, operation: 'create' | 'update'): Promise<void> {
     // 1. Extract source text
-    const sourceText = await this.extractSourceText(doc);
+    const sourceText = await this.extractSourceText(doc)
     if (!sourceText) {
-      logger.warn(`No source text found for document ${doc.id}`);
-      return;
+      logger.warn(`No source text found for document ${doc.id}`)
+      return
     }
 
     // 2. Generate chunks
-    const chunks = await this.generateChunks(sourceText);
+    const chunks = await this.generateChunks(sourceText)
 
     // 3. Prepare base metadata (extra fields)
-    const fields = this.config.fields
-      ? await mapPayloadDocumentToIndex(doc, this.config.fields)
-      : {};
+    const fields = this.config.fields ? await mapPayloadDocumentToIndex(doc, this.config.fields) : {}
 
     // Add standard fields
-    fields.slug = doc.slug || "";
-    fields.publishedAt = doc.publishedAt
-      ? new Date(doc.publishedAt).getTime()
-      : undefined;
+    fields.slug = doc.slug || ''
+    fields.publishedAt = doc.publishedAt ? new Date(doc.publishedAt).getTime() : undefined
 
     // 4. Delete old chunks (if update)
-    if (operation === "update") {
+    if (operation === 'update') {
       await this.adapter.deleteDocumentsByFilter(this.tableName, {
-        parent_doc_id: String(doc.id),
-      });
+        parent_doc_id: String(doc.id)
+      })
     }
 
     // 5. Process and insert chunks
-    const chunkDocs = [];
+    const chunkDocs = []
     for (const chunk of chunks) {
-      const headers = buildHeaderHierarchy(chunk.metadata);
-      let formattedText = formatChunkWithHeaders(chunk.text, headers);
+      const headers = buildHeaderHierarchy(chunk.metadata)
+      let formattedText = formatChunkWithHeaders(chunk.text, headers)
 
       // Apply interceptResult if configured
       if (this.config.embedding?.chunking?.interceptResult) {
@@ -259,27 +232,25 @@ export class DocumentSyncer {
           {
             ...chunk,
             headers,
-            formattedText,
+            formattedText
           },
-          doc,
-        );
+          doc
+        )
       }
 
-      let embedding: number[] = [];
+      let embedding: number[] = []
       if (this.embeddingService) {
-        const result = await this.embeddingService.getEmbedding(formattedText);
+        const result = await this.embeddingService.getEmbedding(formattedText)
         if (result) {
-          embedding = result;
+          embedding = result
         } else {
-          logger.warn("Embedding generation failed for chunk", {
+          logger.warn('Embedding generation failed for chunk', {
             documentId: doc.id,
             collection: this.collectionSlug,
             chunkIndex: chunk.index,
             textLength: formattedText.length,
-            textPreview:
-              formattedText.substring(0, 200) +
-              (formattedText.length > 200 ? "..." : ""),
-          });
+            textPreview: formattedText.substring(0, 200) + (formattedText.length > 200 ? '...' : '')
+          })
         }
       }
 
@@ -293,70 +264,65 @@ export class DocumentSyncer {
         embedding: embedding,
         createdAt: new Date(doc.createdAt).getTime(),
         updatedAt: new Date(doc.updatedAt).getTime(),
-        ...fields,
-      };
+        ...fields
+      }
 
-      chunkDocs.push(chunkDoc);
+      chunkDocs.push(chunkDoc)
     }
 
     // Upsert all chunks using adapter
     if (chunkDocs.length > 0) {
-      await this.adapter.upsertDocuments(
-        this.tableName,
-        chunkDocs as IndexDocument[],
-      );
+      await this.adapter.upsertDocuments(this.tableName, chunkDocs as IndexDocument[])
     }
 
-    logger.info(
-      `Synced ${chunks.length} chunks for document ${doc.id} to ${this.tableName}`,
-    );
+    logger.info(`Synced ${chunks.length} chunks for document ${doc.id} to ${this.tableName}`)
   }
 
   /**
    * Extract and transform source fields for embedding generation
    */
   private async extractSourceText(doc: PayloadDocument): Promise<string> {
-    if (!this.config.embedding?.fields) return "";
+    if (!this.config.embedding?.fields) return ''
 
-    const textParts: string[] = [];
+    const textParts: string[] = []
 
     for (const sourceField of this.config.embedding.fields) {
-      let fieldName: string;
-      let transform: ((value: any) => any | Promise<any>) | undefined;
+      let fieldName: string
+      let transform: ((value: any) => any | Promise<any>) | undefined
 
-      if (typeof sourceField === "string") {
-        fieldName = sourceField;
+      if (typeof sourceField === 'string') {
+        fieldName = sourceField
       } else {
-        fieldName = sourceField.field;
-        transform = sourceField.transform;
+        fieldName = sourceField.field
+        transform = sourceField.transform
       }
 
-      let val = doc[fieldName];
+      let val = doc[fieldName]
 
       // Apply transform if provided
       if (transform) {
-        val = await transform(val);
-      } else if (typeof val === "object" && val !== null && "root" in val) {
+        val = await transform(val)
+      } else if (typeof val === 'object' && val !== null && 'root' in val) {
         // Default handling for RichText if no transform
-        val = JSON.stringify(val);
+        val = JSON.stringify(val)
       }
 
-      textParts.push(String(val || ""));
+      textParts.push(String(val || ''))
     }
 
-    return textParts.join("\n\n");
+    return textParts.join('\n\n')
   }
 
   private async generateChunks(text: string) {
-    if (!this.config.embedding?.chunking) return [];
+    if (!this.config.embedding?.chunking) return []
 
-    const { strategy, size, overlap } = this.config.embedding.chunking;
-    const options = { maxChunkSize: size, overlap };
+    const { strategy, size, overlap } = this.config.embedding.chunking
+    const options = { maxChunkSize: size, overlap }
 
-    if (strategy === "markdown") {
-      return await chunkMarkdown(text, options);
+    if (strategy === 'markdown') {
+      return await chunkMarkdown(text, options)
     } else {
-      return await chunkText(text, options);
+      return await chunkText(text, options)
     }
   }
 }

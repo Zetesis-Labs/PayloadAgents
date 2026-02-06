@@ -5,6 +5,6 @@
 export {
   DocumentSyncer,
   deleteDocumentFromIndex,
-  syncDocumentToIndex,
-} from "./document-syncer";
-export { applySyncHooks } from "./hooks";
+  syncDocumentToIndex
+} from './document-syncer'
+export { applySyncHooks } from './hooks'

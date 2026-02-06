@@ -1,12 +1,11 @@
-import type { Collection, Endpoint } from 'payload'
-
 import { headersWithCors } from '@payloadcms/next/utilities'
+import type { Collection, Endpoint } from 'payload'
 import { APIError, generatePayloadCookie } from 'payload'
 
 // A custom endpoint that can be reached by POST request
 // at: /api/users/external-users/login
 export const externalUsersLogin: Endpoint = {
-  handler: async (req) => {
+  handler: async req => {
     let data: { [key: string]: string } = {}
 
     try {
@@ -27,15 +26,15 @@ export const externalUsersLogin: Endpoint = {
         collection: 'tenants',
         where: tenantDomain
           ? {
-            domain: {
-              equals: tenantDomain,
-            },
-          }
+              domain: {
+                equals: tenantDomain
+              }
+            }
           : {
-            slug: {
-              equals: tenantSlug,
-            },
-          },
+              slug: {
+                equals: tenantSlug
+              }
+            }
       })
     ).docs[0]
 
@@ -47,32 +46,32 @@ export const externalUsersLogin: Endpoint = {
             and: [
               {
                 email: {
-                  equals: username,
-                },
+                  equals: username
+                }
               },
               {
                 'tenants.tenant': {
-                  equals: fullTenant?.id,
-                },
-              },
-            ],
+                  equals: fullTenant?.id
+                }
+              }
+            ]
           },
           {
             and: [
               {
                 username: {
-                  equals: username,
-                },
+                  equals: username
+                }
               },
               {
                 'tenants.tenant': {
-                  equals: fullTenant?.id,
-                },
-              },
-            ],
-          },
-        ],
-      },
+                  equals: fullTenant?.id
+                }
+              }
+            ]
+          }
+        ]
+      }
     })
 
     if (foundUser.totalDocs > 0 && foundUser.docs[0]) {
@@ -81,20 +80,20 @@ export const externalUsersLogin: Endpoint = {
           collection: 'users',
           data: {
             email: foundUser.docs[0].email,
-            password,
+            password
           },
-          req,
+          req
         })
 
         if (loginAttempt?.token) {
-          const collection = (req.payload.collections as { [key: string]: Collection })[
-            'users'
-          ]
-          const cookie = collection && generatePayloadCookie({
-            collectionAuthConfig: collection.config.auth,
-            cookiePrefix: req.payload.config.cookiePrefix,
-            token: loginAttempt.token,
-          })
+          const collection = (req.payload.collections as { [key: string]: Collection })['users']
+          const cookie =
+            collection &&
+            generatePayloadCookie({
+              collectionAuthConfig: collection.config.auth,
+              cookiePrefix: req.payload.config.cookiePrefix,
+              token: loginAttempt.token
+            })
 
           const responseHeaders = new Headers()
           if (cookie) {
@@ -104,30 +103,20 @@ export const externalUsersLogin: Endpoint = {
           return Response.json(loginAttempt, {
             headers: headersWithCors({
               headers: responseHeaders,
-              req,
+              req
             }),
-            status: 200,
+            status: 200
           })
         }
 
-        throw new APIError(
-          'Unable to login with the provided username and password.',
-          400,
-          null,
-          true,
-        )
+        throw new APIError('Unable to login with the provided username and password.', 400, null, true)
       } catch (e) {
-        throw new APIError(
-          'Unable to login with the provided username and password.',
-          400,
-          null,
-          true,
-        )
+        throw new APIError('Unable to login with the provided username and password.', 400, null, true)
       }
     }
 
     throw new APIError('Unable to login with the provided username and password.', 400, null, true)
   },
   method: 'post',
-  path: '/external-users/login',
+  path: '/external-users/login'
 }

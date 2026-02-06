@@ -1,62 +1,58 @@
-"use server";
+'use server'
 
-import type { Payload } from "payload";
-import type Stripe from "stripe";
-import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from "../../model";
-import { payloadUpsert } from "../utils/payload/upsert";
-import { stripeBuilder } from "../utils/stripe/stripe-builder";
+import type { Payload } from 'payload'
+import type Stripe from 'stripe'
+import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from '../../model'
+import { payloadUpsert } from '../utils/payload/upsert'
+import { stripeBuilder } from '../utils/stripe/stripe-builder'
 
 export const updatePrices = async (payload: Payload) => {
-  const stripe = await stripeBuilder();
-  const prices = await stripe.prices.list({ limit: 100, active: true });
-  const promises = prices.data.map((price) => priceUpsert(price, payload));
-  const pricesUpserted = await Promise.all(promises);
+  const stripe = await stripeBuilder()
+  const prices = await stripe.prices.list({ limit: 100, active: true })
+  const promises = prices.data.map(price => priceUpsert(price, payload))
+  const pricesUpserted = await Promise.all(promises)
 
   const pricesByProductId = pricesUpserted
     .filter((p): p is PriceUpserted => p !== null)
     .reduce(
       (acc, { productId, priceId }) => {
         if (!acc[productId]) {
-          acc[productId] = [];
+          acc[productId] = []
         }
-        acc[productId].push(priceId);
-        return acc;
+        acc[productId].push(priceId)
+        return acc
       },
-      {} as Record<string, number[]>,
-    );
+      {} as Record<string, number[]>
+    )
 
   await Promise.all(
     Object.entries(pricesByProductId).map(async ([productId, prices]) => {
       await payload.update({
         collection: COLLECTION_SLUG_PRODUCTS,
         data: {
-          prices,
+          prices
         },
         where: {
-          stripeID: { equals: productId },
-        },
-      });
-    }),
-  );
-};
-
-interface PriceUpserted {
-  productId: string;
-  priceId: number;
+          stripeID: { equals: productId }
+        }
+      })
+    })
+  )
 }
 
-export async function priceUpsert(
-  price: Stripe.Price,
-  payload: Payload,
-): Promise<PriceUpserted | null> {
-  const stripeProductID =
-    typeof price.product === "string" ? price.product : price.product.id;
+interface PriceUpserted {
+  productId: string
+  priceId: number
+}
+
+export async function priceUpsert(price: Stripe.Price, payload: Payload): Promise<PriceUpserted | null> {
+  const stripeProductID = typeof price.product === 'string' ? price.product : price.product.id
 
   if (price.deleted !== undefined) {
-    await priceDeleted(price, payload);
-    return null;
+    await priceDeleted(price, payload)
+    return null
   }
-  if (price.unit_amount == null) return null;
+  if (price.unit_amount == null) return null
   const priceUpserted = await payloadUpsert({
     payload,
     collection: COLLECTION_SLUG_PRICES,
@@ -68,28 +64,28 @@ export async function priceUpsert(
       currency: price.currency,
       type: price.type,
       interval: price.recurring?.interval,
-      intervalCount: price.recurring?.interval_count,
+      intervalCount: price.recurring?.interval_count
     },
     where: {
-      stripeID: { equals: price.id },
-    },
-  });
-  if (!priceUpserted) return null;
-  return { productId: stripeProductID, priceId: priceUpserted.id };
+      stripeID: { equals: price.id }
+    }
+  })
+  if (!priceUpserted) return null
+  return { productId: stripeProductID, priceId: priceUpserted.id }
 }
 
 export const priceDeleted = async (price: Stripe.Price, payload: Payload) => {
-  const { id } = price;
+  const { id } = price
 
   try {
     await payload.delete({
       collection: COLLECTION_SLUG_PRICES,
       where: {
-        stripeID: { equals: id },
-      },
-    });
+        stripeID: { equals: id }
+      }
+    })
   } catch (error) {
-    payload.logger.error(`- Error deleting price: ${error}`);
-    throw error;
+    payload.logger.error(`- Error deleting price: ${error}`)
+    throw error
   }
-};
+}

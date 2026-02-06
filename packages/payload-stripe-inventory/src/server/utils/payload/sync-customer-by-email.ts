@@ -1,27 +1,18 @@
-import { Payload } from "payload";
-import {
-  COLLECTION_SLUG_CUSTOMERS,
-  COLLECTION_SLUG_USER,
-} from "../../../model";
+import type { Payload } from 'payload'
+import { COLLECTION_SLUG_CUSTOMERS, COLLECTION_SLUG_USER } from '../../../model'
 
-export async function syncCustomerByEmail({
-  email,
-  payload,
-}: {
-  email: string;
-  payload: Payload;
-}) {
+export async function syncCustomerByEmail({ email, payload }: { email: string; payload: Payload }) {
   const customers = await payload.find({
     collection: COLLECTION_SLUG_CUSTOMERS,
-    where: { email: { equals: email } },
-  });
-  const customerId = customers.docs?.[0]?.id;
+    where: { email: { equals: email } }
+  })
+  const customerId = customers.docs?.[0]?.id
 
   await payload.update({
     collection: COLLECTION_SLUG_USER,
     data: {
-      customer: customerId,
+      customer: customerId
     },
-    where: { email: { equals: email } },
-  });
+    where: { email: { equals: email } }
+  })
 }

@@ -3,27 +3,27 @@
  * Creates a Payload CMS plugin that handles document syncing to any search backend
  */
 
-import type { Config } from "payload";
-import type { IndexerAdapter } from "../adapter/types";
-import { Logger } from "../core/logging/logger";
-import type { FieldMapping } from "../document/types";
-import { GeminiEmbeddingProvider } from "../embedding/providers/gemini-provider";
-import { OpenAIEmbeddingProvider } from "../embedding/providers/openai-provider";
-import { EmbeddingServiceImpl } from "../embedding/service";
-import type { EmbeddingService } from "../embedding/types";
-import { applySyncHooks } from "./sync/hooks";
-import type { IndexerPluginConfig } from "./types";
+import type { Config } from 'payload'
+import type { IndexerAdapter } from '../adapter/types'
+import { Logger } from '../core/logging/logger'
+import type { FieldMapping } from '../document/types'
+import { GeminiEmbeddingProvider } from '../embedding/providers/gemini-provider'
+import { OpenAIEmbeddingProvider } from '../embedding/providers/openai-provider'
+import { EmbeddingServiceImpl } from '../embedding/service'
+import type { EmbeddingService } from '../embedding/types'
+import { applySyncHooks } from './sync/hooks'
+import type { IndexerPluginConfig } from './types'
 
 /**
  * Result of plugin creation containing the plugin function and internal services
  */
 export interface IndexerPluginResult<TConfig extends Config> {
   /** The Payload plugin function */
-  plugin: (config: TConfig) => TConfig;
+  plugin: (config: TConfig) => TConfig
   /** The embedding service instance (if configured) */
-  embeddingService?: EmbeddingService;
+  embeddingService?: EmbeddingService
   /** The adapter instance */
-  adapter: IndexerAdapter;
+  adapter: IndexerAdapter
 }
 
 /**
@@ -71,56 +71,46 @@ export interface IndexerPluginResult<TConfig extends Config> {
  * });
  * ```
  */
-export function createIndexerPlugin<
-  TFieldMapping extends FieldMapping,
-  TConfig extends Config,
->(config: IndexerPluginConfig<TFieldMapping>): IndexerPluginResult<TConfig> {
-  const { adapter, features, collections } = config;
-  const logger = new Logger({ enabled: true, prefix: "[payload-indexer]" });
+export function createIndexerPlugin<TFieldMapping extends FieldMapping, TConfig extends Config>(
+  config: IndexerPluginConfig<TFieldMapping>
+): IndexerPluginResult<TConfig> {
+  const { adapter, features, collections } = config
+  const logger = new Logger({ enabled: true, prefix: '[payload-indexer]' })
 
   // 1. Create Embedding Service (optional)
-  let embeddingService: EmbeddingService | undefined;
-  const embeddingConfig = features.embedding;
+  let embeddingService: EmbeddingService | undefined
+  const embeddingConfig = features.embedding
 
   if (embeddingConfig) {
     const provider =
-      embeddingConfig.type === "gemini"
+      embeddingConfig.type === 'gemini'
         ? new GeminiEmbeddingProvider(embeddingConfig, logger)
-        : new OpenAIEmbeddingProvider(embeddingConfig, logger);
+        : new OpenAIEmbeddingProvider(embeddingConfig, logger)
 
-    embeddingService = new EmbeddingServiceImpl(
-      provider,
-      logger,
-      embeddingConfig,
-    );
+    embeddingService = new EmbeddingServiceImpl(provider, logger, embeddingConfig)
 
-    logger.debug("Embedding service initialized", {
-      provider: embeddingConfig.type,
-    });
+    logger.debug('Embedding service initialized', {
+      provider: embeddingConfig.type
+    })
   }
 
   // 2. Create the plugin function
   const plugin = (payloadConfig: TConfig): TConfig => {
     // Apply sync hooks to collections
     if (payloadConfig.collections && features.sync?.enabled) {
-      payloadConfig.collections = applySyncHooks(
-        payloadConfig.collections,
-        config,
-        adapter,
-        embeddingService,
-      );
+      payloadConfig.collections = applySyncHooks(payloadConfig.collections, config, adapter, embeddingService)
 
-      logger.debug("Sync hooks applied to collections", {
-        collectionsCount: Object.keys(collections).length,
-      });
+      logger.debug('Sync hooks applied to collections', {
+        collectionsCount: Object.keys(collections).length
+      })
     }
 
-    return payloadConfig;
-  };
+    return payloadConfig
+  }
 
   return {
     plugin,
     embeddingService,
-    adapter,
-  };
+    adapter
+  }
 }

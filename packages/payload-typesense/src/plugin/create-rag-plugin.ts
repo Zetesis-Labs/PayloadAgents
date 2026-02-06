@@ -39,15 +39,15 @@
  * ```
  */
 
-import { Logger } from "@nexo-labs/payload-indexer";
-import type { CollectionSlug, Config } from "payload";
-import { createTypesenseClient } from "../core/client/typesense-client";
-import { createRAGPayloadHandlers } from "../features/rag/endpoints";
-import { AgentManager } from "../features/rag/services/agent-manager";
-import { createSearchEndpoints } from "../features/search/endpoints";
-import { SchemaManager } from "../features/sync/services/schema-manager";
-import type { AgentConfig } from "../shared/types/plugin-types";
-import type { TypesenseRAGPluginConfig } from "./rag-types";
+import { Logger } from '@nexo-labs/payload-indexer'
+import type { CollectionSlug, Config } from 'payload'
+import { createTypesenseClient } from '../core/client/typesense-client'
+import { createRAGPayloadHandlers } from '../features/rag/endpoints'
+import { AgentManager } from '../features/rag/services/agent-manager'
+import { createSearchEndpoints } from '../features/search/endpoints'
+import { SchemaManager } from '../features/sync/services/schema-manager'
+import type { AgentConfig } from '../shared/types/plugin-types'
+import type { TypesenseRAGPluginConfig } from './rag-types'
 
 /**
  * Creates a composable Typesense RAG plugin for Payload CMS
@@ -61,15 +61,14 @@ import type { TypesenseRAGPluginConfig } from "./rag-types";
  * @param config - Typesense RAG plugin configuration
  * @returns Payload config modifier function
  */
-export function createTypesenseRAGPlugin<
-  TConfig extends Config,
-  TSlug extends CollectionSlug,
->(config: TypesenseRAGPluginConfig<TSlug>) {
-  const logger = new Logger({ enabled: true, prefix: "[payload-typesense]" });
+export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends CollectionSlug>(
+  config: TypesenseRAGPluginConfig<TSlug>
+) {
+  const logger = new Logger({ enabled: true, prefix: '[payload-typesense]' })
 
   return (payloadConfig: TConfig): TConfig => {
     // Create Typesense client
-    const typesenseClient = createTypesenseClient(config.typesense);
+    const typesenseClient = createTypesenseClient(config.typesense)
 
     // 1. Add search endpoints if enabled
     if (config.search?.enabled) {
@@ -77,19 +76,16 @@ export function createTypesenseRAGPlugin<
         typesense: config.typesense,
         features: {
           embedding: config.embeddingConfig,
-          search: config.search,
+          search: config.search
         },
-        collections: config.collections || {},
-      });
+        collections: config.collections || {}
+      })
 
-      payloadConfig.endpoints = [
-        ...(payloadConfig.endpoints || []),
-        ...searchEndpoints,
-      ];
+      payloadConfig.endpoints = [...(payloadConfig.endpoints || []), ...searchEndpoints]
 
-      logger.debug("Search endpoints registered", {
-        endpointsCount: searchEndpoints.length,
-      });
+      logger.debug('Search endpoints registered', {
+        endpointsCount: searchEndpoints.length
+      })
     }
 
     // 2. Add RAG endpoints if agents and callbacks are configured
@@ -102,62 +98,59 @@ export function createTypesenseRAGPlugin<
         callbacks: config.callbacks,
         hybrid: config.hybrid,
         hnsw: config.hnsw,
-        advanced: config.advanced,
-      });
+        advanced: config.advanced
+      })
 
-      payloadConfig.endpoints = [
-        ...(payloadConfig.endpoints || []),
-        ...ragEndpoints,
-      ];
+      payloadConfig.endpoints = [...(payloadConfig.endpoints || []), ...ragEndpoints]
 
-      logger.debug("RAG endpoints registered", {
+      logger.debug('RAG endpoints registered', {
         endpointsCount: ragEndpoints.length,
-        agentsCount: config.agents.length,
-      });
+        agentsCount: config.agents.length
+      })
     }
 
     // 3. Initialize on startup (schema sync + agent sync)
-    const incomingOnInit = payloadConfig.onInit;
-    payloadConfig.onInit = async (payload) => {
+    const incomingOnInit = payloadConfig.onInit
+    payloadConfig.onInit = async payload => {
       if (incomingOnInit) {
-        await incomingOnInit(payload);
+        await incomingOnInit(payload)
       }
 
       try {
         // A. Sync Typesense collections schema
         if (config.collections && Object.keys(config.collections).length > 0) {
-          logger.info("Syncing Typesense collections schema...");
+          logger.info('Syncing Typesense collections schema...')
           const schemaManager = new SchemaManager(typesenseClient, {
             typesense: config.typesense,
             features: {
-              embedding: config.embeddingConfig,
+              embedding: config.embeddingConfig
             },
-            collections: config.collections,
-          });
-          await schemaManager.syncCollections();
+            collections: config.collections
+          })
+          await schemaManager.syncCollections()
         }
 
         // B. Sync RAG agents
-        let agents: AgentConfig[] = [];
-        if (typeof config.agents === "function") {
-          agents = await config.agents(payload);
+        let agents: AgentConfig[] = []
+        if (typeof config.agents === 'function') {
+          agents = await config.agents(payload)
         } else if (Array.isArray(config.agents)) {
-          agents = config.agents;
+          agents = config.agents
         }
 
         if (agents && agents.length > 0) {
-          logger.info(`Initializing ${agents.length} RAG agents...`);
+          logger.info(`Initializing ${agents.length} RAG agents...`)
           const agentManager = new AgentManager(typesenseClient, {
-            agents: agents,
-          });
-          await agentManager.syncAgents();
+            agents: agents
+          })
+          await agentManager.syncAgents()
         }
       } catch (error) {
         // Fail soft: Log error but don't crash Payload startup
-        logger.error("Error initializing Typesense resources", error as Error);
+        logger.error('Error initializing Typesense resources', error as Error)
       }
-    };
+    }
 
-    return payloadConfig;
-  };
+    return payloadConfig
+  }
 }

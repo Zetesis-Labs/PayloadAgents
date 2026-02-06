@@ -6,8 +6,7 @@
 import type { IndexableCollectionConfig } from '@nexo-labs/payload-indexer'
 import { transformLexicalToMarkdown } from '@nexo-labs/payload-indexer'
 import type { TypesenseFieldMapping } from '@nexo-labs/payload-typesense'
-import { transformTenant, transformCategories, transformChapters } from './transforms'
-
+import { transformCategories, transformChapters, transformTenant } from './transforms'
 
 // ============================================================================
 // COLLECTIONS
@@ -21,7 +20,7 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
       displayName: 'Posts (Chunked)',
       embedding: {
         fields: [{ field: 'content', transform: transformLexicalToMarkdown }],
-        chunking: { strategy: 'markdown', size: 2000, overlap: 300 },
+        chunking: { strategy: 'markdown', size: 2000, overlap: 300 }
       },
       fields: [
         { name: 'title', type: 'string' },
@@ -32,7 +31,7 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           type: 'string',
           facet: true,
           optional: true,
-          transform: transformTenant,
+          transform: transformTenant
         },
         {
           name: 'taxonomy_slugs',
@@ -40,9 +39,9 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           facet: true,
           optional: true,
           transform: transformCategories,
-          payloadField: 'categories',
-        },
-      ],
+          payloadField: 'categories'
+        }
+      ]
     },
     // Full document version for search
     {
@@ -57,14 +56,14 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           name: 'content',
           type: 'string',
           optional: true,
-          transform: transformLexicalToMarkdown,
+          transform: transformLexicalToMarkdown
         },
         {
           name: 'tenant',
           type: 'string',
           facet: true,
           optional: true,
-          transform: transformTenant,
+          transform: transformTenant
         },
         {
           name: 'taxonomy_slugs',
@@ -72,10 +71,10 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           facet: true,
           optional: true,
           transform: transformCategories,
-          payloadField: 'categories',
-        },
-      ],
-    },
+          payloadField: 'categories'
+        }
+      ]
+    }
   ],
   books: [
     {
@@ -84,7 +83,7 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
       displayName: 'Books (Chunked)',
       embedding: {
         fields: [{ field: 'chapters', transform: transformChapters }],
-        chunking: { strategy: 'markdown', size: 2000, overlap: 300 },
+        chunking: { strategy: 'markdown', size: 2000, overlap: 300 }
       },
       fields: [
         { name: 'title', type: 'string' },
@@ -95,7 +94,7 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           type: 'string',
           facet: true,
           optional: true,
-          transform: transformTenant,
+          transform: transformTenant
         },
         {
           name: 'taxonomy_slugs',
@@ -103,9 +102,9 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           facet: true,
           optional: true,
           transform: transformCategories,
-          payloadField: 'categories',
-        },
-      ],
+          payloadField: 'categories'
+        }
+      ]
     },
     // Full document version for search
     {
@@ -121,7 +120,7 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           type: 'string',
           facet: true,
           optional: true,
-          transform: transformTenant,
+          transform: transformTenant
         },
         {
           name: 'taxonomy_slugs',
@@ -129,11 +128,11 @@ export const collections: IndexableCollectionConfig<TypesenseFieldMapping> = {
           facet: true,
           optional: true,
           transform: transformCategories,
-          payloadField: 'categories',
-        },
-      ],
-    },
-  ],
+          payloadField: 'categories'
+        }
+      ]
+    }
+  ]
 }
 
 // ============================================================================

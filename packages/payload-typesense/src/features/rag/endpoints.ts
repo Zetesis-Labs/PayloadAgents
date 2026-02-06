@@ -5,21 +5,18 @@
  * into Payload CMS handlers that work with Payload's endpoint system.
  */
 
-import type { CollectionSlug, PayloadHandler } from "payload";
-import type { TypesenseRAGPluginConfig } from "../../plugin/rag-types";
-import { createAgentsGETHandler } from "./endpoints/chat/agents/route";
-import { createChatPOSTHandler } from "./endpoints/chat/route";
+import type { CollectionSlug, PayloadHandler } from 'payload'
+import type { TypesenseRAGPluginConfig } from '../../plugin/rag-types'
+import { createAgentsGETHandler } from './endpoints/chat/agents/route'
+import { createChatPOSTHandler } from './endpoints/chat/route'
 import {
   createSessionDELETEHandler,
   createSessionGETHandler,
-  createSessionPATCHHandler,
-} from "./endpoints/chat/session/route";
-import { createSessionsListGETHandler } from "./endpoints/chat/sessions/route";
-import { createChunksGETHandler } from "./endpoints/chunks/[id]/route";
-import {
-  defaultHandleNonStreamingResponse,
-  defaultHandleStreamingResponse,
-} from "./stream-handlers";
+  createSessionPATCHHandler
+} from './endpoints/chat/session/route'
+import { createSessionsListGETHandler } from './endpoints/chat/sessions/route'
+import { createChunksGETHandler } from './endpoints/chunks/[id]/route'
+import { defaultHandleNonStreamingResponse, defaultHandleStreamingResponse } from './stream-handlers'
 
 /**
  * Creates Payload handlers for RAG endpoints
@@ -27,50 +24,28 @@ import {
  * @param config - RAG plugin configuration (composable, doesn't depend on ModularPluginConfig)
  */
 export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
-  config: TypesenseRAGPluginConfig<TSlug>,
+  config: TypesenseRAGPluginConfig<TSlug>
 ): Array<{
-  path: string;
-  method:
-    | "connect"
-    | "delete"
-    | "get"
-    | "head"
-    | "options"
-    | "patch"
-    | "post"
-    | "put";
-  handler: PayloadHandler;
+  path: string
+  method: 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put'
+  handler: PayloadHandler
 }> {
   const endpoints: Array<{
-    path: string;
-    method:
-      | "connect"
-      | "delete"
-      | "get"
-      | "head"
-      | "options"
-      | "patch"
-      | "post"
-      | "put";
-    handler: PayloadHandler;
-  }> = [];
+    path: string
+    method: 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put'
+    handler: PayloadHandler
+  }> = []
 
   // Validate required config
-  if (
-    !config.agents ||
-    (Array.isArray(config.agents) && config.agents.length === 0) ||
-    !config.callbacks
-  ) {
-    return endpoints;
+  if (!config.agents || (Array.isArray(config.agents) && config.agents.length === 0) || !config.callbacks) {
+    return endpoints
   }
 
-  const { agents, callbacks, typesense } = config;
+  const { agents, callbacks, typesense } = config
 
   // Get valid collections from agents configuration
-  const agentCollections = Array.isArray(agents)
-    ? agents.flatMap((agent) => agent.searchCollections)
-    : [];
-  const validCollections = Array.from(new Set(agentCollections));
+  const agentCollections = Array.isArray(agents) ? agents.flatMap(agent => agent.searchCollections) : []
+  const validCollections = Array.from(new Set(agentCollections))
 
   // Build RAG feature config for handlers that still need it
   const ragFeatureConfig = {
@@ -79,13 +54,13 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
     callbacks,
     hybrid: config.hybrid,
     hnsw: config.hnsw,
-    advanced: config.advanced,
-  };
+    advanced: config.advanced
+  }
 
   // Add endpoints
   endpoints.push({
-    path: "/chat",
-    method: "post" as const,
+    path: '/chat',
+    method: 'post' as const,
     handler: createChatPOSTHandler({
       collectionName: config.collectionName,
       checkPermissions: callbacks.checkPermissions,
@@ -99,68 +74,68 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
       handleNonStreamingResponse: defaultHandleNonStreamingResponse,
       createEmbeddingSpending: callbacks.createEmbeddingSpending,
       estimateTokensFromText: callbacks.estimateTokensFromText,
-      embeddingConfig: config.embeddingConfig,
-    }),
-  });
+      embeddingConfig: config.embeddingConfig
+    })
+  })
 
   endpoints.push({
-    path: "/chat/session",
-    method: "get" as const,
+    path: '/chat/session',
+    method: 'get' as const,
     handler: createSessionGETHandler({
       getPayload: callbacks.getPayload,
       checkPermissions: callbacks.checkPermissions,
-      sessionConfig: { collectionName: config.collectionName },
-    }),
-  });
+      sessionConfig: { collectionName: config.collectionName }
+    })
+  })
 
   endpoints.push({
-    path: "/chat/session",
-    method: "delete" as const,
+    path: '/chat/session',
+    method: 'delete' as const,
     handler: createSessionDELETEHandler({
       getPayload: callbacks.getPayload,
       checkPermissions: callbacks.checkPermissions,
-      sessionConfig: { collectionName: config.collectionName },
-    }),
-  });
+      sessionConfig: { collectionName: config.collectionName }
+    })
+  })
 
   endpoints.push({
-    path: "/chat/session",
-    method: "patch" as const,
+    path: '/chat/session',
+    method: 'patch' as const,
     handler: createSessionPATCHHandler({
       getPayload: callbacks.getPayload,
       checkPermissions: callbacks.checkPermissions,
-      sessionConfig: { collectionName: config.collectionName },
-    }),
-  });
+      sessionConfig: { collectionName: config.collectionName }
+    })
+  })
 
   endpoints.push({
-    path: "/chat/sessions",
-    method: "get" as const,
+    path: '/chat/sessions',
+    method: 'get' as const,
     handler: createSessionsListGETHandler({
       getPayload: callbacks.getPayload,
       checkPermissions: callbacks.checkPermissions,
-      sessionConfig: { collectionName: config.collectionName },
-    }),
-  });
+      sessionConfig: { collectionName: config.collectionName }
+    })
+  })
 
   endpoints.push({
-    path: "/chat/chunks/:id",
-    method: "get" as const,
+    path: '/chat/chunks/:id',
+    method: 'get' as const,
     handler: createChunksGETHandler({
       typesense,
       checkPermissions: callbacks.checkPermissions,
-      validCollections,
-    }),
-  });
+      validCollections
+    })
+  })
 
   endpoints.push({
-    path: "/chat/agents",
-    method: "get" as const,
+    path: '/chat/agents',
+    method: 'get' as const,
     handler: createAgentsGETHandler({
       ragConfig: ragFeatureConfig,
-      checkPermissions: callbacks.checkPermissions,
-    }),
-  });
+      checkPermissions: callbacks.checkPermissions
+    })
+  })
 
-  return endpoints;
+  return endpoints
 }

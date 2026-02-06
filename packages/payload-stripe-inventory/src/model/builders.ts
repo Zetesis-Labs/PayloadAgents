@@ -1,13 +1,13 @@
-import { CustomerInventory, UserInventory } from "../types";
+import type { CustomerInventory, UserInventory } from '../types'
 
 export const generateUserInventory = (): UserInventory => ({
   unlocks: [],
-  favorites: [],
-});
+  favorites: []
+})
 
 export const generateCustomerInventory = (): CustomerInventory => ({
   subscriptions: {},
   products: {},
   payments: {},
-  invoices: {},
-});
+  invoices: {}
+})

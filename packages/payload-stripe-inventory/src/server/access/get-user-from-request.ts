@@ -1,5 +1,5 @@
-import type { PayloadRequest } from "payload";
-import type { BaseUser } from "../../types";
+import type { PayloadRequest } from 'payload'
+import type { BaseUser } from '../../types'
 
 /**
  * Gets the current user from a PayloadRequest without depending on next/headers.
@@ -9,5 +9,5 @@ import type { BaseUser } from "../../types";
  * @returns The user object or null if not authenticated
  */
 export function getUserFromRequest(request: PayloadRequest): BaseUser | null {
-  return request.user as BaseUser | null;
+  return request.user as BaseUser | null
 }

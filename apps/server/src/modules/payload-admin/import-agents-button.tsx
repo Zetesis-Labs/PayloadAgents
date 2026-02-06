@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
 import { Button } from '@payloadcms/ui'
+import type React from 'react'
+import { useState } from 'react'
 
 interface ImportResult {
   success: boolean
@@ -26,8 +27,8 @@ export const ImportAgentsButton: React.FC = () => {
       const response = await fetch('/api/agents/import', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const data: ImportResult = await response.json()
@@ -41,7 +42,7 @@ export const ImportAgentsButton: React.FC = () => {
     } catch (error) {
       setResult({
         success: false,
-        message: error instanceof Error ? error.message : 'Error desconocido',
+        message: error instanceof Error ? error.message : 'Error desconocido'
       })
     } finally {
       setIsLoading(false)
@@ -58,24 +59,13 @@ export const ImportAgentsButton: React.FC = () => {
                 animation: 'spin 1s linear infinite',
                 width: '16px',
                 height: '16px',
-                marginRight: '6px',
+                marginRight: '6px'
               }}
               fill="none"
               viewBox="0 0 24 24"
             >
-              <circle
-                style={{ opacity: 0.25 }}
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                style={{ opacity: 0.75 }}
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
+              <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             Importando agentes...
           </>
@@ -108,13 +98,12 @@ export const ImportAgentsButton: React.FC = () => {
             borderRadius: '6px',
             fontSize: '13px',
             backgroundColor: result.success ? '#dcfce7' : '#fee2e2',
-            color: result.success ? '#166534' : '#991b1b',
+            color: result.success ? '#166534' : '#991b1b'
           }}
         >
           {result.success ? (
             <>
-              {result.results?.imported.length || 0} importados,{' '}
-              {result.results?.skipped.length || 0} existentes,{' '}
+              {result.results?.imported.length || 0} importados, {result.results?.skipped.length || 0} existentes,{' '}
               {result.results?.errors.length || 0} errores
             </>
           ) : (

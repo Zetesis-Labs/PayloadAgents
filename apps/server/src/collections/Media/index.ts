@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
-    read: () => true,
+    read: () => true
   },
   upload: {
     staticDir: 'media',
@@ -12,33 +12,33 @@ export const Media: CollectionConfig = {
         name: 'thumbnail',
         width: 400,
         height: 400,
-        position: 'centre',
+        position: 'centre'
       },
       {
         name: 'avatar',
         width: 200,
         height: 200,
-        position: 'centre',
+        position: 'centre'
       },
       {
         name: 'small',
         width: 600,
         height: 600,
-        position: 'centre',
+        position: 'centre'
       },
       {
         name: 'medium',
         width: 1200,
         height: 1200,
-        position: 'centre',
-      },
+        position: 'centre'
+      }
     ],
     adminThumbnail: 'thumbnail',
-    mimeTypes: ['image/*'],
+    mimeTypes: ['image/*']
   },
   admin: {
     useAsTitle: 'filename',
-    group: 'Content',
+    group: 'Content'
   },
   fields: [
     {
@@ -46,8 +46,8 @@ export const Media: CollectionConfig = {
       type: 'text',
       required: false,
       admin: {
-        description: 'Alternative text for accessibility',
-      },
-    },
-  ],
+        description: 'Alternative text for accessibility'
+      }
+    }
+  ]
 }

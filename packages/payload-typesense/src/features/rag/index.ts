@@ -7,47 +7,19 @@
  * @module rag
  */
 
-// Re-export embedding functions from parent
-export { generateEmbeddingWithUsage } from "../embedding/embeddings";
-
-// Query Builder
-export {
-  buildConversationalUrl,
-  buildHybridSearchParams,
-  buildMultiSearchRequestBody,
-  buildMultiSearchRequests,
-} from "./query-builder";
-
-// Stream Handler
-export type {
-  ConversationEvent,
-  StreamProcessingResult,
-} from "./stream-handler";
-
-export {
-  buildContextText,
-  createSSEForwardStream,
-  extractSourcesFromResults,
-  parseConversationEvent,
-  processConversationStream,
-} from "./stream-handler";
-
-// Setup Utilities
-export {
-  ensureConversationCollection,
-  getDefaultRAGConfig,
-  mergeRAGConfigWithDefaults,
-} from "./setup";
-
 // API Handlers (Core Functions)
-export type { TypesenseConnectionConfig } from "../../shared/types/plugin-types";
+export type { TypesenseConnectionConfig } from '../../shared/types/plugin-types'
+// Re-export embedding functions from parent
+export { generateEmbeddingWithUsage } from '../embedding/embeddings'
+// Chat Session Repository
+export type { ChatMessageWithSources } from './chat-session-repository'
 export {
-  closeSession,
-  executeRAGSearch,
-  fetchChunkById,
-  getActiveSession,
-  getSessionByConversationId,
-} from "./handlers/index";
+  markChatSessionAsExpired,
+  saveChatSession
+} from './chat-session-repository'
+export { jsonResponse } from './endpoints/chat/validators/index'
+// API Types
+export type { ApiContext, AuthenticateMethod } from './endpoints/types'
 export type {
   ChatSessionData,
   ChunkFetchConfig,
@@ -55,21 +27,39 @@ export type {
   RAGChatRequest,
   RAGSearchConfig,
   RAGSearchResult,
-  SessionConfig,
-} from "./handlers/index";
-
-// SSE Utilities
-export { formatSSEEvent, sendSSEEvent } from "./utils/sse-utils";
-
-// Chat Session Repository
-export type { ChatMessageWithSources } from "./chat-session-repository";
-
+  SessionConfig
+} from './handlers/index'
 export {
-  markChatSessionAsExpired,
-  saveChatSession,
-} from "./chat-session-repository";
-
-// API Types
-export type { ApiContext, AuthenticateMethod } from "./endpoints/types";
-
-export { jsonResponse } from "./endpoints/chat/validators/index";
+  closeSession,
+  executeRAGSearch,
+  fetchChunkById,
+  getActiveSession,
+  getSessionByConversationId
+} from './handlers/index'
+// Query Builder
+export {
+  buildConversationalUrl,
+  buildHybridSearchParams,
+  buildMultiSearchRequestBody,
+  buildMultiSearchRequests
+} from './query-builder'
+// Setup Utilities
+export {
+  ensureConversationCollection,
+  getDefaultRAGConfig,
+  mergeRAGConfigWithDefaults
+} from './setup'
+// Stream Handler
+export type {
+  ConversationEvent,
+  StreamProcessingResult
+} from './stream-handler'
+export {
+  buildContextText,
+  createSSEForwardStream,
+  extractSourcesFromResults,
+  parseConversationEvent,
+  processConversationStream
+} from './stream-handler'
+// SSE Utilities
+export { formatSSEEvent, sendSSEEvent } from './utils/sse-utils'

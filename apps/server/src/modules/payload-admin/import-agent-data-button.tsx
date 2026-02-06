@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
-import { Button, useDocumentInfo, useField } from '@payloadcms/ui'
 import { useTenantSelection } from '@payloadcms/plugin-multi-tenant/client'
+import { Button, useDocumentInfo, useField } from '@payloadcms/ui'
 import type { UIFieldClientComponent } from 'payload'
+import React, { useRef, useState } from 'react'
+import { ImportIcon, SpinnerIcon, SyncIcon } from './admin-icons'
+import type { CollectionTarget, ImportMode, ImportResult } from './admin-types'
+import { loadingLabels, readFileAsText } from './admin-utils'
 import { importAgentData } from './import-agent-data-actions'
-import type { ImportMode, CollectionTarget, ImportResult } from './admin-types'
-import { SpinnerIcon, ImportIcon, SyncIcon } from './admin-icons'
-import { readFileAsText, loadingLabels } from './admin-utils'
 import { ImportResultDisplay } from './import-result-display'
 
 export const ImportAgentDataButton: UIFieldClientComponent = () => {
@@ -24,7 +24,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
     if (!id) {
       setResult({
         success: false,
-        message: 'No se puede ejecutar: el agente no ha sido guardado aún',
+        message: 'No se puede ejecutar: el agente no ha sido guardado aún'
       })
       return
     }
@@ -39,7 +39,13 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
       }
 
       const overrideAttributes = selectedTenantID ? { tenantId: Number(selectedTenantID) } : undefined
-      const data = await importAgentData({ agentId: id, mode, jsonContent, collection: selectedCollection, overrideAttributes })
+      const data = await importAgentData({
+        agentId: id,
+        mode,
+        jsonContent,
+        collection: selectedCollection,
+        overrideAttributes
+      })
       setResult(data)
 
       if (data.success) {
@@ -48,7 +54,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
     } catch (error) {
       setResult({
         success: false,
-        message: error instanceof Error ? error.message : 'Error desconocido',
+        message: error instanceof Error ? error.message : 'Error desconocido'
       })
     } finally {
       setActiveAction(null)
@@ -65,7 +71,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
         marginBottom: '20px',
         backgroundColor: 'var(--theme-elevation-50)',
         borderRadius: '8px',
-        border: '1px solid var(--theme-elevation-100)',
+        border: '1px solid var(--theme-elevation-100)'
       }}
     >
       <div style={{ marginBottom: '12px' }}>
@@ -73,19 +79,19 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           Importar datos del agente
         </h4>
         <p style={{ margin: 0, fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
-          Sube un archivo JSON o usa <code style={{ backgroundColor: 'var(--theme-elevation-100)', padding: '2px 6px', borderRadius: '4px' }}>
+          Sube un archivo JSON o usa{' '}
+          <code style={{ backgroundColor: 'var(--theme-elevation-100)', padding: '2px 6px', borderRadius: '4px' }}>
             data/{expectedFile}
-          </code> como fallback.
+          </code>{' '}
+          como fallback.
         </p>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--theme-text)' }}>
-          Colección:
-        </label>
+        <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--theme-text)' }}>Colección:</label>
         <select
           value={selectedCollection}
-          onChange={(e) => {
+          onChange={e => {
             setSelectedCollection(e.target.value as CollectionTarget)
             setResult(null)
           }}
@@ -97,7 +103,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
             border: '1px solid var(--theme-elevation-150)',
             backgroundColor: 'var(--theme-input-bg)',
             color: 'var(--theme-text)',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
+            cursor: isLoading ? 'not-allowed' : 'pointer'
           }}
         >
           <option value="posts">Posts</option>
@@ -111,22 +117,25 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           type="file"
           accept=".json"
           style={{ display: 'none' }}
-          onChange={(e) => {
+          onChange={e => {
             const file = e.target.files?.[0] ?? null
             setSelectedFile(file)
             setResult(null)
           }}
         />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isLoading}
-          buttonStyle="secondary"
-          size="small"
-        >
+        <Button onClick={() => fileInputRef.current?.click()} disabled={isLoading} buttonStyle="secondary" size="small">
           Seleccionar JSON
         </Button>
         {selectedFile && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--theme-text)' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: 'var(--theme-text)'
+            }}
+          >
             <code style={{ backgroundColor: 'var(--theme-elevation-100)', padding: '2px 6px', borderRadius: '4px' }}>
               {selectedFile.name}
             </code>
@@ -143,7 +152,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
                 padding: '0 2px',
                 fontSize: '14px',
                 color: 'var(--theme-elevation-500)',
-                lineHeight: 1,
+                lineHeight: 1
               }}
               title="Quitar archivo"
             >
@@ -154,11 +163,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <Button
-          onClick={() => handleAction('import')}
-          disabled={isLoading || !id}
-          buttonStyle="secondary"
-        >
+        <Button onClick={() => handleAction('import')} disabled={isLoading || !id} buttonStyle="secondary">
           {activeAction === 'import' ? (
             <>
               <SpinnerIcon />
@@ -172,11 +177,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           )}
         </Button>
 
-        <Button
-          onClick={() => handleAction('import-sync')}
-          disabled={isLoading || !id}
-          buttonStyle="secondary"
-        >
+        <Button onClick={() => handleAction('import-sync')} disabled={isLoading || !id} buttonStyle="secondary">
           {activeAction === 'import-sync' ? (
             <>
               <SpinnerIcon />
@@ -190,11 +191,7 @@ export const ImportAgentDataButton: UIFieldClientComponent = () => {
           )}
         </Button>
 
-        <Button
-          onClick={() => handleAction('sync')}
-          disabled={isLoading || !id}
-          buttonStyle="secondary"
-        >
+        <Button onClick={() => handleAction('sync')} disabled={isLoading || !id} buttonStyle="secondary">
           {activeAction === 'sync' ? (
             <>
               <SpinnerIcon />

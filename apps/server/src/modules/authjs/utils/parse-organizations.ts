@@ -4,39 +4,33 @@
  */
 
 interface KeycloakOrgInfo {
-  id: string;
-  [key: string]: unknown;
+  id: string
+  [key: string]: unknown
 }
 
-type OrganizationsInfo = Record<string, KeycloakOrgInfo>;
+type OrganizationsInfo = Record<string, KeycloakOrgInfo>
 
-export function parseKeycloakOrganizations(
-  organizationsInfo: unknown
-): string[] {
+export function parseKeycloakOrganizations(organizationsInfo: unknown): string[] {
   if (!organizationsInfo) {
-    return [];
+    return []
   }
 
   try {
     const orgsInfo: OrganizationsInfo =
-      typeof organizationsInfo === "string"
-        ? JSON.parse(organizationsInfo)
-        : (organizationsInfo as OrganizationsInfo);
+      typeof organizationsInfo === 'string' ? JSON.parse(organizationsInfo) : (organizationsInfo as OrganizationsInfo)
 
-    const orgIds: string[] = [];
+    const orgIds: string[] = []
 
     for (const orgAlias in orgsInfo) {
-      const orgId = orgsInfo[orgAlias]?.id;
+      const orgId = orgsInfo[orgAlias]?.id
       if (orgId) {
-        orgIds.push(orgId);
+        orgIds.push(orgId)
       }
     }
 
-    return orgIds;
+    return orgIds
   } catch (error) {
-    console.error("[Auth] Error parsing organizations_info:", error);
-    return [];
+    console.error('[Auth] Error parsing organizations_info:', error)
+    return []
   }
 }
-
-

@@ -1,39 +1,39 @@
-"use client";
+'use client'
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Maximize2, Minimize2, X } from "lucide-react";
-import { useRef } from "react";
-import { cn } from "../lib/utils";
-import { DefaultImage, DefaultLink, ImageComponent, LinkComponent } from "../types/components";
-import { useChat } from "./chat-context";
-import ChatInterface, { ChatInterfaceRef } from "./ChatInterface";
-import ChatMenuDropdown from "./ChatMenuDropdown";
+import { AnimatePresence, motion } from 'framer-motion'
+import { Bot, Maximize2, Minimize2, X } from 'lucide-react'
+import { useRef } from 'react'
+import { cn } from '../lib/utils'
+import { DefaultImage, DefaultLink, type ImageComponent, type LinkComponent } from '../types/components'
+import ChatInterface, { type ChatInterfaceRef } from './ChatInterface'
+import ChatMenuDropdown from './ChatMenuDropdown'
+import { useChat } from './chat-context'
 
 interface FloatingChatPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  aiIcon?: string;
-  agentName?: string;
-  generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string;
-  ImageComponent?: ImageComponent;
-  LinkComponent?: LinkComponent;
+  isOpen: boolean
+  onClose: () => void
+  aiIcon?: string
+  agentName?: string
+  generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
+  ImageComponent?: ImageComponent
+  LinkComponent?: LinkComponent
 }
 
 const FloatingChatPanel = ({
   isOpen,
   onClose,
   aiIcon,
-  agentName = "Asistente",
+  agentName = 'Asistente',
   generateHref,
   ImageComponent: Image = DefaultImage,
   LinkComponent: Link = DefaultLink
 }: FloatingChatPanelProps) => {
-  const { isMaximized, setMaximized } = useChat();
-  const chatInterfaceRef = useRef<ChatInterfaceRef>(null);
+  const { isMaximized, setMaximized } = useChat()
+  const chatInterfaceRef = useRef<ChatInterfaceRef>(null)
 
   const handleNewConversation = () => {
-    chatInterfaceRef.current?.handleNewConversation();
-  };
+    chatInterfaceRef.current?.handleNewConversation()
+  }
 
   return (
     <>
@@ -55,57 +55,61 @@ const FloatingChatPanel = ({
         {isOpen && (
           <motion.div
             className="fixed bg-background shadow-2xl flex flex-col z-50 lg:border lg:border-border overflow-hidden"
-            style={{ borderWidth: "0.5px" }}
+            style={{ borderWidth: '0.5px' }}
             initial={{
-              x: "-100vw",
+              x: '-100vw',
               left: 0,
               top: 0,
               bottom: 0,
-              width: "100vw",
-              borderRadius: "0px",
+              width: '100vw',
+              borderRadius: '0px'
             }}
             animate={
-              isMaximized ? {
-                x: 0,
-                left: 0,
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: "100vw",
-                height: "100vh",
-                borderRadius: "0px",
-              } : (typeof window !== "undefined" && window.innerWidth < 1024) ? {
-                x: 0,
-                left: 0,
-                top: 0,
-                right: "auto",
-                bottom: 0,
-                width: "100vw",
-                height: "100vh",
-                borderRadius: "0px",
-              } : {
-                x: 0,
-                left: "1rem",
-                top: "5rem",
-                right: "auto",
-                bottom: "1rem",
-                width: "33.333333%",
-                height: "auto",
-                borderRadius: "0.75rem",
-              }
+              isMaximized
+                ? {
+                    x: 0,
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    borderRadius: '0px'
+                  }
+                : typeof window !== 'undefined' && window.innerWidth < 1024
+                  ? {
+                      x: 0,
+                      left: 0,
+                      top: 0,
+                      right: 'auto',
+                      bottom: 0,
+                      width: '100vw',
+                      height: '100vh',
+                      borderRadius: '0px'
+                    }
+                  : {
+                      x: 0,
+                      left: '1rem',
+                      top: '5rem',
+                      right: 'auto',
+                      bottom: '1rem',
+                      width: '33.333333%',
+                      height: 'auto',
+                      borderRadius: '0.75rem'
+                    }
             }
             exit={{
-              x: "-100vw",
+              x: '-100vw',
               transition: {
-                type: "spring",
+                type: 'spring',
                 damping: 20,
-                stiffness: 200,
-              },
+                stiffness: 200
+              }
             }}
             transition={{
-              type: "spring",
+              type: 'spring',
               damping: 25,
-              stiffness: 250,
+              stiffness: 250
             }}
           >
             {/* Header with gradient */}
@@ -115,8 +119,8 @@ const FloatingChatPanel = ({
                 <div className="relative">
                   <motion.div
                     className={cn(
-                      "w-10 h-10 rounded-full p-0.5 flex-shrink-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60 animate-pulse-glow",
-                      !aiIcon && "flex items-center justify-center"
+                      'w-10 h-10 rounded-full p-0.5 flex-shrink-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60 animate-pulse-glow',
+                      !aiIcon && 'flex items-center justify-center'
                     )}
                   >
                     {aiIcon ? (
@@ -140,23 +144,18 @@ const FloatingChatPanel = ({
                     className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-chat-status-online border-2 border-background"
                     animate={{
                       scale: [1, 1.2, 1],
-                      opacity: [1, 0.7, 1],
+                      opacity: [1, 0.7, 1]
                     }}
                     transition={{
                       duration: 2,
                       repeat: Infinity,
-                      ease: "easeInOut",
+                      ease: 'easeInOut'
                     }}
                   />
                 </div>
                 <div className="flex flex-col">
-                  <ChatMenuDropdown
-                    title={agentName}
-                    onNewConversation={handleNewConversation}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Disponible para ayudarte
-                  </span>
+                  <ChatMenuDropdown title={agentName} onNewConversation={handleNewConversation} />
+                  <span className="text-xs text-muted-foreground">Disponible para ayudarte</span>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -164,7 +163,7 @@ const FloatingChatPanel = ({
                 <motion.button
                   onClick={() => setMaximized(!isMaximized)}
                   className="hidden lg:flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  aria-label={isMaximized ? "Minimizar" : "Maximizar"}
+                  aria-label={isMaximized ? 'Minimizar' : 'Maximizar'}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -190,7 +189,7 @@ const FloatingChatPanel = ({
         )}
       </AnimatePresence>
     </>
-  );
-};
+  )
+}
 
-export default FloatingChatPanel;
+export default FloatingChatPanel

@@ -1,15 +1,15 @@
-import type { Endpoint } from "payload";
-import type { StripeEndpointConfig } from "../plugin/stripe-inventory-types";
-import { createCheckoutHandler } from "./handlers/checkout-handler";
-import { createDonationHandler } from "./handlers/donation-handler";
-import { createPortalHandler } from "./handlers/portal-handler";
-import { createUpdateHandler } from "./handlers/update-handler";
+import type { Endpoint } from 'payload'
+import type { StripeEndpointConfig } from '../plugin/stripe-inventory-types'
+import { createCheckoutHandler } from './handlers/checkout-handler'
+import { createDonationHandler } from './handlers/donation-handler'
+import { createPortalHandler } from './handlers/portal-handler'
+import { createUpdateHandler } from './handlers/update-handler'
 
-export * from "./handlers/checkout-handler";
-export * from "./handlers/donation-handler";
-export * from "./handlers/portal-handler";
-export * from "./handlers/update-handler";
-export * from "./validators";
+export * from './handlers/checkout-handler'
+export * from './handlers/donation-handler'
+export * from './handlers/portal-handler'
+export * from './handlers/update-handler'
+export * from './validators'
 
 /**
  * Creates all Stripe inventory endpoints
@@ -30,30 +30,27 @@ export * from "./validators";
  * // GET /api/stripe/donation?amount={cents}
  * ```
  */
-export function createStripeEndpoints(
-  config: StripeEndpointConfig,
-  basePath: string = "/stripe",
-): Endpoint[] {
+export function createStripeEndpoints(config: StripeEndpointConfig, basePath: string = '/stripe'): Endpoint[] {
   return [
     {
       path: `${basePath}/checkout`,
-      method: "get",
-      handler: createCheckoutHandler(config),
+      method: 'get',
+      handler: createCheckoutHandler(config)
     },
     {
       path: `${basePath}/portal`,
-      method: "get",
-      handler: createPortalHandler(config),
+      method: 'get',
+      handler: createPortalHandler(config)
     },
     {
       path: `${basePath}/update`,
-      method: "get",
-      handler: createUpdateHandler(config),
+      method: 'get',
+      handler: createUpdateHandler(config)
     },
     {
       path: `${basePath}/donation`,
-      method: "get",
-      handler: createDonationHandler(config),
-    },
-  ];
+      method: 'get',
+      handler: createDonationHandler(config)
+    }
+  ]
 }

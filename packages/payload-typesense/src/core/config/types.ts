@@ -1,45 +1,45 @@
-import type { TableConfig } from "@nexo-labs/payload-indexer";
-import type { CollectionSlug } from "payload";
+import type { TableConfig } from '@nexo-labs/payload-indexer'
+import type { CollectionSlug } from 'payload'
 import type {
   EmbeddingProviderConfig,
   RAGFeatureConfig,
-  TypesenseConnectionConfig,
-} from "../../shared/types/plugin-types";
+  TypesenseConnectionConfig
+} from '../../shared/types/plugin-types'
 
 // --- Search Feature Config ---
 
-export type SearchMode = "semantic" | "keyword" | "hybrid";
+export type SearchMode = 'semantic' | 'keyword' | 'hybrid'
 
 export interface SearchDefaults {
-  mode?: SearchMode;
-  perPage?: number;
-  tables?: string[];
+  mode?: SearchMode
+  perPage?: number
+  tables?: string[]
 }
 
 export interface SearchFeatureConfig {
-  enabled: boolean;
-  defaults?: SearchDefaults;
+  enabled: boolean
+  defaults?: SearchDefaults
 }
 
 // --- Sync Feature Config ---
 
 export interface SyncFeatureConfig {
-  enabled: boolean;
-  autoSync?: boolean;
-  batchSize?: number;
+  enabled: boolean
+  autoSync?: boolean
+  batchSize?: number
 }
 
 // --- Main Configuration ---
 
 export interface FeatureFlags {
-  embedding?: EmbeddingProviderConfig;
-  search?: SearchFeatureConfig;
-  rag?: RAGFeatureConfig;
-  sync?: SyncFeatureConfig;
+  embedding?: EmbeddingProviderConfig
+  search?: SearchFeatureConfig
+  rag?: RAGFeatureConfig
+  sync?: SyncFeatureConfig
 }
 
 export interface ModularPluginConfig {
-  typesense: TypesenseConnectionConfig;
-  features: FeatureFlags;
-  collections: Record<CollectionSlug | string, TableConfig[]>;
+  typesense: TypesenseConnectionConfig
+  features: FeatureFlags
+  collections: Record<CollectionSlug | string, TableConfig[]>
 }

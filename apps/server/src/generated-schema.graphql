@@ -1,28 +1,86 @@
 type Query {
   Page(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): Page
-  Pages(draft: Boolean, where: Page_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Pages
+  Pages(
+    draft: Boolean
+    where: Page_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): Pages
   countPages(draft: Boolean, trash: Boolean, where: Page_where): countPages
   docAccessPage(id: Int!): pagesDocAccess
   User(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): User
-  Users(draft: Boolean, where: User_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Users
+  Users(
+    draft: Boolean
+    where: User_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): Users
   countUsers(draft: Boolean, trash: Boolean, where: User_where): countUsers
   docAccessUser(id: Int!): usersDocAccess
   meUser: usersMe
   initializedUser: Boolean
   Tenant(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): Tenant
-  Tenants(draft: Boolean, where: Tenant_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Tenants
+  Tenants(
+    draft: Boolean
+    where: Tenant_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): Tenants
   countTenants(draft: Boolean, trash: Boolean, where: Tenant_where): countTenants
   docAccessTenant(id: Int!): tenantsDocAccess
   PayloadKv(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): PayloadKv
-  PayloadKvs(draft: Boolean, where: PayloadKv_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): PayloadKvs
+  PayloadKvs(
+    draft: Boolean
+    where: PayloadKv_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): PayloadKvs
   countPayloadKvs(draft: Boolean, trash: Boolean, where: PayloadKv_where): countPayloadKvs
   docAccessPayloadKv(id: Int!): payload_kvDocAccess
   PayloadLockedDocument(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): PayloadLockedDocument
-  PayloadLockedDocuments(draft: Boolean, where: PayloadLockedDocument_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): PayloadLockedDocuments
-  countPayloadLockedDocuments(draft: Boolean, trash: Boolean, where: PayloadLockedDocument_where): countPayloadLockedDocuments
+  PayloadLockedDocuments(
+    draft: Boolean
+    where: PayloadLockedDocument_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): PayloadLockedDocuments
+  countPayloadLockedDocuments(
+    draft: Boolean
+    trash: Boolean
+    where: PayloadLockedDocument_where
+  ): countPayloadLockedDocuments
   docAccessPayloadLockedDocument(id: Int!): payload_locked_documentsDocAccess
   PayloadPreference(id: Int!, draft: Boolean, select: Boolean, trash: Boolean): PayloadPreference
-  PayloadPreferences(draft: Boolean, where: PayloadPreference_where, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): PayloadPreferences
+  PayloadPreferences(
+    draft: Boolean
+    where: PayloadPreference_where
+    limit: Int
+    page: Int
+    pagination: Boolean
+    select: Boolean
+    sort: String
+    trash: Boolean
+  ): PayloadPreferences
   countPayloadPreferences(draft: Boolean, trash: Boolean, where: PayloadPreference_where): countPayloadPreferences
   docAccessPayloadPreference(id: Int!): payload_preferencesDocAccess
   Access: Access
@@ -3066,15 +3124,33 @@ type Mutation {
   deleteTenant(id: Int!, trash: Boolean): Tenant
   duplicateTenant(id: Int!, data: mutationTenantInput!): Tenant
   createPayloadKv(data: mutationPayloadKvInput!, draft: Boolean): PayloadKv
-  updatePayloadKv(id: Int!, autosave: Boolean, data: mutationPayloadKvUpdateInput!, draft: Boolean, trash: Boolean): PayloadKv
+  updatePayloadKv(
+    id: Int!
+    autosave: Boolean
+    data: mutationPayloadKvUpdateInput!
+    draft: Boolean
+    trash: Boolean
+  ): PayloadKv
   deletePayloadKv(id: Int!, trash: Boolean): PayloadKv
   duplicatePayloadKv(id: Int!, data: mutationPayloadKvInput!): PayloadKv
   createPayloadLockedDocument(data: mutationPayloadLockedDocumentInput!, draft: Boolean): PayloadLockedDocument
-  updatePayloadLockedDocument(id: Int!, autosave: Boolean, data: mutationPayloadLockedDocumentUpdateInput!, draft: Boolean, trash: Boolean): PayloadLockedDocument
+  updatePayloadLockedDocument(
+    id: Int!
+    autosave: Boolean
+    data: mutationPayloadLockedDocumentUpdateInput!
+    draft: Boolean
+    trash: Boolean
+  ): PayloadLockedDocument
   deletePayloadLockedDocument(id: Int!, trash: Boolean): PayloadLockedDocument
   duplicatePayloadLockedDocument(id: Int!, data: mutationPayloadLockedDocumentInput!): PayloadLockedDocument
   createPayloadPreference(data: mutationPayloadPreferenceInput!, draft: Boolean): PayloadPreference
-  updatePayloadPreference(id: Int!, autosave: Boolean, data: mutationPayloadPreferenceUpdateInput!, draft: Boolean, trash: Boolean): PayloadPreference
+  updatePayloadPreference(
+    id: Int!
+    autosave: Boolean
+    data: mutationPayloadPreferenceUpdateInput!
+    draft: Boolean
+    trash: Boolean
+  ): PayloadPreference
   deletePayloadPreference(id: Int!, trash: Boolean): PayloadPreference
   duplicatePayloadPreference(id: Int!, data: mutationPayloadPreferenceInput!): PayloadPreference
 }

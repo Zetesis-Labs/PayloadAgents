@@ -1,8 +1,7 @@
-import { slugField, type CollectionConfig } from 'payload'
-
+import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
+import { type CollectionConfig, slugField } from 'payload'
 import { superAdminOrTenantAdminAccess } from '@/collections/access/superAdminOrTenantAdmin'
 import { syncToTypesense } from './endpoints/syncToTypesense'
-import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -10,39 +9,39 @@ export const Posts: CollectionConfig = {
     create: superAdminOrTenantAdminAccess,
     delete: superAdminOrTenantAdminAccess,
     read: () => true,
-    update: superAdminOrTenantAdminAccess,
+    update: superAdminOrTenantAdminAccess
   },
   admin: {
     useAsTitle: 'title',
     components: {
       views: {
         list: {
-          actions: ['@/modules/payload-admin/sync-typesense-button'],
-        },
-      },
-    },
+          actions: ['@/modules/payload-admin/sync-typesense-button']
+        }
+      }
+    }
   },
   endpoints: [syncToTypesense],
   fields: [
     {
       name: 'title',
-      type: 'text',
+      type: 'text'
     },
-    slugField({useAsSlug: 'title'}),
+    slugField({ useAsSlug: 'title' }),
     {
       name: 'external_id',
       type: 'text',
       index: true,
       admin: {
-        description: 'ID externo del contenido importado (ej: ID de tweet)',
-      },
+        description: 'ID externo del contenido importado (ej: ID de tweet)'
+      }
     },
     {
       name: 'url',
       type: 'text',
       admin: {
-        description: 'URL original del contenido',
-      },
+        description: 'URL original del contenido'
+      }
     },
     {
       name: 'publishedAt',
@@ -52,21 +51,21 @@ export const Posts: CollectionConfig = {
       admin: {
         description: 'Fecha de publicación del contenido',
         date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
+          pickerAppearance: 'dayAndTime'
+        }
+      }
     },
     {
       name: 'content',
       type: 'richText',
       admin: {
-        description: 'Contenido de la pagina. Se indexa para busqueda y RAG.',
-      },
+        description: 'Contenido de la pagina. Se indexa para busqueda y RAG.'
+      }
     },
     buildTaxonomyRelationship({
       name: 'categories',
       label: 'Categorias',
-      required: false,
+      required: false
     }),
     {
       label: 'Videos relacionados',
@@ -74,8 +73,8 @@ export const Posts: CollectionConfig = {
       type: 'array',
       fields: [
         { name: 'url', type: 'text', required: true },
-        { name: 'title', type: 'text' },
-      ],
+        { name: 'title', type: 'text' }
+      ]
     },
     {
       label: 'Libros relacionados',
@@ -88,12 +87,12 @@ export const Posts: CollectionConfig = {
           relationTo: 'books',
           required: false,
           admin: {
-            description: 'Libro relacionado de la colección',
-          },
+            description: 'Libro relacionado de la colección'
+          }
         },
         { name: 'url', type: 'text', required: false },
-        { name: 'title', type: 'text' },
-      ],
+        { name: 'title', type: 'text' }
+      ]
     },
     {
       label: 'Otros enlaces relacionados',
@@ -101,8 +100,8 @@ export const Posts: CollectionConfig = {
       type: 'array',
       fields: [
         { name: 'url', type: 'text', required: true },
-        { name: 'title', type: 'text' },
-      ],
-    },
-  ],
+        { name: 'title', type: 'text' }
+      ]
+    }
+  ]
 }

@@ -30,8 +30,8 @@
  * ```
  */
 
-import { stripePlugin } from "@payloadcms/plugin-stripe";
-import type { Config, Plugin } from "payload";
+import { stripePlugin } from '@payloadcms/plugin-stripe'
+import type { Config, Plugin } from 'payload'
 import {
   customerDeleted,
   invoiceSucceeded,
@@ -39,23 +39,23 @@ import {
   priceDeleted,
   productDeleted,
   subscriptionDeleted,
-  subscriptionUpsert,
-} from "../actions";
-import { createStripeEndpoints } from "../endpoints";
+  subscriptionUpsert
+} from '../actions'
+import { createStripeEndpoints } from '../endpoints'
 import type {
   ResolveContentPermissions,
   ResolveSubscriptionPermissions,
   StripeEndpointConfig,
-  StripeInventoryPluginConfig,
-} from "./stripe-inventory-types";
+  StripeInventoryPluginConfig
+} from './stripe-inventory-types'
 
-export { createStripeEndpoints };
+export { createStripeEndpoints }
 export type {
   ResolveContentPermissions,
   ResolveSubscriptionPermissions,
   StripeEndpointConfig,
-  StripeInventoryPluginConfig,
-};
+  StripeInventoryPluginConfig
+}
 
 /**
  * Creates the Stripe Inventory plugin for Payload CMS
@@ -74,87 +74,79 @@ export type {
  * - GET /api{basePath}/update?subscriptionId={id}&cancelAtPeriodEnd={bool} - Update subscription
  * - GET /api{basePath}/donation?amount={cents} - Returns JSON with checkout URL
  */
-export function createStripeInventoryPlugin<
-  TProduct = unknown,
-  TContent = unknown,
->(config: StripeInventoryPluginConfig<TProduct, TContent>): Plugin {
-  const basePath = config.basePath || "/stripe";
+export function createStripeInventoryPlugin<TProduct = unknown, TContent = unknown>(
+  config: StripeInventoryPluginConfig<TProduct, TContent>
+): Plugin {
+  const basePath = config.basePath || '/stripe'
 
   // Build endpoint configuration
   const endpointConfig: StripeEndpointConfig = {
     routes: config.routes,
     checkPermissions: config.checkPermissions,
-    resolveUser: config.resolveUser,
-  };
+    resolveUser: config.resolveUser
+  }
 
   // Callback for subscription updates (defaults to no-op)
   const onSubscriptionUpdate =
     config.onSubscriptionUpdate ||
     (async () => {
       /* no-op */
-    });
+    })
 
   // Required callbacks for permission resolution
-  const { resolveSubscriptionPermissions, resolveContentPermissions } = config;
+  const { resolveSubscriptionPermissions, resolveContentPermissions } = config
 
   return (incomingConfig: Config): Config => {
     // 1. Create and register Stripe endpoints
-    const stripeEndpoints = createStripeEndpoints(endpointConfig, basePath);
+    const stripeEndpoints = createStripeEndpoints(endpointConfig, basePath)
 
     const configWithEndpoints: Config = {
       ...incomingConfig,
-      endpoints: [...(incomingConfig.endpoints || []), ...stripeEndpoints],
-    };
+      endpoints: [...(incomingConfig.endpoints || []), ...stripeEndpoints]
+    }
 
     // 2. Apply the base Stripe plugin with webhook handlers
     const stripePluginInstance = stripePlugin({
-      isTestKey: process.env.STRIPE_SECRET_KEY?.includes("sk_test"),
-      stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
+      isTestKey: process.env.STRIPE_SECRET_KEY?.includes('sk_test'),
+      stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
       stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOK_SECRET,
       webhooks: {
-        "price.deleted": async ({ event, payload }) =>
-          await priceDeleted(event.data.object, payload),
-        "customer.subscription.created": async ({ event, payload }) =>
+        'price.deleted': async ({ event, payload }) => await priceDeleted(event.data.object, payload),
+        'customer.subscription.created': async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions,
+            resolveSubscriptionPermissions
           ),
-        "customer.subscription.paused": async ({ event, payload }) =>
+        'customer.subscription.paused': async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions,
+            resolveSubscriptionPermissions
           ),
-        "customer.subscription.updated": async ({ event, payload }) =>
+        'customer.subscription.updated': async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions,
+            resolveSubscriptionPermissions
           ),
-        "customer.subscription.deleted": async ({ event, payload }) =>
-          await subscriptionDeleted(
-            event.data.object,
-            payload,
-            onSubscriptionUpdate,
-          ),
-        "customer.deleted": async ({ event, payload }) =>
-          await customerDeleted(event.data.object, payload),
-        "product.deleted": async ({ event, payload }) =>
-          await productDeleted(event.data.object, payload),
-        "payment_intent.succeeded": async ({ event, payload }) => {
-          await paymentSucceeded(event.data.object, payload);
+        'customer.subscription.deleted': async ({ event, payload }) =>
+          await subscriptionDeleted(event.data.object, payload, onSubscriptionUpdate),
+        'customer.deleted': async ({ event, payload }) => await customerDeleted(event.data.object, payload),
+        'product.deleted': async ({ event, payload }) => await productDeleted(event.data.object, payload),
+        'payment_intent.succeeded': async ({ event, payload }) => {
+          await paymentSucceeded(event.data.object, payload)
         },
-        "invoice.paid": async ({ event, payload }) => {
-          await invoiceSucceeded(event.data.object, payload);
-        },
-      },
-    });
+        'invoice.paid': async ({ event, payload }) => {
+          await invoiceSucceeded(event.data.object, payload)
+        }
+      }
+    })
 
     // 3. Apply the Stripe plugin to the config with endpoints
-    return stripePluginInstance(configWithEndpoints);
-  };
+    return stripePluginInstance(configWithEndpoints)
+  }
 }

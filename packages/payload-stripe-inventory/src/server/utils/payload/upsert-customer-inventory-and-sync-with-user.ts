@@ -1,17 +1,14 @@
-import { Payload } from "payload";
-import {
-  COLLECTION_SLUG_CUSTOMERS,
-  generateCustomerInventory,
-} from "../../../model";
-import type { CustomerInventory } from "../../../types";
-import { syncCustomerByEmail } from "./sync-customer-by-email";
-import { payloadUpsert } from "./upsert";
+import type { Payload } from 'payload'
+import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from '../../../model'
+import type { CustomerInventory } from '../../../types'
+import { syncCustomerByEmail } from './sync-customer-by-email'
+import { payloadUpsert } from './upsert'
 
 export async function upsertCustomerInventoryAndSyncWithUser(
   payload: Payload,
   inventory: CustomerInventory | null | undefined,
   email: string,
-  stripeCustomerId?: string | null,
+  stripeCustomerId?: string | null
 ) {
   await payloadUpsert({
     payload,
@@ -19,9 +16,9 @@ export async function upsertCustomerInventoryAndSyncWithUser(
     data: {
       email: email,
       stripeId: stripeCustomerId,
-      inventory: inventory ?? generateCustomerInventory(),
+      inventory: inventory ?? generateCustomerInventory()
     },
-    where: { email: { equals: email } },
-  });
-  await syncCustomerByEmail({ email, payload });
+    where: { email: { equals: email } }
+  })
+  await syncCustomerByEmail({ email, payload })
 }

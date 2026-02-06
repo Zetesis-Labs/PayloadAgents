@@ -2,11 +2,8 @@
  * Types for the composable Typesense RAG plugin
  */
 
-import type {
-  EmbeddingProviderConfig,
-  TableConfig,
-} from "@nexo-labs/payload-indexer";
-import { CollectionSlug } from "payload";
+import type { EmbeddingProviderConfig, TableConfig } from '@nexo-labs/payload-indexer'
+import type { CollectionSlug } from 'payload'
 import type {
   AdvancedSearchConfig,
   AgentConfig,
@@ -14,8 +11,8 @@ import type {
   HNSWConfig,
   HybridSearchConfig,
   RAGCallbacks,
-  TypesenseConnectionConfig,
-} from "../shared/types/plugin-types";
+  TypesenseConnectionConfig
+} from '../shared/types/plugin-types'
 
 /**
  * Search feature configuration for the Typesense RAG plugin
@@ -23,16 +20,16 @@ import type {
  */
 export interface TypesenseSearchConfig {
   /** Enable search endpoints */
-  enabled: boolean;
+  enabled: boolean
   /** Default search settings */
   defaults?: {
     /** Search mode: 'semantic' | 'hybrid' | 'keyword' */
-    mode?: "semantic" | "hybrid" | "keyword";
+    mode?: 'semantic' | 'hybrid' | 'keyword'
     /** Results per page */
-    perPage?: number;
+    perPage?: number
     /** Tables to search by default */
-    tables?: string[];
-  };
+    tables?: string[]
+  }
 }
 
 /**
@@ -41,35 +38,35 @@ export interface TypesenseSearchConfig {
  */
 export interface TypesenseRAGPluginConfig<TSlug extends CollectionSlug> {
   /** Typesense connection configuration */
-  typesense: TypesenseConnectionConfig;
+  typesense: TypesenseConnectionConfig
 
-  collectionName: TSlug;
+  collectionName: TSlug
 
   /**
    * Embedding provider config (for RAG query embedding)
    * Note: The RAG handler creates its own provider instance to track usage/spending.
    * The EmbeddingService from createIndexerPlugin is used for document sync, not RAG queries.
    */
-  embeddingConfig?: EmbeddingProviderConfig;
+  embeddingConfig?: EmbeddingProviderConfig
 
   /** Collection configurations (for schema sync) */
-  collections?: Record<string, TableConfig[]>;
+  collections?: Record<string, TableConfig[]>
 
   /** Search configuration */
-  search?: TypesenseSearchConfig;
+  search?: TypesenseSearchConfig
 
   /** RAG agent configurations */
-  agents?: AgentConfig[] | AgentProvider;
+  agents?: AgentConfig[] | AgentProvider
 
   /** Callback functions for permissions, session management, etc. */
-  callbacks?: RAGCallbacks;
+  callbacks?: RAGCallbacks
 
   /** Hybrid search configuration */
-  hybrid?: HybridSearchConfig;
+  hybrid?: HybridSearchConfig
 
   /** HNSW optimization configuration */
-  hnsw?: HNSWConfig;
+  hnsw?: HNSWConfig
 
   /** Advanced search configuration */
-  advanced?: AdvancedSearchConfig;
+  advanced?: AdvancedSearchConfig
 }

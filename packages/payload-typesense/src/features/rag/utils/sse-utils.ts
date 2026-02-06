@@ -4,7 +4,7 @@
  * Provides utilities for formatting and sending SSE events
  */
 
-import { SSEEvent } from "../../../shared";
+import type { SSEEvent } from '../../../shared'
 
 /**
  * Helper to create an SSE event string
@@ -13,7 +13,7 @@ import { SSEEvent } from "../../../shared";
  * @returns Formatted SSE event string
  */
 export function formatSSEEvent(event: SSEEvent): string {
-  return `data: ${JSON.stringify(event)}\n\n`;
+  return `data: ${JSON.stringify(event)}\n\n`
 }
 
 /**
@@ -26,8 +26,8 @@ export function formatSSEEvent(event: SSEEvent): string {
 export function sendSSEEvent(
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
-  event: SSEEvent,
+  event: SSEEvent
 ): void {
-  const data = formatSSEEvent(event);
-  controller.enqueue(encoder.encode(data));
+  const data = formatSSEEvent(event)
+  controller.enqueue(encoder.encode(data))
 }

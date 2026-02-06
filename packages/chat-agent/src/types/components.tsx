@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 /**
  * Props for a Link component that can be injected
@@ -41,7 +41,15 @@ export type ImageComponent = React.ComponentType<ImageComponentProps>
 /**
  * Default Link component fallback (regular <a> tag)
  */
-export const DefaultLink: LinkComponent = ({ href, children, onClick, className, target, 'aria-label': ariaLabel, title }) => (
+export const DefaultLink: LinkComponent = ({
+  href,
+  children,
+  onClick,
+  className,
+  target,
+  'aria-label': ariaLabel,
+  title
+}) => (
   <a href={href} onClick={onClick} className={className} target={target} aria-label={ariaLabel} title={title}>
     {children}
   </a>

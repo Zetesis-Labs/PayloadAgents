@@ -1,15 +1,15 @@
-import { mcpPlugin as _mcpPlugin } from "@payloadcms/plugin-mcp";
+import { mcpPlugin as _mcpPlugin } from '@payloadcms/plugin-mcp'
 
 export const mcpPlugin = _mcpPlugin({
   collections: {
     posts: {
-      enabled: true,
+      enabled: true
     },
     books: {
-      enabled: true,
+      enabled: true
     },
     taxonomy: {
-      enabled: true,
-    },
-  },
-});
+      enabled: true
+    }
+  }
+})

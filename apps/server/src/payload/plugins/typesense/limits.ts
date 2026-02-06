@@ -4,7 +4,7 @@
  */
 
 import type { Payload } from 'payload'
-import { type SpendingEntry } from './token-utils'
+import type { SpendingEntry } from './token-utils'
 
 // ============================================================================
 // TYPES
@@ -37,7 +37,7 @@ const DEFAULT_LIMITS = {
   free: 10000,
   basic: 50000,
   pro: 200000,
-  enterprise: 1000000,
+  enterprise: 1000000
 } as const
 
 // ============================================================================
@@ -53,7 +53,7 @@ async function getUserDailyLimitImpl(payload: Payload, userId: string | number):
     const user = await payload.findByID({
       collection: 'users',
       id: userId,
-      depth: 1,
+      depth: 1
     })
 
     if (!user) return DEFAULT_LIMITS.free
@@ -87,7 +87,7 @@ async function getCurrentDailyUsageImpl(payload: Payload, userId: string | numbe
       collection: 'chat-sessions',
       where: { user: { equals: userId } },
       limit: 1000,
-      pagination: false,
+      pagination: false
     })
 
     let totalTokens = 0
@@ -105,14 +105,14 @@ async function getCurrentDailyUsageImpl(payload: Payload, userId: string | numbe
     return {
       date: today.toISOString().split('T')[0] ?? '',
       tokens_used: totalTokens,
-      reset_at: tomorrow.toISOString(),
+      reset_at: tomorrow.toISOString()
     }
   } catch (error) {
     console.error('[Token Limits] Error calculating daily usage:', error)
     return {
       date: today.toISOString().split('T')[0] ?? '',
       tokens_used: 0,
-      reset_at: tomorrow.toISOString(),
+      reset_at: tomorrow.toISOString()
     }
   }
 }
@@ -139,7 +139,7 @@ export async function getTokenUsage(payload: Payload, userId: string | number): 
       remaining,
       percentage,
       reset_at: currentUsage.reset_at,
-      canUse: (tokens: number) => used + tokens <= limit,
+      canUse: (tokens: number) => used + tokens <= limit
     }
   } catch (error) {
     console.error('[Token Usage] Error getting usage:', error)
@@ -149,7 +149,7 @@ export async function getTokenUsage(payload: Payload, userId: string | number): 
       remaining: 0,
       percentage: 0,
       reset_at: new Date().toISOString(),
-      canUse: () => false,
+      canUse: () => false
     }
   }
 }

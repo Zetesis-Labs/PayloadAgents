@@ -4,63 +4,60 @@
  * Handles the execution of RAG conversational search against Typesense
  */
 
-import type { TypesenseConnectionConfig } from "../../../index";
-import { ChunkSource } from "../../../shared/index";
-import {
-  buildConversationalUrl,
-  buildMultiSearchRequestBody,
-} from "../query-builder";
+import type { TypesenseConnectionConfig } from '../../../index'
+import type { ChunkSource } from '../../../shared/index'
+import { buildConversationalUrl, buildMultiSearchRequestBody } from '../query-builder'
 
 /**
  * Configuration for RAG search
  */
 export type RAGSearchConfig = {
   /** Collections to search in */
-  searchCollections: string[];
+  searchCollections: string[]
   /** Conversation model ID */
-  modelId: string;
+  modelId: string
   /** Number of results to retrieve */
-  kResults?: number;
+  kResults?: number
   /** Advanced search configuration */
   advancedConfig?: {
-    typoTokensThreshold?: number;
-    numTypos?: number;
-    prefix?: boolean;
-    dropTokensThreshold?: number;
-  };
+    typoTokensThreshold?: number
+    numTypos?: number
+    prefix?: boolean
+    dropTokensThreshold?: number
+  }
   /** Taxonomy slugs to filter RAG content */
-  taxonomySlugs?: string[];
-};
+  taxonomySlugs?: string[]
+}
 
 /**
  * Request parameters for RAG chat
  */
 export type RAGChatRequest = {
   /** User's message */
-  userMessage: string;
+  userMessage: string
   /** Query embedding vector */
-  queryEmbedding: number[];
+  queryEmbedding: number[]
   /** Optional chat/conversation ID for follow-up messages */
-  chatId?: string;
+  chatId?: string
   /** Optional selected document IDs to filter search */
-  selectedDocuments?: string[];
-};
+  selectedDocuments?: string[]
+}
 
 /**
  * Result of a RAG search operation
  */
 export type RAGSearchResult = {
   /** Full assistant message (for non-streaming responses) */
-  fullAssistantMessage?: string;
+  fullAssistantMessage?: string
   /** Conversation ID from Typesense */
-  conversationId?: string;
+  conversationId?: string
   /** Sources/chunks used in the response */
-  sources: ChunkSource[];
+  sources: ChunkSource[]
   /** Raw response from Typesense */
-  response: Response;
+  response: Response
   /** Whether the response is streaming */
-  isStreaming: boolean;
-};
+  isStreaming: boolean
+}
 
 /**
  * Execute a RAG conversational search
@@ -79,14 +76,10 @@ export type RAGSearchResult = {
 export async function executeRAGSearch(
   typesenseConfig: TypesenseConnectionConfig,
   searchConfig: RAGSearchConfig,
-  request: RAGChatRequest,
+  request: RAGChatRequest
 ): Promise<RAGSearchResult> {
   // Build the Typesense conversational search URL
-  const typesenseUrl = buildConversationalUrl(
-    request,
-    searchConfig.modelId,
-    typesenseConfig,
-  );
+  const typesenseUrl = buildConversationalUrl(request, searchConfig.modelId, typesenseConfig)
 
   // Build the multi-search request body
   const requestBody = buildMultiSearchRequestBody({
@@ -97,42 +90,39 @@ export async function executeRAGSearch(
     searchCollections: searchConfig.searchCollections,
     kResults: searchConfig.kResults || 10,
     advancedConfig: searchConfig.advancedConfig,
-    taxonomySlugs: searchConfig.taxonomySlugs,
-  });
+    taxonomySlugs: searchConfig.taxonomySlugs
+  })
 
   // Execute the search
   const response = await fetch(typesenseUrl.toString(), {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "X-TYPESENSE-API-KEY": typesenseConfig.apiKey,
+      'Content-Type': 'application/json',
+      'X-TYPESENSE-API-KEY': typesenseConfig.apiKey
     },
-    body: JSON.stringify(requestBody),
-  });
+    body: JSON.stringify(requestBody)
+  })
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await response.text()
 
     // Detect expired conversation error
-    if (
-      errorText.includes("conversation_id") &&
-      errorText.includes("invalid")
-    ) {
-      const error = new Error("EXPIRED_CONVERSATION");
-      (error as any).cause = errorText;
-      throw error;
+    if (errorText.includes('conversation_id') && errorText.includes('invalid')) {
+      const error = new Error('EXPIRED_CONVERSATION')
+      ;(error as any).cause = errorText
+      throw error
     }
 
-    throw new Error(`Typesense search failed: ${errorText}`);
+    throw new Error(`Typesense search failed: ${errorText}`)
   }
 
   // Check if response is streaming
-  const contentType = response.headers.get("content-type");
-  const isStreaming = contentType?.includes("text/event-stream") || false;
+  const contentType = response.headers.get('content-type')
+  const isStreaming = contentType?.includes('text/event-stream') || false
 
   return {
     response,
     isStreaming,
-    sources: [], // Will be populated by stream/response handlers
-  };
+    sources: [] // Will be populated by stream/response handlers
+  }
 }

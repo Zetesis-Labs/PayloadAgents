@@ -3,8 +3,8 @@
 import { Check, ChevronDown, ChevronLeft, History, MessageSquarePlus } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '../lib/utils'
-import { useChat } from './chat-context'
 import { ChatHistoryList } from './ChatHistoryList'
+import { useChat } from './chat-context'
 
 interface ChatMenuDropdownProps {
   title: string
@@ -96,7 +96,7 @@ const ChatMenuDropdown = ({ title, onNewConversation }: ChatMenuDropdownProps) =
           aria-label="Menú de chat"
         >
           <span>{displayTitle}</span>
-          <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} />
+          <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
         </button>
 
         {isOpen && (
@@ -130,13 +130,13 @@ const ChatMenuDropdown = ({ title, onNewConversation }: ChatMenuDropdownProps) =
                       <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Cambiar Agente
                       </div>
-                      {agents.map((agent) => (
+                      {agents.map(agent => (
                         <button
                           key={agent.slug}
                           onClick={() => handleAgentSelect(agent.slug)}
                           className={cn(
-                            "relative flex w-full cursor-pointer select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
-                            selectedAgent === agent.slug && "text-primary font-medium bg-primary/10"
+                            'relative flex w-full cursor-pointer select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground',
+                            selectedAgent === agent.slug && 'text-primary font-medium bg-primary/10'
                           )}
                         >
                           <span className="truncate">{agent.name || agent.slug}</span>
@@ -149,10 +149,7 @@ const ChatMenuDropdown = ({ title, onNewConversation }: ChatMenuDropdownProps) =
               ) : (
                 <div className="flex flex-col max-h-[60vh]">
                   <div className="flex items-center gap-2 px-2 py-1.5 border-b border-border mb-1">
-                    <button
-                      onClick={handleBackToMenu}
-                      className="p-1 hover:bg-accent rounded-sm"
-                    >
+                    <button onClick={handleBackToMenu} className="p-1 hover:bg-accent rounded-sm">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm font-semibold">Historial</span>

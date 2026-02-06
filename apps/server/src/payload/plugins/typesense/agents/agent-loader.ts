@@ -3,8 +3,8 @@
  * Loads RAG agents from PayloadCMS database
  */
 
-import type { Payload } from 'payload'
 import type { AgentConfig } from '@nexo-labs/payload-typesense'
+import type { Payload } from 'payload'
 import type { Agent, Media, Taxonomy } from '@/payload-types'
 
 /**
@@ -16,7 +16,7 @@ export async function loadAgentsFromPayload(payload: Payload): Promise<AgentConf
       collection: 'agents',
       where: { isActive: { equals: true } },
       depth: 1,
-      limit: 100,
+      limit: 100
     })
 
     return docs.map(toAgentConfig)
@@ -43,12 +43,12 @@ function toAgentConfig(agent: Agent): AgentConfig {
     avatar: extractAvatarUrl(agent.avatar),
     welcomeTitle: agent.welcomeTitle ?? undefined,
     welcomeSubtitle: agent.welcomeSubtitle ?? undefined,
-    suggestedQuestions: agent.suggestedQuestions?.map((q) => ({
+    suggestedQuestions: agent.suggestedQuestions?.map(q => ({
       prompt: q.prompt,
       title: q.title,
-      description: q.description || '',
+      description: q.description || ''
     })),
-    taxonomySlugs: extractTaxonomySlugs(agent.taxonomies),
+    taxonomySlugs: extractTaxonomySlugs(agent.taxonomies)
   }
 }
 
@@ -71,7 +71,5 @@ function extractAvatarUrl(avatar?: number | Media | null): string | undefined {
 function extractTaxonomySlugs(taxonomies?: (number | Taxonomy)[] | null): string[] {
   if (!taxonomies) return []
 
-  return taxonomies
-    .filter((t): t is Taxonomy => typeof t === 'object')
-    .map((t) => t.slug)
+  return taxonomies.filter((t): t is Taxonomy => typeof t === 'object').map(t => t.slug)
 }

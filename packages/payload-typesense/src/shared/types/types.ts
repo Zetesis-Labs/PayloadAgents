@@ -3,7 +3,7 @@
  */
 
 // Re-export base document types from payload-indexer (single source of truth)
-export type { BaseDocument, PayloadDocument } from "@nexo-labs/payload-indexer";
+export type { BaseDocument, PayloadDocument } from '@nexo-labs/payload-indexer'
 
 // Typesense document type - represents the mapped document for Typesense
 export interface TypesenseDocument {

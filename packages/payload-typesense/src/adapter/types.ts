@@ -3,28 +3,28 @@
  * These are the data types and field configurations supported by Typesense
  */
 
-import type { FieldMapping, BaseCollectionSchema } from "@nexo-labs/payload-indexer";
+import type { BaseCollectionSchema, FieldMapping } from '@nexo-labs/payload-indexer'
 
 /**
  * All valid Typesense field types
  * @see https://typesense.org/docs/latest/api/collections.html#schema-parameters
  */
 export type TypesenseFieldType =
-  | "string"
-  | "int32"
-  | "int64"
-  | "float"
-  | "bool"
-  | "string[]"
-  | "float[]"
-  | "int32[]"
-  | "int64[]"
-  | "bool[]"
-  | "object"
-  | "object[]"
-  | "geopoint"
-  | "geopoint[]"
-  | "auto";
+  | 'string'
+  | 'int32'
+  | 'int64'
+  | 'float'
+  | 'bool'
+  | 'string[]'
+  | 'float[]'
+  | 'int32[]'
+  | 'int64[]'
+  | 'bool[]'
+  | 'object'
+  | 'object[]'
+  | 'geopoint'
+  | 'geopoint[]'
+  | 'auto'
 
 /**
  * Typesense-specific field mapping
@@ -44,23 +44,23 @@ export interface TypesenseFieldMapping extends FieldMapping {
   /**
    * Typesense field type
    */
-  type: TypesenseFieldType;
+  type: TypesenseFieldType
 
   /**
    * Whether the field should be faceted (filterable in Typesense UI)
    */
-  facet?: boolean;
+  facet?: boolean
 
   /**
    * Whether the field should be indexed (searchable)
    * @default true
    */
-  index?: boolean;
+  index?: boolean
 
   /**
    * Whether the field is optional (can be missing from documents)
    */
-  optional?: boolean;
+  optional?: boolean
 }
 
 /**
@@ -68,15 +68,15 @@ export interface TypesenseFieldMapping extends FieldMapping {
  * Used internally when creating/updating collections
  */
 export interface TypesenseFieldSchema {
-  name: string;
-  type: TypesenseFieldType;
-  facet?: boolean;
-  index?: boolean;
-  optional?: boolean;
+  name: string
+  type: TypesenseFieldType
+  facet?: boolean
+  index?: boolean
+  optional?: boolean
   /** Number of dimensions for vector fields (float[]) */
-  vectorDimensions?: number;
+  vectorDimensions?: number
   /** Allow additional properties for compatibility with BaseCollectionSchema */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -84,9 +84,9 @@ export interface TypesenseFieldSchema {
  * Extends BaseCollectionSchema with Typesense-specific options
  */
 export interface TypesenseCollectionSchema extends BaseCollectionSchema {
-  fields: TypesenseFieldSchema[];
+  fields: TypesenseFieldSchema[]
   /** Default sorting field (must be a numeric field) */
-  defaultSortingField?: string;
+  defaultSortingField?: string
 }
 
 // ============================================================================
@@ -98,11 +98,11 @@ export interface TypesenseCollectionSchema extends BaseCollectionSchema {
  * Highlight information for a search hit
  */
 export interface TypesenseHighlight {
-  field: string;
-  snippet?: string;
-  matched_tokens?: string[];
-  snippets?: string[];
-  indices?: number[];
+  field: string
+  snippet?: string
+  matched_tokens?: string[]
+  snippets?: string[]
+  indices?: number[]
 }
 
 /**
@@ -110,13 +110,13 @@ export interface TypesenseHighlight {
  * @typeParam TDoc - The document type
  */
 export interface TypesenseSearchHit<TDoc = Record<string, unknown>> {
-  document: TDoc;
+  document: TDoc
   /** Distance score for vector searches (lower is more similar) */
-  vector_distance?: number;
+  vector_distance?: number
   /** Text match score for keyword searches */
-  text_match?: number;
+  text_match?: number
   /** Highlighted snippets for matched fields */
-  highlights?: TypesenseHighlight[];
+  highlights?: TypesenseHighlight[]
 }
 
 /**
@@ -124,15 +124,15 @@ export interface TypesenseSearchHit<TDoc = Record<string, unknown>> {
  * @typeParam TDoc - The document type in hits
  */
 export interface TypesenseSearchResult<TDoc = Record<string, unknown>> {
-  hits?: TypesenseSearchHit<TDoc>[];
-  found: number;
-  out_of: number;
-  page: number;
-  search_time_ms: number;
+  hits?: TypesenseSearchHit<TDoc>[]
+  found: number
+  out_of: number
+  page: number
+  search_time_ms: number
   facet_counts?: Array<{
-    field_name: string;
-    counts: Array<{ value: string; count: number }>;
-  }>;
+    field_name: string
+    counts: Array<{ value: string; count: number }>
+  }>
 }
 
 /**
@@ -140,9 +140,9 @@ export interface TypesenseSearchResult<TDoc = Record<string, unknown>> {
  * Uses proper types instead of `any`
  */
 export interface TypesenseCollectionInfo {
-  name: string;
-  fields: TypesenseFieldSchema[];
-  default_sorting_field?: string;
-  num_documents: number;
-  created_at?: number;
+  name: string
+  fields: TypesenseFieldSchema[]
+  default_sorting_field?: string
+  num_documents: number
+  created_at?: number
 }

@@ -1,4 +1,4 @@
-import { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 export type ChatSessionStatus = 'active' | 'closed'
 
@@ -19,7 +19,7 @@ export const ChatSessions: CollectionConfig = {
   admin: {
     group: 'Chat',
     useAsTitle: 'conversation_id',
-    defaultColumns: ['conversation_id', 'user', 'status', 'total_tokens', 'last_activity'],
+    defaultColumns: ['conversation_id', 'user', 'status', 'total_tokens', 'last_activity']
   },
   fields: [
     {
@@ -29,8 +29,8 @@ export const ChatSessions: CollectionConfig = {
       required: true,
       index: true,
       admin: {
-        position: 'sidebar',
-      },
+        position: 'sidebar'
+      }
     },
     {
       name: 'conversation_id',
@@ -39,8 +39,8 @@ export const ChatSessions: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
-        description: 'ID de conversación de Typesense',
-      },
+        description: 'ID de conversación de Typesense'
+      }
     },
     {
       name: 'status',
@@ -49,13 +49,14 @@ export const ChatSessions: CollectionConfig = {
       defaultValue: 'active',
       options: [
         { label: 'Activa', value: 'active' },
-        { label: 'Cerrada manualmente', value: 'closed' },
+        { label: 'Cerrada manualmente', value: 'closed' }
       ],
       index: true,
       admin: {
         position: 'sidebar',
-        description: 'Active = en uso. Closed = cerrada por el usuario. La expiración (>24h inactiva) se calcula dinámicamente.',
-      },
+        description:
+          'Active = en uso. Closed = cerrada por el usuario. La expiración (>24h inactiva) se calcula dinámicamente.'
+      }
     },
     {
       name: 'agentSlug',
@@ -64,8 +65,8 @@ export const ChatSessions: CollectionConfig = {
       index: true,
       admin: {
         position: 'sidebar',
-        description: 'Slug del agente utilizado en esta conversación',
-      },
+        description: 'Slug del agente utilizado en esta conversación'
+      }
     },
     {
       name: 'messages',
@@ -73,9 +74,8 @@ export const ChatSessions: CollectionConfig = {
       required: true,
       defaultValue: [],
       admin: {
-        description:
-          'Historial de mensajes en formato JSON: [{role, content, timestamp, sources}]',
-      },
+        description: 'Historial de mensajes en formato JSON: [{role, content, timestamp, sources}]'
+      }
     },
     {
       name: 'spending',
@@ -83,9 +83,8 @@ export const ChatSessions: CollectionConfig = {
       required: true,
       defaultValue: [],
       admin: {
-        description:
-          'Detalle de gastos por servicio: [{service, model, tokens, cost_usd, timestamp}]',
-      },
+        description: 'Detalle de gastos por servicio: [{service, model, tokens, cost_usd, timestamp}]'
+      }
     },
     {
       name: 'total_tokens',
@@ -94,8 +93,8 @@ export const ChatSessions: CollectionConfig = {
       defaultValue: 0,
       admin: {
         position: 'sidebar',
-        description: 'Total de tokens usados en esta conversación',
-      },
+        description: 'Total de tokens usados en esta conversación'
+      }
     },
     {
       name: 'total_cost',
@@ -104,8 +103,8 @@ export const ChatSessions: CollectionConfig = {
       defaultValue: 0,
       admin: {
         position: 'sidebar',
-        description: 'Costo total estimado en USD',
-      },
+        description: 'Costo total estimado en USD'
+      }
     },
     {
       name: 'last_activity',
@@ -113,17 +112,18 @@ export const ChatSessions: CollectionConfig = {
       required: true,
       index: true,
       admin: {
-        description: 'Última actividad. Se actualiza automáticamente en cada mensaje. Las sesiones con >24h de inactividad se consideran expiradas (calculado dinámicamente).',
-      },
+        description:
+          'Última actividad. Se actualiza automáticamente en cada mensaje. Las sesiones con >24h de inactividad se consideran expiradas (calculado dinámicamente).'
+      }
     },
     {
       name: 'closed_at',
       type: 'date',
       admin: {
         position: 'sidebar',
-        description: 'Fecha de cierre manual',
-      },
-    },
+        description: 'Fecha de cierre manual'
+      }
+    }
   ],
   hooks: {
     beforeChange: [
@@ -139,7 +139,7 @@ export const ChatSessions: CollectionConfig = {
         }
 
         return data
-      },
-    ],
-  },
+      }
+    ]
+  }
 }

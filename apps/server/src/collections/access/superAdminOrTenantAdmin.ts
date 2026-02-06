@@ -1,6 +1,6 @@
+import type { Access } from 'payload'
 import { getUserTenantIDs } from '@/utilities/getUserTenantIDs'
 import { isSuperAdmin } from '../../access/isSuperAdmin'
-import { Access } from 'payload'
 
 /**
  * Tenant admins and super admins can will be allowed access

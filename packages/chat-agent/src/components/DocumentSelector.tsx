@@ -3,12 +3,7 @@
 import { BookOpen, ChevronDown, FileText, Loader2, Search, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { cn } from '../lib/utils'
-import {
-  Document,
-  useCombinedDocuments,
-  useDocumentSearch,
-  useDocumentSelection,
-} from './useDocumentSelector'
+import { type Document, useCombinedDocuments, useDocumentSearch, useDocumentSelection } from './useDocumentSelector'
 
 interface DocumentSelectorProps {
   onSelectionChange?: (selectedDocuments: Document[]) => void
@@ -19,21 +14,28 @@ interface DocumentSelectorProps {
 const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSelectorProps) => {
   const [isExpanded, setIsExpanded] = useState(isSidePanel)
 
-  const { searchQuery, searchResults, isLoading, error, handleSearchChange: baseHandleSearchChange } = useDocumentSearch()
+  const {
+    searchQuery,
+    searchResults,
+    isLoading,
+    error,
+    handleSearchChange: baseHandleSearchChange
+  } = useDocumentSearch()
   const { selectedDocuments, toggleDocument, clearAllSelections } = useDocumentSelection(onSelectionChange)
   const allDocuments = useCombinedDocuments(selectedDocuments, searchResults)
 
-  const handleSearchChange = useCallback((query: string) => {
-    baseHandleSearchChange(query)
-    if (query.trim().length >= 2) {
-      setIsExpanded(true)
-    }
-  }, [baseHandleSearchChange])
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      baseHandleSearchChange(query)
+      if (query.trim().length >= 2) {
+        setIsExpanded(true)
+      }
+    },
+    [baseHandleSearchChange]
+  )
 
   const getDocumentIcon = (type: Document['type']) => {
-    return type === 'book'
-      ? <BookOpen className="w-4 h-4" />
-      : <FileText className="w-4 h-4" />
+    return type === 'book' ? <BookOpen className="w-4 h-4" /> : <FileText className="w-4 h-4" />
   }
 
   if (isSidePanel) {
@@ -46,7 +48,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
               type="text"
               placeholder="Buscar contenido..."
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={e => handleSearchChange(e.target.value)}
               className="flex h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -57,10 +59,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
             <span className="text-sm font-medium text-foreground">
               {selectedDocuments.length} documento{selectedDocuments.length !== 1 ? 's' : ''}
             </span>
-            <button
-              onClick={clearAllSelections}
-              className="text-sm text-destructive hover:text-destructive/80"
-            >
+            <button onClick={clearAllSelections} className="text-sm text-destructive hover:text-destructive/80">
               Limpiar
             </button>
           </div>
@@ -74,32 +73,26 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
             </div>
           )}
 
-          {error && (
-            <div className="p-4 text-center text-sm text-destructive">{error}</div>
-          )}
+          {error && <div className="p-4 text-center text-sm text-destructive">{error}</div>}
 
           {!isLoading && !error && searchQuery.length >= 2 && searchResults.length === 0 && (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              Sin resultados para "{searchQuery}"
-            </div>
+            <div className="p-4 text-center text-sm text-muted-foreground">Sin resultados para "{searchQuery}"</div>
           )}
 
           {!isLoading && !error && searchQuery.length < 2 && selectedDocuments.length === 0 && (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              Busca libros o artículos para filtrar
-            </div>
+            <div className="p-4 text-center text-sm text-muted-foreground">Busca libros o artículos para filtrar</div>
           )}
 
           {!isLoading && !error && allDocuments.length > 0 && (
             <div>
-              {allDocuments.map((doc) => {
+              {allDocuments.map(doc => {
                 const isSelected = selectedDocuments.some(d => d.id === doc.id)
                 return (
                   <button
                     key={doc.id}
                     onClick={() => toggleDocument(doc)}
                     className={cn(
-                      "w-full flex items-center justify-between p-4 text-left border-b border-border/50 hover:bg-muted/50 transition-colors",
+                      'w-full flex items-center justify-between p-4 text-left border-b border-border/50 hover:bg-muted/50 transition-colors',
                       isSelected && 'bg-primary/10'
                     )}
                   >
@@ -134,7 +127,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
               type="text"
               placeholder="Buscar libros o artículos..."
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={e => handleSearchChange(e.target.value)}
               className="flex h-9 w-full rounded-l-md border border-input bg-background pl-10 pr-3 py-1 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -143,7 +136,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
             className="inline-flex items-center gap-1 h-9 rounded-r-md border border-l-0 border-input bg-background px-3 text-sm text-foreground hover:bg-accent transition-colors"
           >
             {selectedDocuments.length > 0 ? `${selectedDocuments.length} filtros` : 'Filtros'}
-            <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
+            <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
           </button>
         </div>
 
@@ -172,14 +165,14 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
 
                 {!isLoading && !error && allDocuments.length > 0 && (
                   <div>
-                    {allDocuments.map((doc) => {
+                    {allDocuments.map(doc => {
                       const isSelected = selectedDocuments.some(d => d.id === doc.id)
                       return (
                         <button
                           key={doc.id}
                           onClick={() => toggleDocument(doc)}
                           className={cn(
-                            "w-full flex items-center justify-between p-3 text-left border-b border-border/50 hover:bg-muted/50 transition-colors",
+                            'w-full flex items-center justify-between p-3 text-left border-b border-border/50 hover:bg-muted/50 transition-colors',
                             isSelected && 'bg-primary/10'
                           )}
                         >
@@ -200,9 +193,7 @@ const DocumentSelector = ({ onSelectionChange, isSidePanel = false }: DocumentSe
                 )}
 
                 {!isLoading && !error && searchQuery.length < 2 && selectedDocuments.length === 0 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    Busca libros o artículos
-                  </div>
+                  <div className="p-4 text-center text-sm text-muted-foreground">Busca libros o artículos</div>
                 )}
               </div>
             </div>

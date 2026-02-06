@@ -1,9 +1,9 @@
-import type { Plugin } from "payload";
-import { authjsPlugin } from "payload-authjs";
-import { authConfig } from "./authjs-config";
+import type { Plugin } from 'payload'
+import { authjsPlugin } from 'payload-authjs'
+import { authConfig } from './authjs-config'
 
 const config: Plugin = authjsPlugin({
-  authjsConfig: authConfig,
-});
+  authjsConfig: authConfig
+})
 
-export default config;
+export default config

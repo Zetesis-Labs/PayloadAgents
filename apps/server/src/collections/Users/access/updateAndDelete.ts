@@ -1,7 +1,6 @@
 import type { Access } from 'payload'
-
-import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 import { isSuperAdmin } from '@/access/isSuperAdmin'
+import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 import { isAccessingSelf } from './isAccessingSelf'
 
 export const updateAndDeleteAccess: Access = ({ req, id }) => {
@@ -25,7 +24,7 @@ export const updateAndDeleteAccess: Access = ({ req, id }) => {
    */
   return {
     'tenants.tenant': {
-      in: getUserTenantIDs(user, 'tenant-admin'),
-    },
+      in: getUserTenantIDs(user, 'tenant-admin')
+    }
   }
 }

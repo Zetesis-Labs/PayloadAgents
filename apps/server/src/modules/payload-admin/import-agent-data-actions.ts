@@ -1,18 +1,18 @@
 'use server'
 
-import { getPayload } from '@/modules/get-payload'
-import { Post, Book } from '@/payload-types'
-import { seedPost } from '@/seed/post.seed'
-import { seedBook } from '@/seed/book.seed'
 import type { PayloadDocument } from '@nexo-labs/payload-indexer'
-import { syncDocumentToIndex, createEmbeddingService, createLogger } from '@nexo-labs/payload-indexer'
+import { createEmbeddingService, createLogger, syncDocumentToIndex } from '@nexo-labs/payload-indexer'
 import { createTypesenseAdapter } from '@nexo-labs/payload-typesense'
-import { typesenseConnection, embeddingConfig } from '@/payload/plugins/typesense/config'
-import { collections } from '@/payload/plugins/typesense/collections'
-import type { Payload } from 'payload'
 import fs from 'fs'
 import path from 'path'
-import type { ImportMode, CollectionTarget, ImportResult, SyncResults } from './admin-types'
+import type { Payload } from 'payload'
+import { getPayload } from '@/modules/get-payload'
+import { collections } from '@/payload/plugins/typesense/collections'
+import { embeddingConfig, typesenseConnection } from '@/payload/plugins/typesense/config'
+import type { Book, Post } from '@/payload-types'
+import { seedBook } from '@/seed/book.seed'
+import { seedPost } from '@/seed/post.seed'
+import type { CollectionTarget, ImportMode, ImportResult, SyncResults } from './admin-types'
 
 // Re-export types for consumers
 export type { CollectionTarget } from './admin-types'
@@ -28,7 +28,7 @@ const toIndexableDocument = (doc: any): PayloadDocument => ({
   id: String(doc.id),
   slug: doc.slug ?? undefined,
   createdAt: doc.createdAt,
-  updatedAt: doc.updatedAt,
+  updatedAt: doc.updatedAt
 })
 
 /**
@@ -42,7 +42,7 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
     throw new Error(`${collectionSlug} collection is not configured for indexing`)
   }
 
-  const enabledConfigs = tableConfigs.filter((tc) => tc.enabled)
+  const enabledConfigs = tableConfigs.filter(tc => tc.enabled)
   if (enabledConfigs.length === 0) {
     throw new Error(`No enabled table configs for ${collectionSlug}`)
   }
@@ -53,12 +53,14 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
   const response = await payload.find({
     collection: collectionSlug,
     limit: 0,
-    depth: 1,
+    depth: 1
   })
 
   const results: SyncResults = { synced: 0, errors: [] }
 
-  payload.logger.info(`[Agent Data Sync] Starting sync of ${response.totalDocs} ${collectionSlug} to Typesense (${enabledConfigs.length} tables)...`)
+  payload.logger.info(
+    `[Agent Data Sync] Starting sync of ${response.totalDocs} ${collectionSlug} to Typesense (${enabledConfigs.length} tables)...`
+  )
 
   for (const doc of response.docs) {
     try {
@@ -70,7 +72,7 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
           indexableDoc,
           'update',
           tableConfig,
-          tableConfig.embedding ? embeddingService : undefined,
+          tableConfig.embedding ? embeddingService : undefined
         )
       }
       results.synced++
@@ -81,9 +83,7 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
     }
   }
 
-  payload.logger.info(
-    `[Agent Data Sync] Completed: ${results.synced} synced, ${results.errors.length} errors`,
-  )
+  payload.logger.info(`[Agent Data Sync] Completed: ${results.synced} synced, ${results.errors.length} errors`)
 
   return results
 }
@@ -98,19 +98,22 @@ async function processImportEntries(
   collection: CollectionTarget,
   mode: ImportMode,
   logPrefix: string,
-  overrideAttributes?: { tenantId?: number },
+  overrideAttributes?: { tenantId?: number }
 ): Promise<Pick<ImportResult, 'results' | 'syncResults' | 'needsSync'>> {
-  payload.logger.info(`${logPrefix} Found ${entries.length} entries to process as ${collection} (index sync disabled for speed)`)
+  payload.logger.info(
+    `${logPrefix} Found ${entries.length} entries to process as ${collection} (index sync disabled for speed)`
+  )
 
   const results = {
     imported: 0,
     skipped: 0,
-    errors: [] as string[],
+    errors: [] as string[]
   }
 
-  const seeder = collection === 'books'
-    ? seedBook(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
-    : seedPost(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
+  const seeder =
+    collection === 'books'
+      ? seedBook(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
+      : seedPost(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
 
   for (let i = 0; i < entries.length; i += BATCH_SIZE) {
     const batch = entries.slice(i, i + BATCH_SIZE)
@@ -137,9 +140,7 @@ async function processImportEntries(
     syncResults = await syncCollectionToTypesense(payload, collection)
   }
 
-  payload.logger.info(
-    `${logPrefix} Completed: ${results.imported} imported, ${results.errors.length} errors.`,
-  )
+  payload.logger.info(`${logPrefix} Completed: ${results.imported} imported, ${results.errors.length} errors.`)
 
   return { results, syncResults, needsSync: mode === 'import' }
 }
@@ -147,20 +148,36 @@ async function processImportEntries(
 /**
  * Handle sync-only mode (shared by both public functions)
  */
-async function handleSyncOnly(payload: Payload, collection: CollectionTarget, logPrefix: string): Promise<ImportResult> {
+async function handleSyncOnly(
+  payload: Payload,
+  collection: CollectionTarget,
+  logPrefix: string
+): Promise<ImportResult> {
   payload.logger.info(`${logPrefix} Starting sync-only mode for ${collection}`)
   const syncResults = await syncCollectionToTypesense(payload, collection)
   return {
     success: true,
     message: `Sync completed: ${syncResults.synced} synced, ${syncResults.errors.length} errors`,
-    syncResults,
+    syncResults
   }
 }
 
 /**
  * Import data for a specific agent (from uploaded JSON or data file on disk)
  */
-export async function importAgentData({ agentId, mode = 'import', jsonContent, collection = 'posts', overrideAttributes }: { agentId: string | number; mode?: ImportMode; jsonContent?: string; collection?: CollectionTarget; overrideAttributes?: { tenantId?: number } }): Promise<ImportResult> {
+export async function importAgentData({
+  agentId,
+  mode = 'import',
+  jsonContent,
+  collection = 'posts',
+  overrideAttributes
+}: {
+  agentId: string | number
+  mode?: ImportMode
+  jsonContent?: string
+  collection?: CollectionTarget
+  overrideAttributes?: { tenantId?: number }
+}): Promise<ImportResult> {
   const payload = await getPayload()
   const logPrefix = '[Agent Data Import]'
 
@@ -171,7 +188,7 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
 
     const agent = await payload.findByID({
       collection: 'agents',
-      id: agentId,
+      id: agentId
     })
 
     if (!agent) {
@@ -179,7 +196,7 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
     }
 
     const slug = agent.slug as string
-    const name = (agent.name as string || '').toLowerCase().replace(/\s+/g, '_')
+    const name = ((agent.name as string) || '').toLowerCase().replace(/\s+/g, '_')
     payload.logger.info(`${logPrefix} Starting ${collection} import for agent: ${slug}`)
 
     let entries: (Post | Book)[]
@@ -193,7 +210,7 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
     } else {
       const possiblePaths = [
         path.join(process.cwd(), 'data', `${slug}_data.json`),
-        path.join(process.cwd(), 'data', `${name}_data.json`),
+        path.join(process.cwd(), 'data', `${name}_data.json`)
       ]
 
       let dataFilePath: string | null = null
@@ -207,7 +224,7 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
       if (!dataFilePath) {
         return {
           success: false,
-          message: `Data file not found. Expected: ${slug}_data.json in /data folder`,
+          message: `Data file not found. Expected: ${slug}_data.json in /data folder`
         }
       }
 
@@ -223,19 +240,20 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
 
     return {
       success: true,
-      message: mode === 'import-sync'
-        ? 'Import and sync completed.'
-        : 'Import completed. Use sync endpoint to index documents.',
+      message:
+        mode === 'import-sync'
+          ? 'Import and sync completed.'
+          : 'Import completed. Use sync endpoint to index documents.',
       agentSlug: slug,
       dataFile: dataFileName,
       totalEntries: entries.length,
-      ...importResult,
+      ...importResult
     }
   } catch (error) {
     payload.logger.error(`${logPrefix} Fatal error: ${error}`)
     return {
       success: false,
-      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     }
   }
 }
@@ -243,7 +261,17 @@ export async function importAgentData({ agentId, mode = 'import', jsonContent, c
 /**
  * Import data for a collection (from uploaded JSON, no agent context)
  */
-export async function importCollectionData({ jsonContent, collection = 'posts', mode = 'import', overrideAttributes }: { jsonContent?: string; collection?: CollectionTarget; mode?: ImportMode; overrideAttributes?: { tenantId?: number } }): Promise<ImportResult> {
+export async function importCollectionData({
+  jsonContent,
+  collection = 'posts',
+  mode = 'import',
+  overrideAttributes
+}: {
+  jsonContent?: string
+  collection?: CollectionTarget
+  mode?: ImportMode
+  overrideAttributes?: { tenantId?: number }
+}): Promise<ImportResult> {
   const payload = await getPayload()
   const logPrefix = '[Collection Import]'
 
@@ -265,13 +293,13 @@ export async function importCollectionData({ jsonContent, collection = 'posts', 
       success: true,
       message: mode === 'import-sync' ? 'Import and sync completed.' : 'Import completed.',
       totalEntries: entries.length,
-      ...importResult,
+      ...importResult
     }
   } catch (error) {
     payload.logger.error(`${logPrefix} Fatal error: ${error}`)
     return {
       success: false,
-      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     }
   }
 }

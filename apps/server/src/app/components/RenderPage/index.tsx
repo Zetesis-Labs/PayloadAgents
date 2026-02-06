@@ -1,7 +1,7 @@
-import type { Post } from "@payload-types";
+import type { Post } from '@payload-types'
 
-import React from "react";
-import { LogoutButton } from "./LogoutButton";
+import React from 'react'
+import { LogoutButton } from './LogoutButton'
 
 export const RenderPage = ({ data }: { data: Post }) => {
   return (
@@ -11,5 +11,5 @@ export const RenderPage = ({ data }: { data: Post }) => {
 
       <code>{JSON.stringify(data)}</code>
     </React.Fragment>
-  );
-};
+  )
+}

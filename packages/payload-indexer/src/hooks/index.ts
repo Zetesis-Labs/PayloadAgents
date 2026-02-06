@@ -5,7 +5,7 @@
 
 // Export hook types (to be expanded as needed)
 export interface SyncHookContext {
-  operation: 'create' | 'update' | 'delete';
-  documentId: string;
-  collectionSlug: string;
+  operation: 'create' | 'update' | 'delete'
+  documentId: string
+  collectionSlug: string
 }

@@ -10,9 +10,9 @@ import { extractID } from './extractID'
  */
 export const getUserTenantIDs = (
   user: TypedUser | null,
-  role?: NonNullable<User['tenants']>[number]['roles'][number],
+  role?: NonNullable<User['tenants']>[number]['roles'][number]
 ): Tenant['id'][] => {
-  if (!user || user.collection == "payload-mcp-api-keys") {
+  if (!user || user.collection == 'payload-mcp-api-keys') {
     return []
   }
 

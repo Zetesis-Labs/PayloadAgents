@@ -1,1 +1,1 @@
-export { validateSearchRequest } from "./search-request-validator";
+export { validateSearchRequest } from './search-request-validator'

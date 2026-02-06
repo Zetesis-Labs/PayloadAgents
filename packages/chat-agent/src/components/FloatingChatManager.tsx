@@ -1,9 +1,9 @@
 'use client'
 
-import { ImageComponent, LinkComponent } from '../types/components'
-import FloatingChatPanel from './FloatingChatPanel'
+import type { ImageComponent, LinkComponent } from '../types/components'
 import FloatingChatButton from './buttons/FloatingChatButton'
 import { useChat } from './chat-context'
+import FloatingChatPanel from './FloatingChatPanel'
 
 /**
  * Minimal user type - consumer provides their own user type
@@ -34,18 +34,13 @@ const FloatingChatManager = ({
   if (!user) return null
 
   const currentAgent = agents.find(agent => agent.slug === selectedAgent)
-  const currentAvatar = currentAgent?.avatar && currentAgent.avatar.trim() !== ''
-    ? currentAgent.avatar
-    : aiIcon || undefined
-  const currentAgentName = currentAgent?.name || "Asistente"
+  const currentAvatar =
+    currentAgent?.avatar && currentAgent.avatar.trim() !== '' ? currentAgent.avatar : aiIcon || undefined
+  const currentAgentName = currentAgent?.name || 'Asistente'
 
   return (
     <>
-      <FloatingChatButton
-        onOpen={openPanel}
-        aiIcon={currentAvatar}
-        ImageComponent={ImageComponent}
-      />
+      <FloatingChatButton onOpen={openPanel} aiIcon={currentAvatar} ImageComponent={ImageComponent} />
       {/* Siempre renderizar para que AnimatePresence funcione */}
       <FloatingChatPanel
         isOpen={isPanelOpen}

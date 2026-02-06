@@ -2,9 +2,9 @@
  * Factory function for creating a TypesenseAdapter
  */
 
-import { Client } from "typesense";
-import type { TypesenseConnectionConfig } from "../shared/types/plugin-types";
-import { TypesenseAdapter } from "./typesense-adapter";
+import { Client } from 'typesense'
+import type { TypesenseConnectionConfig } from '../shared/types/plugin-types'
+import { TypesenseAdapter } from './typesense-adapter'
 
 /**
  * Creates a TypesenseAdapter instance with the provided configuration
@@ -26,18 +26,16 @@ import { TypesenseAdapter } from "./typesense-adapter";
  * });
  * ```
  */
-export function createTypesenseAdapter(
-  config: TypesenseConnectionConfig,
-): TypesenseAdapter {
+export function createTypesenseAdapter(config: TypesenseConnectionConfig): TypesenseAdapter {
   const client = new Client({
     apiKey: config.apiKey,
     nodes: config.nodes,
     connectionTimeoutSeconds: config.connectionTimeoutSeconds ?? 10,
     retryIntervalSeconds: config.retryIntervalSeconds,
-    numRetries: config.numRetries,
-  });
+    numRetries: config.numRetries
+  })
 
-  return new TypesenseAdapter(client);
+  return new TypesenseAdapter(client)
 }
 
 /**
@@ -47,8 +45,6 @@ export function createTypesenseAdapter(
  * @param client - Existing Typesense Client instance
  * @returns A TypesenseAdapter instance wrapping the provided client
  */
-export function createTypesenseAdapterFromClient(
-  client: Client,
-): TypesenseAdapter {
-  return new TypesenseAdapter(client);
+export function createTypesenseAdapterFromClient(client: Client): TypesenseAdapter {
+  return new TypesenseAdapter(client)
 }

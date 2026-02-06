@@ -1,8 +1,7 @@
-"use server";
+'use server'
 
-import { signIn } from "./plugins";
+import { signIn } from './plugins'
 
 export const signInAction = async () => {
-  await signIn("keycloak");
-};
-
+  await signIn('keycloak')
+}

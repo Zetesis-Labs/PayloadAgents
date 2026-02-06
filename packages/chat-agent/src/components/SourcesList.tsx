@@ -1,56 +1,56 @@
-"use client";
+'use client'
 
-import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, ChevronDown, FileText, List, Loader2, X } from "lucide-react";
-import React, { useState } from "react";
-import { useChunkLoader } from "../hooks/useChunkLoader";
-import { cn } from "../lib/utils";
-import { LinkComponent } from "../types/components";
-import { MarkdownText } from "./assistant-ui/markdown-text";
-import { ViewMoreLink } from "./buttons/ViewMoreLink";
+import { AnimatePresence, motion } from 'framer-motion'
+import { BookOpen, ChevronDown, FileText, List, Loader2, X } from 'lucide-react'
+import React, { useState } from 'react'
+import { useChunkLoader } from '../hooks/useChunkLoader'
+import { cn } from '../lib/utils'
+import type { LinkComponent } from '../types/components'
+import { MarkdownText } from './assistant-ui/markdown-text'
+import { ViewMoreLink } from './buttons/ViewMoreLink'
 
 interface Source {
-  id: string;
-  title: string;
-  slug: string;
-  type: "article" | "book";
-  chunkIndex: number;
-  relevanceScore: number;
-  content: string;
-  excerpt?: string;
+  id: string
+  title: string
+  slug: string
+  type: 'article' | 'book'
+  chunkIndex: number
+  relevanceScore: number
+  content: string
+  excerpt?: string
 }
 
 interface SourcesListProps {
-  sources: Source[];
-  isMaximized?: boolean;
-  onMinimize?: () => void;
-  generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string;
-  LinkComponent?: LinkComponent;
-  renderSourceIcon?: (type: "article" | "book") => React.ReactNode;
+  sources: Source[]
+  isMaximized?: boolean
+  onMinimize?: () => void
+  generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
+  LinkComponent?: LinkComponent
+  renderSourceIcon?: (type: 'article' | 'book') => React.ReactNode
   renderViewMore?: (props: {
-    type: "article" | "book";
-    slug: string;
-    title: string;
-    onClick?: () => void;
-  }) => React.ReactNode;
+    type: 'article' | 'book'
+    slug: string
+    title: string
+    onClick?: () => void
+  }) => React.ReactNode
 }
 
 // Animation variants
 const listVariants = {
-  hidden: { opacity: 0, height: 0, transition: { duration: 0.2, ease: "easeInOut" as const } },
-  visible: { opacity: 1, height: "auto", transition: { duration: 0.3, ease: "easeOut" as const } },
-};
+  hidden: { opacity: 0, height: 0, transition: { duration: 0.2, ease: 'easeInOut' as const } },
+  visible: { opacity: 1, height: 'auto', transition: { duration: 0.3, ease: 'easeOut' as const } }
+}
 
 const expandedCardVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.2, ease: "easeInOut" as const } },
+  hidden: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.2, ease: 'easeInOut' as const } },
   visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const } },
-  exit: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.2, ease: "easeInOut" as const } },
-};
+  exit: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.2, ease: 'easeInOut' as const } }
+}
 
 const contentVariants = {
   hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.3, ease: "easeOut" as const } },
-};
+  visible: { opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.3, ease: 'easeOut' as const } }
+}
 
 const itemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -60,62 +60,60 @@ const itemVariants = {
     transition: {
       delay: i * 0.05,
       duration: 0.2,
-      ease: "easeOut" as const
+      ease: 'easeOut' as const
     }
   })
-};
+}
 
 // Helper to parse chunk content
 const parseChunkContent = (content: string) => {
-  const separator = ".________________________________________.";
+  const separator = '.________________________________________.'
   if (!content || !content.includes(separator)) {
-    return { text: content, metadata: null };
+    return { text: content, metadata: null }
   }
 
-  const [text = "", metadataRaw] = content.split(separator);
-  const metadata: { section?: string; path?: string } = {};
+  const [text = '', metadataRaw] = content.split(separator)
+  const metadata: { section?: string; path?: string } = {}
 
   if (metadataRaw) {
-    const parts = metadataRaw.split("|");
+    const parts = metadataRaw.split('|')
     parts.forEach(part => {
-      const trimmed = part.trim();
-      if (trimmed.toLowerCase().startsWith("section:")) {
-        metadata.section = trimmed.substring("section:".length).trim();
-      } else if (trimmed.toLowerCase().startsWith("path:")) {
-        metadata.path = trimmed.substring("path:".length).trim();
+      const trimmed = part.trim()
+      if (trimmed.toLowerCase().startsWith('section:')) {
+        metadata.section = trimmed.substring('section:'.length).trim()
+      } else if (trimmed.toLowerCase().startsWith('path:')) {
+        metadata.path = trimmed.substring('path:'.length).trim()
       }
-    });
+    })
   }
 
-  return { text: text.trim(), metadata };
-};
+  return { text: text.trim(), metadata }
+}
 
 // Relevance bar component
 const RelevanceBar: React.FC<{ score: number }> = ({ score }) => {
-  const percentage = Math.min(Math.max(score * 100, 0), 100);
+  const percentage = Math.min(Math.max(score * 100, 0), 100)
   const getColor = () => {
-    if (percentage >= 80) return "bg-green-500";
-    if (percentage >= 60) return "bg-primary";
-    if (percentage >= 40) return "bg-yellow-500";
-    return "bg-muted-foreground";
-  };
+    if (percentage >= 80) return 'bg-green-500'
+    if (percentage >= 60) return 'bg-primary'
+    if (percentage >= 40) return 'bg-yellow-500'
+    return 'bg-muted-foreground'
+  }
 
   return (
     <div className="flex items-center gap-2">
       <div className="h-1 w-12 rounded-full bg-secondary overflow-hidden">
         <motion.div
-          className={cn("h-full rounded-full", getColor())}
+          className={cn('h-full rounded-full', getColor())}
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         />
       </div>
-      <span className="text-[10px] text-muted-foreground">
-        {Math.round(percentage)}%
-      </span>
+      <span className="text-[10px] text-muted-foreground">{Math.round(percentage)}%</span>
     </div>
-  );
-};
+  )
+}
 
 export const SourcesList: React.FC<SourcesListProps> = ({
   sources,
@@ -124,58 +122,58 @@ export const SourcesList: React.FC<SourcesListProps> = ({
   generateHref,
   LinkComponent,
   renderSourceIcon,
-  renderViewMore,
+  renderViewMore
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [expandedSourceId, setExpandedSourceId] = useState<string | null>(null);
-  const [loadedContent, setLoadedContent] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [expandedSourceId, setExpandedSourceId] = useState<string | null>(null)
+  const [loadedContent, setLoadedContent] = useState<string>('')
 
-  const { loadChunkContent, getChunkState } = useChunkLoader();
+  const { loadChunkContent, getChunkState } = useChunkLoader()
 
   const handleViewMore = () => {
     if (isMaximized && onMinimize) {
-      onMinimize();
+      onMinimize()
     }
-  };
-
-  if (!sources || sources.length === 0) {
-    return null;
   }
 
-  const getIcon = (type: "article" | "book") => {
-    if (renderSourceIcon) return renderSourceIcon(type);
-    return type === "book" ? <BookOpen className="w-full h-full" /> : <FileText className="w-full h-full" />;
-  };
+  if (!sources || sources.length === 0) {
+    return null
+  }
+
+  const getIcon = (type: 'article' | 'book') => {
+    if (renderSourceIcon) return renderSourceIcon(type)
+    return type === 'book' ? <BookOpen className="w-full h-full" /> : <FileText className="w-full h-full" />
+  }
 
   const handleSourceClick = async (sourceId: string) => {
-    setExpandedSourceId(sourceId);
-    setLoadedContent("");
+    setExpandedSourceId(sourceId)
+    setLoadedContent('')
 
-    const source = sources.find(s => s.id === sourceId);
-    if (!source) return;
+    const source = sources.find(s => s.id === sourceId)
+    if (!source) return
 
     if (source.content) {
-      setLoadedContent(source.content);
-      return;
+      setLoadedContent(source.content)
+      return
     }
 
-    const content = await loadChunkContent(sourceId, source.type);
-    setLoadedContent(content);
-  };
+    const content = await loadChunkContent(sourceId, source.type)
+    setLoadedContent(content)
+  }
 
   const handleCloseExpanded = () => {
-    setExpandedSourceId(null);
-    setLoadedContent("");
-  };
+    setExpandedSourceId(null)
+    setLoadedContent('')
+  }
 
   // If a source is expanded, show only that one
   if (expandedSourceId) {
-    const expandedSource = sources.find(s => s.id === expandedSourceId);
-    if (!expandedSource) return null;
+    const expandedSource = sources.find(s => s.id === expandedSourceId)
+    if (!expandedSource) return null
 
-    const chunkState = getChunkState(expandedSource.id, expandedSource.type);
-    const displayContent = loadedContent || expandedSource.content;
-    const { text: cleanContent, metadata } = parseChunkContent(displayContent);
+    const chunkState = getChunkState(expandedSource.id, expandedSource.type)
+    const displayContent = loadedContent || expandedSource.content
+    const { text: cleanContent, metadata } = parseChunkContent(displayContent)
 
     return (
       <div className="mt-3 pt-3 border-t border-border">
@@ -196,24 +194,18 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                     className="flex-shrink-0 w-5 h-5 text-foreground mt-0.5"
                     initial={{ rotate: -10 }}
                     animate={{ rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
                   >
                     {getIcon(expandedSource.type)}
                   </motion.div>
                   <div>
-                    <div className="text-foreground font-semibold text-sm">
-                      {expandedSource.title}
-                    </div>
+                    <div className="text-foreground font-semibold text-sm">{expandedSource.title}</div>
                     <div className="text-muted-foreground text-xs mt-1 flex items-center gap-2">
                       <span>
-                        {expandedSource.type === "article" ? "Articulo" : "Libro"}
-                        {expandedSource.chunkIndex !== undefined && (
-                          <> - Parte {expandedSource.chunkIndex + 1}</>
-                        )}
+                        {expandedSource.type === 'article' ? 'Articulo' : 'Libro'}
+                        {expandedSource.chunkIndex !== undefined && <> - Parte {expandedSource.chunkIndex + 1}</>}
                       </span>
-                      {expandedSource.relevanceScore && (
-                        <RelevanceBar score={expandedSource.relevanceScore} />
-                      )}
+                      {expandedSource.relevanceScore && <RelevanceBar score={expandedSource.relevanceScore} />}
                     </div>
                   </div>
                 </div>
@@ -236,9 +228,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                     Cargando contenido...
                   </div>
                 ) : chunkState.error ? (
-                  <div className="text-sm text-destructive py-2">
-                    Error: {chunkState.error}
-                  </div>
+                  <div className="text-sm text-destructive py-2">Error: {chunkState.error}</div>
                 ) : displayContent ? (
                   <>
                     <MarkdownText text={cleanContent} />
@@ -248,9 +238,9 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                       <div className="mt-4 flex flex-wrap items-center gap-2 mb-3">
                         <span className="text-xs text-muted-foreground">Ubicacion:</span>
                         {metadata.path ? (
-                          metadata.path.split(">").map((segment, index, arr) => {
+                          metadata.path.split('>').map((segment, index, arr) => {
                             const text = segment.trim()
-                            const truncated = text.length > 25 ? text.slice(0, 25) + "..." : text
+                            const truncated = text.length > 25 ? text.slice(0, 25) + '...' : text
                             return (
                               <React.Fragment key={index}>
                                 <motion.span
@@ -262,9 +252,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                                 >
                                   <span className="truncate">{truncated}</span>
                                 </motion.span>
-                                {index < arr.length - 1 && (
-                                  <span className="text-muted-foreground text-xs">/</span>
-                                )}
+                                {index < arr.length - 1 && <span className="text-muted-foreground text-xs">/</span>}
                               </React.Fragment>
                             )
                           })
@@ -274,7 +262,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                             title={metadata.section}
                           >
                             <span className="truncate">
-                              {metadata.section.length > 25 ? metadata.section.slice(0, 25) + "..." : metadata.section}
+                              {metadata.section.length > 25 ? metadata.section.slice(0, 25) + '...' : metadata.section}
                             </span>
                           </span>
                         ) : null}
@@ -287,7 +275,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                         type: expandedSource.type,
                         slug: expandedSource.slug,
                         title: expandedSource.title,
-                        onClick: handleViewMore,
+                        onClick: handleViewMore
                       })
                     ) : (
                       <ViewMoreLink
@@ -310,7 +298,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
           </motion.div>
         </AnimatePresence>
       </div>
-    );
+    )
   }
 
   // Show collapsed list
@@ -324,9 +312,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
       >
         <div className="flex items-center gap-2">
           <List className="w-4 h-4 text-foreground" />
-          <p className="text-xs font-semibold text-foreground">
-            Fuentes consultadas
-          </p>
+          <p className="text-xs font-semibold text-foreground">Fuentes consultadas</p>
           <motion.span
             className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-medium"
             initial={{ scale: 1 }}
@@ -337,10 +323,7 @@ export const SourcesList: React.FC<SourcesListProps> = ({
             {sources.length}
           </motion.span>
         </div>
-        <motion.div
-          animate={{ rotate: isExpanded ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div animate={{ rotate: isExpanded ? 0 : -90 }} transition={{ duration: 0.2 }}>
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </motion.div>
       </motion.button>
@@ -381,20 +364,14 @@ export const SourcesList: React.FC<SourcesListProps> = ({
                     </div>
 
                     <div className="text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-xs">
-                        {source.type === "article" ? "Articulo" : "Libro"}
-                      </span>
+                      <span className="text-xs">{source.type === 'article' ? 'Articulo' : 'Libro'}</span>
                       {source.chunkIndex !== undefined && (
                         <>
                           <span>-</span>
-                          <span className="text-xs">
-                            Parte {source.chunkIndex + 1}
-                          </span>
+                          <span className="text-xs">Parte {source.chunkIndex + 1}</span>
                         </>
                       )}
-                      {source.relevanceScore && (
-                        <RelevanceBar score={source.relevanceScore} />
-                      )}
+                      {source.relevanceScore && <RelevanceBar score={source.relevanceScore} />}
                     </div>
 
                     {source.excerpt && (
@@ -418,5 +395,5 @@ export const SourcesList: React.FC<SourcesListProps> = ({
         )}
       </AnimatePresence>
     </div>
-  );
-};
+  )
+}

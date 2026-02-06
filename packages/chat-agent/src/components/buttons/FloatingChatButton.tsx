@@ -17,7 +17,7 @@ export const FloatingChatButton = ({
   aiIcon,
   isOpen = false,
   className,
-  ImageComponent = (props: any) => <img {...props} />,
+  ImageComponent = (props: any) => <img {...props} />
 }: FloatingChatButtonProps) => {
   return (
     <AnimatePresence>
@@ -25,30 +25,30 @@ export const FloatingChatButton = ({
         <motion.button
           onClick={onOpen}
           className={cn(
-            "fixed bottom-6 left-6 z-50 h-[60px] w-[60px] rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 overflow-hidden animate-pulse-glow",
-            !aiIcon && "bg-primary text-primary-foreground flex items-center justify-center",
+            'fixed bottom-6 left-6 z-50 h-[60px] w-[60px] rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 overflow-hidden animate-pulse-glow',
+            !aiIcon && 'bg-primary text-primary-foreground flex items-center justify-center',
             className
           )}
           initial={{ scale: 0, rotate: -180, opacity: 0 }}
           animate={{
             scale: 1,
             rotate: 0,
-            opacity: 1,
+            opacity: 1
           }}
           exit={{
             scale: 0,
             rotate: 180,
             opacity: 0,
-            transition: { duration: 0.3, ease: "easeInOut" }
+            transition: { duration: 0.3, ease: 'easeInOut' }
           }}
           transition={{
-            type: "spring" as const,
+            type: 'spring' as const,
             stiffness: 260,
-            damping: 20,
+            damping: 20
           }}
           whileHover={{
             scale: 1.08,
-            boxShadow: "var(--shadow-glow-lg)"
+            boxShadow: 'var(--shadow-glow-lg)'
           }}
           whileTap={{ scale: 0.95 }}
           aria-label="Abrir chat"
@@ -63,7 +63,7 @@ export const FloatingChatButton = ({
               transition={{
                 duration: 2,
                 repeat: Infinity,
-                ease: "easeInOut"
+                ease: 'easeInOut'
               }}
             >
               <div className="h-full w-full rounded-full overflow-hidden bg-background">
@@ -79,12 +79,12 @@ export const FloatingChatButton = ({
           ) : (
             <motion.div
               animate={{
-                scale: [1, 1.1, 1],
+                scale: [1, 1.1, 1]
               }}
               transition={{
                 duration: 2,
                 repeat: Infinity,
-                ease: "easeInOut"
+                ease: 'easeInOut'
               }}
             >
               <MessageCircle className="w-8 h-8" />

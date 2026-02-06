@@ -1,68 +1,59 @@
-import { CollectionSlug, Payload, PayloadRequest } from "payload";
-import { logger } from "../../../../core/logging/logger";
+import type { AgentConfig } from '@nexo-labs/payload-typesense'
+import type { CollectionSlug, Payload, PayloadRequest } from 'payload'
+import { logger } from '../../../../core/logging/logger'
 import type {
   ChunkSource,
   EmbeddingProviderConfig,
   RAGFeatureConfig,
   SpendingEntry,
-  SSEEvent,
-} from "../../../../shared/types/plugin-types";
-import {
-  executeRAGSearch,
-  sendSSEEvent,
-  type RAGSearchConfig,
-  type TypesenseConnectionConfig,
-} from "../../index";
-
-import type { AgentConfig } from "@nexo-labs/payload-typesense";
-import { markChatSessionAsExpired } from "../../chat-session-repository";
-import { generateEmbeddingWithTracking } from "./handlers/embedding-handler";
-import { saveChatSessionIfNeeded } from "./handlers/session-handler";
-import { checkTokenLimitsIfNeeded } from "./handlers/token-limit-handler";
-import {
-  calculateTotalUsage,
-  sendUsageStatsIfNeeded,
-} from "./handlers/usage-stats-handler";
-import { validateChatRequest } from "./validators/index";
+  SSEEvent
+} from '../../../../shared/types/plugin-types'
+import { markChatSessionAsExpired } from '../../chat-session-repository'
+import { executeRAGSearch, type RAGSearchConfig, sendSSEEvent, type TypesenseConnectionConfig } from '../../index'
+import { generateEmbeddingWithTracking } from './handlers/embedding-handler'
+import { saveChatSessionIfNeeded } from './handlers/session-handler'
+import { checkTokenLimitsIfNeeded } from './handlers/token-limit-handler'
+import { calculateTotalUsage, sendUsageStatsIfNeeded } from './handlers/usage-stats-handler'
+import { validateChatRequest } from './validators/index'
 
 /**
  * Configuration for chat endpoint
  */
 export type ChatEndpointConfig = {
   /** Collection name for chat sessions */
-  collectionName: CollectionSlug;
+  collectionName: CollectionSlug
   /** Check permissions function */
-  checkPermissions: (request: PayloadRequest) => Promise<boolean>;
+  checkPermissions: (request: PayloadRequest) => Promise<boolean>
   /** Typesense connection config */
-  typesense: TypesenseConnectionConfig;
+  typesense: TypesenseConnectionConfig
   /** RAG search configuration (full config for multi-agent resolution) */
-  rag: RAGFeatureConfig;
+  rag: RAGFeatureConfig
   /** Get Payload instance */
-  getPayload: () => Promise<Payload>;
+  getPayload: () => Promise<Payload>
   /** Embedding configuration */
-  embeddingConfig?: EmbeddingProviderConfig;
+  embeddingConfig?: EmbeddingProviderConfig
   /** Check token limit function */
   checkTokenLimit?: (
     payload: Payload,
     userId: string | number,
-    tokens: number,
+    tokens: number
   ) => Promise<{
-    allowed: boolean;
-    limit: number;
-    used: number;
-    remaining: number;
-    reset_at?: string;
-  }>;
+    allowed: boolean
+    limit: number
+    used: number
+    remaining: number
+    reset_at?: string
+  }>
   /** Get user usage stats function */
   getUserUsageStats?: (
     payload: Payload,
-    userId: string | number,
+    userId: string | number
   ) => Promise<{
-    limit: number;
-    used: number;
-    remaining: number;
-    reset_at?: string;
-  }>;
+    limit: number
+    used: number
+    remaining: number
+    reset_at?: string
+  }>
   /** Save chat session function */
   saveChatSession?: (
     payload: Payload,
@@ -73,35 +64,35 @@ export type ChatEndpointConfig = {
     sources: ChunkSource[],
     spendingEntries: SpendingEntry[],
     collectionName: CollectionSlug,
-    agentSlug?: string,
-  ) => Promise<void>;
+    agentSlug?: string
+  ) => Promise<void>
   /** Handle streaming response function */
   handleStreamingResponse: (
     response: Response,
     controller: ReadableStreamDefaultController<Uint8Array>,
-    encoder: TextEncoder,
+    encoder: TextEncoder
   ) => Promise<{
-    fullAssistantMessage: string;
-    conversationId: string | null;
-    sources: ChunkSource[];
-    llmSpending: SpendingEntry;
-  }>;
+    fullAssistantMessage: string
+    conversationId: string | null
+    sources: ChunkSource[]
+    llmSpending: SpendingEntry
+  }>
   /** Handle non-streaming response function */
   handleNonStreamingResponse: (
     data: Record<string, unknown>,
     controller: ReadableStreamDefaultController<Uint8Array>,
-    encoder: TextEncoder,
+    encoder: TextEncoder
   ) => Promise<{
-    fullAssistantMessage: string;
-    conversationId: string | null;
-    sources: ChunkSource[];
-    llmSpending: SpendingEntry;
-  }>;
+    fullAssistantMessage: string
+    conversationId: string | null
+    sources: ChunkSource[]
+    llmSpending: SpendingEntry
+  }>
   /** Create embedding spending function */
-  createEmbeddingSpending?: (model: string, tokens: number) => SpendingEntry;
+  createEmbeddingSpending?: (model: string, tokens: number) => SpendingEntry
   /** Estimate tokens from text function */
-  estimateTokensFromText?: (text: string) => number;
-};
+  estimateTokensFromText?: (text: string) => number
+}
 
 /**
  * Create a parameterizable POST handler for chat endpoint
@@ -110,147 +101,110 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
   return async function POST(request: PayloadRequest) {
     try {
       // Validate request
-      const validated = await validateChatRequest(request, config);
+      const validated = await validateChatRequest(request, config)
       if (!validated.success) {
-        return validated.error;
+        return validated.error
       }
 
-      const { userId, userEmail, payload, userMessage, body } = validated;
+      const { userId, userEmail, payload, userMessage, body } = validated
 
       // Resolve Agent Configuration
-      let searchConfig: RAGSearchConfig;
-      const agentSlug = body.agentSlug;
+      let searchConfig: RAGSearchConfig
+      const agentSlug = body.agentSlug
 
       // Resolve agents - can be array or function
-      let agents: AgentConfig<readonly string[]>[] = [];
+      let agents: AgentConfig<readonly string[]>[] = []
       if (config.rag?.agents) {
-        if (typeof config.rag.agents === "function") {
-          agents = await config.rag.agents(payload);
+        if (typeof config.rag.agents === 'function') {
+          agents = await config.rag.agents(payload)
         } else if (Array.isArray(config.rag.agents)) {
-          agents = config.rag.agents;
+          agents = config.rag.agents
         }
       }
 
       if (agentSlug && agents.length > 0) {
-        const agent = agents.find((a) => a.slug === agentSlug);
+        const agent = agents.find(a => a.slug === agentSlug)
         if (!agent) {
-          return new Response(
-            JSON.stringify({ error: `Agent not found: ${agentSlug}` }),
-            { status: 404 },
-          );
+          return new Response(JSON.stringify({ error: `Agent not found: ${agentSlug}` }), { status: 404 })
         }
         searchConfig = {
           modelId: agent.slug,
           searchCollections: agent.searchCollections,
           kResults: agent.kResults,
           taxonomySlugs: agent.taxonomySlugs,
-          advancedConfig: config.rag.advanced,
-        };
+          advancedConfig: config.rag.advanced
+        }
       } else if (agents.length > 0) {
         // Use first agent as default
-        const agent = agents[0];
-        if (!agent) throw new Error("Default agent not found");
+        const agent = agents[0]
+        if (!agent) throw new Error('Default agent not found')
         searchConfig = {
           modelId: agent.slug,
           searchCollections: agent.searchCollections,
           kResults: agent.kResults,
           taxonomySlugs: agent.taxonomySlugs,
-          advancedConfig: config.rag.advanced,
-        };
+          advancedConfig: config.rag.advanced
+        }
       } else {
-        return new Response(
-          JSON.stringify({ error: "No RAG configuration available" }),
-          { status: 500 },
-        );
+        return new Response(JSON.stringify({ error: 'No RAG configuration available' }), { status: 500 })
       }
 
       // Check token limits if configured
-      const tokenLimitError = await checkTokenLimitsIfNeeded(
-        config,
-        payload,
-        userId,
-        userEmail,
-        userMessage,
-      );
+      const tokenLimitError = await checkTokenLimitsIfNeeded(config, payload, userId, userEmail, userMessage)
       if (tokenLimitError) {
-        return tokenLimitError;
+        return tokenLimitError
       }
 
-      logger.info("Processing chat message", {
+      logger.info('Processing chat message', {
         userId,
-        chatId: body.chatId || "new",
-        agentSlug: agentSlug || "default",
+        chatId: body.chatId || 'new',
+        agentSlug: agentSlug || 'default',
         modelId: searchConfig.modelId,
         isFollowUp: !!body.chatId,
         hasSelectedDocuments: !!body.selectedDocuments,
-        messageLength: userMessage.length,
-      });
+        messageLength: userMessage.length
+      })
 
       // Create a streaming response
-      const encoder = new TextEncoder();
+      const encoder = new TextEncoder()
       const stream = new ReadableStream({
         async start(controller) {
-          const spendingEntries: SpendingEntry[] = [];
-          let fullAssistantMessage = "";
-          let conversationIdCapture: string | null = null;
-          let sourcesCapture: ChunkSource[] = [];
+          const spendingEntries: SpendingEntry[] = []
+          let fullAssistantMessage = ''
+          let conversationIdCapture: string | null = null
+          let sourcesCapture: ChunkSource[] = []
 
           try {
-            const sendEvent = (event: SSEEvent) =>
-              sendSSEEvent(controller, encoder, event);
+            const sendEvent = (event: SSEEvent) => sendSSEEvent(controller, encoder, event)
 
             // Generate embedding with tracking
-            const queryEmbedding = await generateEmbeddingWithTracking(
-              userMessage,
-              config,
-              spendingEntries,
-            );
+            const queryEmbedding = await generateEmbeddingWithTracking(userMessage, config, spendingEntries)
 
             // Execute RAG search
-            const searchResult = await executeRAGSearch(
-              config.typesense,
-              searchConfig,
-              {
-                userMessage,
-                queryEmbedding,
-                chatId: body.chatId,
-                selectedDocuments: body.selectedDocuments,
-              },
-            );
+            const searchResult = await executeRAGSearch(config.typesense, searchConfig, {
+              userMessage,
+              queryEmbedding,
+              chatId: body.chatId,
+              selectedDocuments: body.selectedDocuments
+            })
 
             // Handle streaming or non-streaming response
             const streamResult =
               searchResult.isStreaming && searchResult.response.body
-                ? await config.handleStreamingResponse(
-                    searchResult.response,
-                    controller,
-                    encoder,
-                  )
-                : await config.handleNonStreamingResponse(
-                    await searchResult.response.json(),
-                    controller,
-                    encoder,
-                  );
+                ? await config.handleStreamingResponse(searchResult.response, controller, encoder)
+                : await config.handleNonStreamingResponse(await searchResult.response.json(), controller, encoder)
 
             // Extract results
-            fullAssistantMessage = streamResult.fullAssistantMessage;
-            conversationIdCapture = streamResult.conversationId;
-            sourcesCapture = streamResult.sources;
-            spendingEntries.push(streamResult.llmSpending);
+            fullAssistantMessage = streamResult.fullAssistantMessage
+            conversationIdCapture = streamResult.conversationId
+            sourcesCapture = streamResult.sources
+            spendingEntries.push(streamResult.llmSpending)
 
             // Calculate total usage
-            const { totalTokens: totalTokensUsed, totalCostUSD } =
-              calculateTotalUsage(spendingEntries);
+            const { totalTokens: totalTokensUsed, totalCostUSD } = calculateTotalUsage(spendingEntries)
 
             // Send usage stats
-            await sendUsageStatsIfNeeded(
-              config,
-              payload,
-              userId,
-              totalTokensUsed,
-              totalCostUSD,
-              sendEvent,
-            );
+            await sendUsageStatsIfNeeded(config, payload, userId, totalTokensUsed, totalCostUSD, sendEvent)
 
             // Save session
             await saveChatSessionIfNeeded(
@@ -262,94 +216,86 @@ export function createChatPOSTHandler(config: ChatEndpointConfig) {
               fullAssistantMessage,
               sourcesCapture,
               spendingEntries,
-              agentSlug,
-            );
+              agentSlug
+            )
 
-            logger.info("Chat request completed successfully", {
+            logger.info('Chat request completed successfully', {
               userId,
               conversationId: conversationIdCapture,
-              totalTokens: totalTokensUsed,
-            });
-            controller.close();
+              totalTokens: totalTokensUsed
+            })
+            controller.close()
           } catch (error) {
             // Handle expired conversation error
-            if (
-              error instanceof Error &&
-              error.message === "EXPIRED_CONVERSATION"
-            ) {
-              logger.warn("Expired conversation detected", {
+            if (error instanceof Error && error.message === 'EXPIRED_CONVERSATION') {
+              logger.warn('Expired conversation detected', {
                 userId,
-                chatId: body.chatId,
-              });
+                chatId: body.chatId
+              })
 
               // Mark chat as expired in PayloadCMS
               if (body.chatId) {
-                await markChatSessionAsExpired(
-                  payload,
-                  body.chatId,
-                  config.collectionName,
-                );
+                await markChatSessionAsExpired(payload, body.chatId, config.collectionName)
               }
 
               // Send specific error to client
               sendSSEEvent(controller, encoder, {
-                type: "error",
+                type: 'error',
                 data: {
-                  error: "EXPIRED_CONVERSATION",
+                  error: 'EXPIRED_CONVERSATION',
                   message:
-                    "Esta conversación ha expirado (>24 horas de inactividad). Por favor, inicia una nueva conversación.",
-                  chatId: body.chatId,
-                },
-              });
-              controller.close();
-              return;
+                    'Esta conversación ha expirado (>24 horas de inactividad). Por favor, inicia una nueva conversación.',
+                  chatId: body.chatId
+                }
+              })
+              controller.close()
+              return
             }
 
             // Generic error (maintain current behavior)
-            logger.error("Fatal error in chat stream", error as Error, {
+            logger.error('Fatal error in chat stream', error as Error, {
               userId,
-              chatId: body.chatId,
-            });
+              chatId: body.chatId
+            })
             sendSSEEvent(controller, encoder, {
-              type: "error",
+              type: 'error',
               data: {
-                error:
-                  error instanceof Error ? error.message : "Error desconocido",
-              },
-            });
-            controller.close();
+                error: error instanceof Error ? error.message : 'Error desconocido'
+              }
+            })
+            controller.close()
           }
-        },
-      });
+        }
+      })
 
       return new Response(stream, {
         headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive'
+        }
+      })
     } catch (error) {
-      logger.error("Error in chat API endpoint", error as Error, {
-        userId: request.user?.id,
-      });
+      logger.error('Error in chat API endpoint', error as Error, {
+        userId: request.user?.id
+      })
 
       return new Response(
         JSON.stringify({
-          error: "Error al procesar tu mensaje. Por favor, inténtalo de nuevo.",
-          details: error instanceof Error ? error.message : "Error desconocido",
+          error: 'Error al procesar tu mensaje. Por favor, inténtalo de nuevo.',
+          details: error instanceof Error ? error.message : 'Error desconocido'
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
     }
-  };
+  }
 }
 
 /**
  * Default export for Next.js App Router
  * Users should call createChatPOSTHandler with their config
  */
-export { createChatPOSTHandler as POST };
+export { createChatPOSTHandler as POST }

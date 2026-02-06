@@ -1,7 +1,7 @@
 'use client'
-import type { FormEvent } from 'react'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import type { FormEvent } from 'react'
 import React from 'react'
 
 import './index.scss'
@@ -32,12 +32,12 @@ export const Login = ({ tenantSlug, tenantDomain }: Props) => {
         password: passwordRef.current.value,
         tenantSlug,
         tenantDomain,
-        username: usernameRef.current.value,
+        username: usernameRef.current.value
       }),
       headers: {
-        'content-type': 'application/json',
+        'content-type': 'application/json'
       },
-      method: 'post',
+      method: 'post'
     })
     const json = await actionRes.json()
 

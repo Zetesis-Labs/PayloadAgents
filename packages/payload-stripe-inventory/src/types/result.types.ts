@@ -22,16 +22,14 @@
  * }
  * ```
  */
-export type Result<T, E = string> =
-  | { data: T; error?: never }
-  | { data?: never; error: E };
+export type Result<T, E = string> = { data: T; error?: never } | { data?: never; error: E }
 
 /**
  * Helper to create a success result
  */
-export const ok = <T>(data: T): Result<T, never> => ({ data });
+export const ok = <T>(data: T): Result<T, never> => ({ data })
 
 /**
  * Helper to create an error result
  */
-export const err = <E = string>(error: E): Result<never, E> => ({ error });
+export const err = <E = string>(error: E): Result<never, E> => ({ error })

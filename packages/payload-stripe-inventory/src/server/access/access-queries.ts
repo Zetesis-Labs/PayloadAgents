@@ -1,63 +1,61 @@
-import { Access } from "payload";
-import { permissionSlugs } from "../../model/constants";
+import type { Access } from 'payload'
+import { permissionSlugs } from '../../model/constants'
 
 export const isAdmin: Access = ({ req }) => {
-  return req?.user?.roles?.includes(permissionSlugs.webAdmin) || false;
-};
+  return req?.user?.roles?.includes(permissionSlugs.webAdmin) || false
+}
 
-export const isAnyone: Access = () => true;
+export const isAnyone: Access = () => true
 
 export const isAdminOrCurrentUser: Access = ({ req }) => {
-  if (req?.user?.roles?.includes(permissionSlugs.webAdmin)) return true;
-  return { id: { equals: req.user?.id } };
-};
+  if (req?.user?.roles?.includes(permissionSlugs.webAdmin)) return true
+  return { id: { equals: req.user?.id } }
+}
 
 export const isAdminOrPublished: Access = ({ req: { user } }) => {
   if (user && user?.roles?.includes(permissionSlugs.webAdmin)) {
-    return true;
+    return true
   }
 
   return {
     _status: {
-      equals: "published",
-    },
-  };
-};
+      equals: 'published'
+    }
+  }
+}
 
 export const isAdminOrStripeActive: Access = ({ req: { user } }) => {
   if (user && user?.roles?.includes(permissionSlugs.webAdmin)) {
-    return true;
+    return true
   }
 
   return {
     active: {
-      equals: true,
-    },
-  };
-};
+      equals: true
+    }
+  }
+}
 
-export const isAdminOrUserFieldMatchingCurrentUser: Access = ({
-  req: { user },
-}) => {
+export const isAdminOrUserFieldMatchingCurrentUser: Access = ({ req: { user } }) => {
   if (user) {
-    if (user?.roles?.includes(permissionSlugs.webAdmin)) return true;
+    if (user?.roles?.includes(permissionSlugs.webAdmin)) return true
     return {
       user: {
-        equals: user?.id,
-      },
-    };
+        equals: user?.id
+      }
+    }
   }
-  return false;
-};
+  return false
+}
 
 export const loggedInOrPublished: Access = ({ req: { user } }) => {
   if (user) {
-    return true;
+    return true
   }
 
   return {
     _status: {
-      equals: "published",
-    },
-  };
-};
+      equals: 'published'
+    }
+  }
+}

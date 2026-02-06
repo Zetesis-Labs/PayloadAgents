@@ -1,11 +1,10 @@
-import type { User } from '@/payload-types'
-import type { Access, Where } from 'payload'
 import { getTenantFromCookie } from '@payloadcms/plugin-multi-tenant/utilities'
-
+import type { Access, Where } from 'payload'
+import type { User } from '@/payload-types'
+import { getCollectionIDType } from '@/utilities/getCollectionIDType'
 import { isSuperAdmin } from '../../../access/isSuperAdmin'
 import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
 import { isAccessingSelf } from './isAccessingSelf'
-import { getCollectionIDType } from '@/utilities/getCollectionIDType'
 
 export const readAccess: Access<User> = ({ req, id }) => {
   if (!req?.user) {
@@ -19,18 +18,18 @@ export const readAccess: Access<User> = ({ req, id }) => {
   const superAdmin = isSuperAdmin(req.user)
   const selectedTenant = getTenantFromCookie(
     req.headers,
-    getCollectionIDType({ payload: req.payload, collectionSlug: 'tenants' }),
+    getCollectionIDType({ payload: req.payload, collectionSlug: 'tenants' })
   )
   const adminTenantAccessIDs = getUserTenantIDs(req.user, 'tenant-admin')
 
   if (selectedTenant) {
     // If it's a super admin, or they have access to the tenant ID set in cookie
-    const hasTenantAccess = adminTenantAccessIDs.some((id) => id === selectedTenant)
+    const hasTenantAccess = adminTenantAccessIDs.some(id => id === selectedTenant)
     if (superAdmin || hasTenantAccess) {
       return {
         'tenants.tenant': {
-          equals: selectedTenant,
-        },
+          equals: selectedTenant
+        }
       }
     }
   }
@@ -43,14 +42,14 @@ export const readAccess: Access<User> = ({ req, id }) => {
     or: [
       {
         id: {
-          equals: req.user.id,
-        },
+          equals: req.user.id
+        }
       },
       {
         'tenants.tenant': {
-          in: adminTenantAccessIDs,
-        },
-      },
-    ],
+          in: adminTenantAccessIDs
+        }
+      }
+    ]
   } as Where
 }

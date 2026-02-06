@@ -1,8 +1,7 @@
-import { slugField, type CollectionConfig } from 'payload'
-
+import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
+import { type CollectionConfig, slugField } from 'payload'
 import { superAdminOrTenantAdminAccess } from '@/collections/access/superAdminOrTenantAdmin'
 import { syncToTypesense } from './endpoints/syncToTypesense'
-import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
 
 export const Books: CollectionConfig = {
   slug: 'books',
@@ -10,17 +9,17 @@ export const Books: CollectionConfig = {
     create: superAdminOrTenantAdminAccess,
     delete: superAdminOrTenantAdminAccess,
     read: () => true,
-    update: superAdminOrTenantAdminAccess,
+    update: superAdminOrTenantAdminAccess
   },
   admin: {
     useAsTitle: 'title',
     components: {
       views: {
         list: {
-          actions: ['@/modules/payload-admin/sync-typesense-button'],
-        },
-      },
-    },
+          actions: ['@/modules/payload-admin/sync-typesense-button']
+        }
+      }
+    }
   },
   endpoints: [syncToTypesense],
   fields: [
@@ -29,8 +28,8 @@ export const Books: CollectionConfig = {
       type: 'text',
       required: true,
       admin: {
-        description: 'Título del libro',
-      },
+        description: 'Título del libro'
+      }
     },
     slugField({ useAsSlug: 'title' }),
     {
@@ -41,21 +40,21 @@ export const Books: CollectionConfig = {
       admin: {
         description: 'Fecha de publicación del libro',
         date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
+          pickerAppearance: 'dayAndTime'
+        }
+      }
     },
     buildTaxonomyRelationship({
       name: 'categories',
       label: 'Categorias',
-      required: false,
+      required: false
     }),
     {
       name: 'chapters',
       type: 'array',
       required: false,
       admin: {
-        description: 'Capítulos del libro',
+        description: 'Capítulos del libro'
       },
       fields: [
         {
@@ -63,8 +62,8 @@ export const Books: CollectionConfig = {
           type: 'text',
           required: false,
           admin: {
-            description: 'Título del capítulo (opcional)',
-          },
+            description: 'Título del capítulo (opcional)'
+          }
         },
         {
           name: 'content',
@@ -72,10 +71,10 @@ export const Books: CollectionConfig = {
           required: true,
           admin: {
             language: 'markdown',
-            description: 'Contenido del capítulo en formato markdown',
-          },
-        },
-      ],
-    },
-  ],
+            description: 'Contenido del capítulo en formato markdown'
+          }
+        }
+      ]
+    }
+  ]
 }

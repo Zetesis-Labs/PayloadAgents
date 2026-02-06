@@ -48,17 +48,17 @@ export function validateSearchParams(params: unknown): ValidationResult {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map((err) => {
+      const errors = error.issues.map(err => {
         const path = err.path.length > 0 ? `${err.path.join('.')}: ` : ''
         return `${path}${err.message}`
       })
-      
+
       return {
         errors,
         success: false
       }
     }
-    
+
     return {
       errors: ['Invalid search parameters format'],
       success: false

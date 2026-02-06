@@ -30,39 +30,39 @@ export interface SpendingEntry {
 const PRICING = {
   // OpenAI models
   'text-embedding-3-large': {
-    input: 0.00013 / 1000, // per token
+    input: 0.00013 / 1000 // per token
   },
   'gpt-4o-mini': {
     input: 0.15 / 1_000_000, // per token
-    output: 0.60 / 1_000_000, // per token
+    output: 0.6 / 1_000_000 // per token
   },
   'openai/gpt-4o-mini': {
     input: 0.15 / 1_000_000,
-    output: 0.60 / 1_000_000,
+    output: 0.6 / 1_000_000
   },
   // Gemini models (pricing as of Jan 2025)
   'text-embedding-004': {
-    input: 0, // Free tier
+    input: 0 // Free tier
   },
   'gemini-embedding-001': {
-    input: 0, // Free tier
+    input: 0 // Free tier
   },
   'gemini-2.0-flash': {
-    input: 0.10 / 1_000_000, // $0.10 per 1M input tokens
-    output: 0.40 / 1_000_000, // $0.40 per 1M output tokens
+    input: 0.1 / 1_000_000, // $0.10 per 1M input tokens
+    output: 0.4 / 1_000_000 // $0.40 per 1M output tokens
   },
   'google/gemini-2.0-flash': {
-    input: 0.10 / 1_000_000,
-    output: 0.40 / 1_000_000,
+    input: 0.1 / 1_000_000,
+    output: 0.4 / 1_000_000
   },
   'gemini-1.5-flash': {
     input: 0.075 / 1_000_000,
-    output: 0.30 / 1_000_000,
+    output: 0.3 / 1_000_000
   },
   'google/gemini-1.5-flash': {
     input: 0.075 / 1_000_000,
-    output: 0.30 / 1_000_000,
-  },
+    output: 0.3 / 1_000_000
+  }
 } as const
 
 type ModelName = keyof typeof PRICING
@@ -110,14 +110,10 @@ function getEmbeddingServiceType(model: string): ServiceType {
 /**
  * Create a spending entry for embedding operations
  */
-export function createEmbeddingSpending(
-  model: string,
-  tokens: number,
-  timestamp?: Date
-): SpendingEntry {
+export function createEmbeddingSpending(model: string, tokens: number, timestamp?: Date): SpendingEntry {
   const tokenUsage: TokenUsage = {
     input: tokens,
-    total: tokens,
+    total: tokens
   }
 
   return {
@@ -125,7 +121,7 @@ export function createEmbeddingSpending(
     model,
     tokens: tokenUsage,
     cost_usd: calculateCost(model, tokenUsage),
-    timestamp: (timestamp || new Date()).toISOString(),
+    timestamp: (timestamp || new Date()).toISOString()
   }
 }
 

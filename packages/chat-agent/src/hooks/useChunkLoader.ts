@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 interface ChunkData {
   chunk_text: string
@@ -47,13 +47,13 @@ export function useChunkLoader() {
       }
 
       // Mark as loading
-      setChunkCache((prev) => ({
+      setChunkCache(prev => ({
         ...prev,
         [cacheKey]: {
           content: '',
           isLoading: true,
-          error: null,
-        },
+          error: null
+        }
       }))
 
       try {
@@ -70,28 +70,27 @@ export function useChunkLoader() {
         const data: ChunkData = await response.json()
 
         // Update cache with loaded content
-        setChunkCache((prev) => ({
+        setChunkCache(prev => ({
           ...prev,
           [cacheKey]: {
             content: data.chunk_text,
             isLoading: false,
-            error: null,
-          },
+            error: null
+          }
         }))
 
         return data.chunk_text
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Error desconocido al cargar el chunk'
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar el chunk'
 
         // Update cache with error
-        setChunkCache((prev) => ({
+        setChunkCache(prev => ({
           ...prev,
           [cacheKey]: {
             content: '',
             isLoading: false,
-            error: errorMessage,
-          },
+            error: errorMessage
+          }
         }))
 
         console.error('[useChunkLoader] Error loading chunk:', error)
@@ -111,7 +110,7 @@ export function useChunkLoader() {
         chunkCache[cacheKey] || {
           content: '',
           isLoading: false,
-          error: null,
+          error: null
         }
       )
     },
@@ -120,6 +119,6 @@ export function useChunkLoader() {
 
   return {
     loadChunkContent,
-    getChunkState,
+    getChunkState
   }
 }

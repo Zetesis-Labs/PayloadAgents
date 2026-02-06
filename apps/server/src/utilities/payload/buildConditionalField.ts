@@ -1,4 +1,4 @@
-import { Field } from 'payload'
+import type { Field } from 'payload'
 
 /**
  * Maps a field to include a conditional admin property
@@ -10,8 +10,8 @@ const mapFieldToCondition =
       ...field,
       admin: {
         ...field.admin,
-        condition: (_, siblingData) => siblingData[selectorFieldName] === key,
-      },
+        condition: (_, siblingData) => siblingData[selectorFieldName] === key
+      }
     }) as Field
 
 interface BuildConditionalFieldProps<TKeys extends string> {
@@ -67,7 +67,7 @@ export const buildConditionalField = <TKeys extends string>({
   name,
   selectorLabel,
   labels,
-  defaultValue,
+  defaultValue
 }: BuildConditionalFieldProps<TKeys>): Field[] => {
   const keys = Object.keys(fields) as TKeys[]
 
@@ -75,15 +75,13 @@ export const buildConditionalField = <TKeys extends string>({
     {
       type: 'select',
       name,
-      options: keys.map((key) => ({
+      options: keys.map(key => ({
         label: labels[key],
-        value: key,
+        value: key
       })),
       defaultValue: defaultValue ?? keys[0],
-      label: selectorLabel,
+      label: selectorLabel
     },
-    ...Object.entries(fields)
-      .map(([key, fieldList]) => (fieldList as Field[]).map(mapFieldToCondition(key, name)))
-      .flat(),
+    ...Object.entries(fields).flatMap(([key, fieldList]) => (fieldList as Field[]).map(mapFieldToCondition(key, name)))
   ]
 }

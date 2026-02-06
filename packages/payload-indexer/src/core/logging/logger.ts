@@ -3,19 +3,19 @@
  * Provides structured logging with levels and context
  */
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent'
 
 export interface LogContext {
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 export interface LoggerConfig {
   /** Minimum log level to output (default: 'info') */
-  level?: LogLevel;
+  level?: LogLevel
   /** Prefix for all log messages (default: '[payload-indexer]') */
-  prefix?: string;
+  prefix?: string
   /** Enable/disable logging (default: true) */
-  enabled?: boolean;
+  enabled?: boolean
 }
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -23,35 +23,35 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   info: 1,
   warn: 2,
   error: 3,
-  silent: 4,
-};
+  silent: 4
+}
 
 export class Logger {
-  private level: LogLevel;
-  private prefix: string;
-  private enabled: boolean;
+  private level: LogLevel
+  private prefix: string
+  private enabled: boolean
 
   constructor(config: LoggerConfig = {}) {
-    this.level = config.level || 'info';
-    this.prefix = config.prefix || '[payload-indexer]';
-    this.enabled = config.enabled !== false;
+    this.level = config.level || 'info'
+    this.prefix = config.prefix || '[payload-indexer]'
+    this.enabled = config.enabled !== false
   }
 
   /**
    * Update logger configuration
    */
   configure(config: Partial<LoggerConfig>): void {
-    if (config.level !== undefined) this.level = config.level;
-    if (config.prefix !== undefined) this.prefix = config.prefix;
-    if (config.enabled !== undefined) this.enabled = config.enabled;
+    if (config.level !== undefined) this.level = config.level
+    if (config.prefix !== undefined) this.prefix = config.prefix
+    if (config.enabled !== undefined) this.enabled = config.enabled
   }
 
   /**
    * Check if a log level should be output
    */
   private shouldLog(level: LogLevel): boolean {
-    if (!this.enabled) return false;
-    return LOG_LEVELS[level] >= LOG_LEVELS[this.level];
+    if (!this.enabled) return false
+    return LOG_LEVELS[level] >= LOG_LEVELS[this.level]
   }
 
   /**
@@ -59,9 +59,9 @@ export class Logger {
    */
   private formatMessage(message: string, context?: LogContext): string {
     if (!context || Object.keys(context).length === 0) {
-      return `${this.prefix} ${message}`;
+      return `${this.prefix} ${message}`
     }
-    return `${this.prefix} ${message} ${JSON.stringify(context)}`;
+    return `${this.prefix} ${message} ${JSON.stringify(context)}`
   }
 
   /**
@@ -69,7 +69,7 @@ export class Logger {
    */
   debug(message: string, context?: LogContext): void {
     if (this.shouldLog('debug')) {
-      console.debug(this.formatMessage(message, context));
+      console.debug(this.formatMessage(message, context))
     }
   }
 
@@ -78,7 +78,7 @@ export class Logger {
    */
   info(message: string, context?: LogContext): void {
     if (this.shouldLog('info')) {
-      console.log(this.formatMessage(message, context));
+      console.log(this.formatMessage(message, context))
     }
   }
 
@@ -87,7 +87,7 @@ export class Logger {
    */
   warn(message: string, context?: LogContext): void {
     if (this.shouldLog('warn')) {
-      console.warn(this.formatMessage(message, context));
+      console.warn(this.formatMessage(message, context))
     }
   }
 
@@ -98,13 +98,16 @@ export class Logger {
     if (this.shouldLog('error')) {
       const errorContext = {
         ...context,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : String(error),
-      };
-      console.error(this.formatMessage(message, errorContext));
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+              }
+            : String(error)
+      }
+      console.error(this.formatMessage(message, errorContext))
     }
   }
 
@@ -112,47 +115,47 @@ export class Logger {
    * Get current log level
    */
   getLevel(): LogLevel {
-    return this.level;
+    return this.level
   }
 
   /**
    * Check if logger is enabled
    */
   isEnabled(): boolean {
-    return this.enabled;
+    return this.enabled
   }
 }
 
 // Default logger instance
-let defaultLogger = new Logger();
+let defaultLogger = new Logger()
 
 /**
  * Configure the default logger
  */
 export const configureLogger = (config: LoggerConfig): void => {
-  defaultLogger.configure(config);
-};
+  defaultLogger.configure(config)
+}
 
 /**
  * Create a new logger instance with custom configuration
  */
 export const createLogger = (config?: LoggerConfig): Logger => {
-  return new Logger(config);
-};
+  return new Logger(config)
+}
 
 /**
  * Get the default logger instance
  */
 export const getLogger = (): Logger => {
-  return defaultLogger;
-};
+  return defaultLogger
+}
 
 /**
  * Set a new default logger instance
  */
 export const setLogger = (logger: Logger): void => {
-  defaultLogger = logger;
-};
+  defaultLogger = logger
+}
 
 // Export singleton methods for convenience
 export const logger = {
@@ -163,5 +166,5 @@ export const logger = {
     defaultLogger.error(message, error, context),
   configure: configureLogger,
   getLevel: () => defaultLogger.getLevel(),
-  isEnabled: () => defaultLogger.isEnabled(),
-};
+  isEnabled: () => defaultLogger.isEnabled()
+}

@@ -5,28 +5,25 @@
  * - superadmin en Keycloak → superadmin en Payload
  */
 
-type PayloadRole = "superadmin" | "user";
+type PayloadRole = 'superadmin' | 'user'
 
 interface KeycloakProfile {
-  roles?: string[];
+  roles?: string[]
   realm_access?: {
-    roles?: string[];
-  };
+    roles?: string[]
+  }
 }
 
 export function mapKeycloakRoles(profile: KeycloakProfile): PayloadRole[] {
-  const keycloakRoles = [
-    ...(profile.roles ?? []),
-    ...(profile.realm_access?.roles ?? []),
-  ];
+  const keycloakRoles = [...(profile.roles ?? []), ...(profile.realm_access?.roles ?? [])]
 
-  const hasSuperAdmin = keycloakRoles.includes("superadmin");
+  const hasSuperAdmin = keycloakRoles.includes('superadmin')
 
   if (hasSuperAdmin) {
-    return ["superadmin"];
+    return ['superadmin']
   }
 
-  return ["user"];
+  return ['user']
 }
 
 /**
@@ -34,10 +31,7 @@ export function mapKeycloakRoles(profile: KeycloakProfile): PayloadRole[] {
  * Se usa para asignar tenant-admin en los tenants
  */
 export function hasOrgAdminRole(profile: KeycloakProfile): boolean {
-  const keycloakRoles = [
-    ...(profile.roles ?? []),
-    ...(profile.realm_access?.roles ?? []),
-  ];
+  const keycloakRoles = [...(profile.roles ?? []), ...(profile.realm_access?.roles ?? [])]
 
-  return keycloakRoles.includes("org_admin");
+  return keycloakRoles.includes('org_admin')
 }

@@ -1,64 +1,64 @@
-import { convertLexicalToMarkdown, editorConfigFactory } from '@payloadcms/richtext-lexical';
-import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical';
-import type { SanitizedConfig } from 'payload';
-import OpenAI from 'openai';
+import { convertLexicalToMarkdown, editorConfigFactory } from '@payloadcms/richtext-lexical'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import OpenAI from 'openai'
+import type { SanitizedConfig } from 'payload'
 
 /**
  * Recursively extracts plain text from Lexical nodes
  * Used as a fallback when proper Lexical conversion is not available
  */
 function extractTextFromLexicalNodes(nodes: any[]): string {
-  if (!Array.isArray(nodes)) return '';
+  if (!Array.isArray(nodes)) return ''
 
-  const textParts: string[] = [];
+  const textParts: string[] = []
 
   for (const node of nodes) {
-    if (!node) continue;
+    if (!node) continue
 
     // Text node
     if (node.type === 'text' && typeof node.text === 'string') {
-      textParts.push(node.text);
+      textParts.push(node.text)
     }
     // Linebreak node
     else if (node.type === 'linebreak') {
-      textParts.push('\n');
+      textParts.push('\n')
     }
     // Link node - extract text and URL
     else if (node.type === 'link' && node.children) {
-      const linkText = extractTextFromLexicalNodes(node.children);
-      const url = node.fields?.url || node.url || '';
+      const linkText = extractTextFromLexicalNodes(node.children)
+      const url = node.fields?.url || node.url || ''
       if (url && linkText) {
-        textParts.push(`[${linkText}](${url})`);
+        textParts.push(`[${linkText}](${url})`)
       } else {
-        textParts.push(linkText);
+        textParts.push(linkText)
       }
     }
     // Heading nodes - add markdown heading prefix
     else if (node.type === 'heading' && node.children) {
-      const level = parseInt(node.tag?.replace('h', '') || '1', 10);
-      const prefix = '#'.repeat(Math.min(level, 6)) + ' ';
-      textParts.push(prefix + extractTextFromLexicalNodes(node.children) + '\n\n');
+      const level = parseInt(node.tag?.replace('h', '') || '1', 10)
+      const prefix = '#'.repeat(Math.min(level, 6)) + ' '
+      textParts.push(prefix + extractTextFromLexicalNodes(node.children) + '\n\n')
     }
     // List items
     else if (node.type === 'listitem' && node.children) {
-      textParts.push('- ' + extractTextFromLexicalNodes(node.children) + '\n');
+      textParts.push('- ' + extractTextFromLexicalNodes(node.children) + '\n')
     }
     // Quote blocks
     else if (node.type === 'quote' && node.children) {
-      const quoteText = extractTextFromLexicalNodes(node.children);
-      textParts.push('> ' + quoteText.replace(/\n/g, '\n> ') + '\n\n');
+      const quoteText = extractTextFromLexicalNodes(node.children)
+      textParts.push('> ' + quoteText.replace(/\n/g, '\n> ') + '\n\n')
     }
     // Paragraph and other block nodes
     else if (node.children) {
-      textParts.push(extractTextFromLexicalNodes(node.children));
+      textParts.push(extractTextFromLexicalNodes(node.children))
       // Add paragraph break for block-level elements
       if (['paragraph', 'heading', 'quote', 'list'].includes(node.type)) {
-        textParts.push('\n\n');
+        textParts.push('\n\n')
       }
     }
   }
 
-  return textParts.join('');
+  return textParts.join('')
 }
 
 /**
@@ -67,14 +67,14 @@ function extractTextFromLexicalNodes(nodes: any[]): string {
  */
 function simpleLexicalToText(value: SerializedEditorState): string {
   try {
-    const root = value?.root;
-    if (!root || !root.children) return '';
+    const root = value?.root
+    if (!root || !root.children) return ''
 
-    const text = extractTextFromLexicalNodes(root.children);
+    const text = extractTextFromLexicalNodes(root.children)
     // Clean up excessive whitespace
-    return text.replace(/\n{3,}/g, '\n\n').trim();
+    return text.replace(/\n{3,}/g, '\n\n').trim()
   } catch {
-    return '';
+    return ''
   }
 }
 
@@ -88,62 +88,60 @@ export const transformLexicalToMarkdown = async (
   config?: SanitizedConfig
 ): Promise<string> => {
   if (!value) {
-    return '';
+    return ''
   }
 
   // Check if we have a valid config with collections
-  const hasValidConfig = config &&
-    typeof config === 'object' &&
-    'collections' in config &&
-    Array.isArray(config.collections);
+  const hasValidConfig =
+    config && typeof config === 'object' && 'collections' in config && Array.isArray(config.collections)
 
   if (config && hasValidConfig) {
     try {
       const editorConfig = await editorConfigFactory.default({
         config
-      });
+      })
 
       const result = await convertLexicalToMarkdown({
         data: value,
         editorConfig
-      });
-      return result;
+      })
+      return result
     } catch (error) {
-      console.warn('Error in Lexical to markdown conversion, falling back to simple extraction:', error);
+      console.warn('Error in Lexical to markdown conversion, falling back to simple extraction:', error)
     }
   }
 
   // Fallback to simple text extraction
-  return simpleLexicalToText(value);
-};
+  return simpleLexicalToText(value)
+}
 
 /**
  * Configuration for summarize transforms
  */
 export interface SummarizeConfig {
   /** Minimum characters before summarization is triggered */
-  minCharacters: number;
+  minCharacters: number
   /** OpenAI API key. If not provided, uses OPENAI_API_KEY env variable */
-  apiKey?: string;
+  apiKey?: string
   /** Model to use for summarization. Defaults to 'gpt-4o-mini' */
-  model?: string;
+  model?: string
   /** Maximum tokens for the summary output. Defaults to 2000 */
-  maxTokens?: number;
-  /** Maximum input characters to send to OpenAI. Defaults to 500000 (~125k tokens). 
+  maxTokens?: number
+  /** Maximum input characters to send to OpenAI. Defaults to 500000 (~125k tokens).
    * Text exceeding this will be truncated before summarization to avoid rate limits. */
-  maxInputCharacters?: number;
+  maxInputCharacters?: number
   /** Custom system prompt for summarization */
-  systemPrompt?: string;
+  systemPrompt?: string
 }
 
 /** @deprecated Use SummarizeConfig instead */
-export type SummarizeLexicalConfig = SummarizeConfig;
+export type SummarizeLexicalConfig = SummarizeConfig
 
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that summarizes long texts while preserving the key information, main arguments, and important details.
 Create a comprehensive summary that captures the essence of the content.
 Maintain the original language of the text.
 Focus on preserving factual information, key concepts, and the author's main points.
-The summary should be detailed enough to be useful for semantic search and understanding the document's content.`;
+The summary should be detailed enough to be useful for semantic search and understanding the document's content.`
 
 /**
  * Core summarization logic shared between transforms.
@@ -152,36 +150,40 @@ The summary should be detailed enough to be useful for semantic search and under
 const summarizeText = async (
   text: string,
   config: {
-    minCharacters: number;
-    maxInputCharacters: number;
-    client: OpenAI;
-    model: string;
-    maxTokens: number;
-    systemPrompt: string;
-    logPrefix: string;
+    minCharacters: number
+    maxInputCharacters: number
+    client: OpenAI
+    model: string
+    maxTokens: number
+    systemPrompt: string
+    logPrefix: string
   }
 ): Promise<string> => {
-  const { minCharacters, maxInputCharacters, client, model, maxTokens, systemPrompt, logPrefix } = config;
+  const { minCharacters, maxInputCharacters, client, model, maxTokens, systemPrompt, logPrefix } = config
 
   if (!text) {
-    return '';
+    return ''
   }
 
   // If under the limit, return as-is
   if (text.length <= minCharacters) {
-    return text;
+    return text
   }
 
   // Truncate if exceeds max input to avoid rate limits
-  let inputText = text;
+  let inputText = text
   if (text.length > maxInputCharacters) {
-    console.log(`[${logPrefix}] Text (${text.length} chars) exceeds maxInputCharacters (${maxInputCharacters}), truncating...`);
-    inputText = text.substring(0, maxInputCharacters);
+    console.log(
+      `[${logPrefix}] Text (${text.length} chars) exceeds maxInputCharacters (${maxInputCharacters}), truncating...`
+    )
+    inputText = text.substring(0, maxInputCharacters)
   }
 
   // Summarize using OpenAI
   try {
-    console.log(`[${logPrefix}] Text exceeds ${minCharacters} chars (${inputText.length}), summarizing with ${model}...`);
+    console.log(
+      `[${logPrefix}] Text exceeds ${minCharacters} chars (${inputText.length}), summarizing with ${model}...`
+    )
 
     const response = await client.chat.completions.create({
       model,
@@ -190,19 +192,19 @@ const summarizeText = async (
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Please summarize the following text:\n\n${inputText}` }
       ]
-    });
+    })
 
-    const summary = response.choices[0]?.message?.content || '';
+    const summary = response.choices[0]?.message?.content || ''
 
-    console.log(`[${logPrefix}] Summarized from ${text.length} to ${summary.length} chars`);
+    console.log(`[${logPrefix}] Summarized from ${text.length} to ${summary.length} chars`)
 
-    return summary;
+    return summary
   } catch (error) {
-    console.error(`[${logPrefix}] Error summarizing text:`, error);
+    console.error(`[${logPrefix}] Error summarizing text:`, error)
     // On error, truncate to avoid embedding failures
-    return text.substring(0, minCharacters);
+    return text.substring(0, minCharacters)
   }
-};
+}
 
 /**
  * Creates a configured OpenAI client and extracts config with defaults
@@ -215,16 +217,18 @@ const createSummarizeContext = (config: SummarizeConfig) => {
     maxTokens = 2000,
     maxInputCharacters = 500000, // ~125k tokens, safe for most models
     systemPrompt = DEFAULT_SYSTEM_PROMPT
-  } = config;
+  } = config
 
   if (!apiKey) {
-    throw new Error('OpenAI API key is required for summarization. Provide it in config or set OPENAI_API_KEY env variable.');
+    throw new Error(
+      'OpenAI API key is required for summarization. Provide it in config or set OPENAI_API_KEY env variable.'
+    )
   }
 
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey })
 
-  return { minCharacters, maxInputCharacters, client, model, maxTokens, systemPrompt };
-};
+  return { minCharacters, maxInputCharacters, client, model, maxTokens, systemPrompt }
+}
 
 /**
  * Creates a transform function that summarizes plain text if too long.
@@ -247,15 +251,15 @@ const createSummarizeContext = (config: SummarizeConfig) => {
  * ```
  */
 export const createSummarizeTransform = (config: SummarizeConfig) => {
-  const ctx = createSummarizeContext(config);
+  const ctx = createSummarizeContext(config)
 
   return async (value?: string | null): Promise<string> => {
     return summarizeText(value || '', {
       ...ctx,
       logPrefix: 'summarize'
-    });
-  };
-};
+    })
+  }
+}
 
 /**
  * Creates a transform function that converts Lexical to Markdown and summarizes if too long.
@@ -278,20 +282,17 @@ export const createSummarizeTransform = (config: SummarizeConfig) => {
  * }
  * ```
  */
-export const createSummarizeLexicalTransform = (
-  config: SummarizeConfig,
-  payloadConfig?: SanitizedConfig
-) => {
-  const ctx = createSummarizeContext(config);
+export const createSummarizeLexicalTransform = (config: SummarizeConfig, payloadConfig?: SanitizedConfig) => {
+  const ctx = createSummarizeContext(config)
 
   return async (value?: SerializedEditorState | null): Promise<string> => {
     // First, transform Lexical to Markdown
-    const markdown = await transformLexicalToMarkdown(value, payloadConfig);
+    const markdown = await transformLexicalToMarkdown(value, payloadConfig)
 
     // Then apply summarization
     return summarizeText(markdown, {
       ...ctx,
       logPrefix: 'summarize-lexical'
-    });
-  };
-};
+    })
+  }
+}

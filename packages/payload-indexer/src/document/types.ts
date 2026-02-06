@@ -17,13 +17,13 @@ export interface FieldMapping {
   /**
    * Name of the field in the index
    */
-  name: string;
+  name: string
 
   /**
    * Path to the field in Payload (supports dot notation)
    * If not provided, defaults to 'name'
    */
-  payloadField?: string;
+  payloadField?: string
 
   /**
    * Custom transformation function to convert Payload value to index value
@@ -41,7 +41,7 @@ export interface FieldMapping {
    *   return [];
    * }
    */
-  transform?: (value: any) => Promise<any> | any;
+  transform?: (value: any) => Promise<any> | any
 }
 
 /**
@@ -52,7 +52,7 @@ export interface SourceField {
   /**
    * Name of the field in Payload
    */
-  field: string;
+  field: string
 
   /**
    * Optional transform function to convert the field value
@@ -61,7 +61,7 @@ export interface SourceField {
    * @param value - The raw value from Payload
    * @returns The transformed value
    */
-  transform?: (value: any) => any | Promise<any>;
+  transform?: (value: any) => any | Promise<any>
 }
 
 /**
@@ -71,17 +71,17 @@ export interface ChunkingConfig {
   /**
    * Chunking strategy to use
    */
-  strategy: "markdown" | "text";
+  strategy: 'markdown' | 'text'
 
   /**
    * Maximum size of each chunk in characters
    */
-  size?: number;
+  size?: number
 
   /**
    * Overlap between chunks in characters
    */
-  overlap?: number;
+  overlap?: number
 
   /**
    * Callback to intercept and modify chunk results
@@ -91,7 +91,7 @@ export interface ChunkingConfig {
    * @param payloadDocument - The original Payload document
    * @returns The modified chunk text or object
    */
-  interceptResult?: (chunkResultsWithMetadata: any, payloadDocument: any) => string;
+  interceptResult?: (chunkResultsWithMetadata: any, payloadDocument: any) => string
 }
 
 /**
@@ -102,13 +102,13 @@ export interface EmbeddingTableConfig {
    * Source fields to extract and transform for embedding generation
    * These will be concatenated if multiple are provided
    */
-  fields: (string | SourceField)[];
+  fields: (string | SourceField)[]
 
   /**
    * Optional chunking configuration
    * If provided, the content will be chunked before embedding
    */
-  chunking?: ChunkingConfig;
+  chunking?: ChunkingConfig
 }
 
 /**
@@ -121,23 +121,23 @@ interface BaseTableConfig<TFieldMapping extends FieldMapping = FieldMapping> {
    * Name of the table in the index
    * If not provided, generated from collection slug + suffix
    */
-  tableName?: string;
+  tableName?: string
 
   /**
    * Display name for UI
    */
-  displayName?: string;
+  displayName?: string
 
   /**
    * Whether this table sync is enabled
    */
-  enabled: boolean;
+  enabled: boolean
 
   /**
    * Fields to map from Payload to the index
    * The field type depends on the adapter being used
    */
-  fields: TFieldMapping[];
+  fields: TFieldMapping[]
 
   /**
    * Optional callback to determine if a document should be indexed
@@ -145,7 +145,7 @@ interface BaseTableConfig<TFieldMapping extends FieldMapping = FieldMapping> {
    * @param doc - The document being indexed
    * @returns boolean | Promise<boolean> - true to index, false to skip
    */
-  shouldIndex?: (doc: any) => boolean | Promise<boolean>;
+  shouldIndex?: (doc: any) => boolean | Promise<boolean>
 }
 
 /**
@@ -162,7 +162,7 @@ export interface TableConfig<TFieldMapping extends FieldMapping = FieldMapping> 
    * Embedding configuration
    * Defines how to generate embeddings for this table
    */
-  embedding?: EmbeddingTableConfig;
+  embedding?: EmbeddingTableConfig
 }
 
 /**
@@ -172,7 +172,7 @@ export interface TableConfig<TFieldMapping extends FieldMapping = FieldMapping> 
  * @typeParam TFieldMapping - The field mapping type (adapter-specific)
  */
 export interface CollectionConfig<TFieldMapping extends FieldMapping = FieldMapping> {
-  tables: TableConfig<TFieldMapping>[];
+  tables: TableConfig<TFieldMapping>[]
 }
 
 // === Document Types ===
@@ -181,48 +181,48 @@ export interface CollectionConfig<TFieldMapping extends FieldMapping = FieldMapp
  * Base document interface that all collections should extend
  */
 export interface BaseDocument {
-  _status?: 'draft' | 'published';
-  createdAt: Date | string;
-  publishedAt?: Date | string;
-  id: string;
-  slug?: string;
-  updatedAt: Date | string;
+  _status?: 'draft' | 'published'
+  createdAt: Date | string
+  publishedAt?: Date | string
+  id: string
+  slug?: string
+  updatedAt: Date | string
 }
 
 /**
  * Generic Payload document
  */
 export interface PayloadDocument extends BaseDocument {
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
  * Generic indexed document
  */
 export interface IndexedDocument {
-  id: string;
-  slug?: string;
-  createdAt: number;
-  updatedAt: number;
-  embedding?: number[];
-  [key: string]: unknown;
+  id: string
+  slug?: string
+  createdAt: number
+  updatedAt: number
+  embedding?: number[]
+  [key: string]: unknown
 }
 
 /**
  * Chunk document for RAG/semantic search
  */
 export interface ChunkDocument {
-  id: string;
-  parent_doc_id: string;
-  slug: string;
-  title?: string;
-  createdAt: number;
-  publishedAt?: number;
-  updatedAt: number;
-  chunk_index: number;
-  chunk_text: string;
-  is_chunk: boolean;
-  headers?: string[];
-  embedding: number[];
-  [key: string]: unknown;
+  id: string
+  parent_doc_id: string
+  slug: string
+  title?: string
+  createdAt: number
+  publishedAt?: number
+  updatedAt: number
+  chunk_index: number
+  chunk_text: string
+  is_chunk: boolean
+  headers?: string[]
+  embedding: number[]
+  [key: string]: unknown
 }

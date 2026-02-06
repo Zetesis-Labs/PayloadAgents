@@ -1,30 +1,24 @@
-import type { Payload } from "payload";
-import { logger } from "../../../../../core/logging/logger";
-import { SpendingEntry, SSEEvent } from "../../../../../shared/index";
-import type { ChatEndpointConfig } from "../route";
+import type { Payload } from 'payload'
+import { logger } from '../../../../../core/logging/logger'
+import type { SpendingEntry, SSEEvent } from '../../../../../shared/index'
+import type { ChatEndpointConfig } from '../route'
 
 /**
  * Calculates total usage from spending entries
  */
 export function calculateTotalUsage(spendingEntries: SpendingEntry[]): {
-  totalTokens: number;
-  totalCostUSD: number;
+  totalTokens: number
+  totalCostUSD: number
 } {
-  const totalTokensUsed = spendingEntries.reduce(
-    (sum, entry) => sum + entry.tokens.total,
-    0,
-  );
-  const totalCostUSD = spendingEntries.reduce(
-    (sum, entry) => sum + (entry.cost_usd || 0),
-    0,
-  );
+  const totalTokensUsed = spendingEntries.reduce((sum, entry) => sum + entry.tokens.total, 0)
+  const totalCostUSD = spendingEntries.reduce((sum, entry) => sum + (entry.cost_usd || 0), 0)
 
-  logger.info("Total token usage calculated", {
+  logger.info('Total token usage calculated', {
     totalTokens: totalTokensUsed,
-    totalCostUsd: totalCostUSD,
-  });
+    totalCostUsd: totalCostUSD
+  })
 
-  return { totalTokens: totalTokensUsed, totalCostUSD };
+  return { totalTokens: totalTokensUsed, totalCostUSD }
 }
 
 /**
@@ -36,23 +30,23 @@ export async function sendUsageStatsIfNeeded(
   userId: string | number,
   totalTokens: number,
   totalCostUSD: number,
-  sendEvent: (event: SSEEvent) => void,
+  sendEvent: (event: SSEEvent) => void
 ): Promise<void> {
   if (!config.getUserUsageStats) {
-    return;
+    return
   }
 
-  const usageStats = await config.getUserUsageStats(payload, userId);
+  const usageStats = await config.getUserUsageStats(payload, userId)
 
   sendEvent({
-    type: "usage",
+    type: 'usage',
     data: {
       tokens_used: totalTokens,
       cost_usd: totalCostUSD,
       daily_limit: usageStats.limit,
       daily_used: usageStats.used,
       daily_remaining: usageStats.remaining,
-      reset_at: usageStats.reset_at,
-    },
-  });
+      reset_at: usageStats.reset_at
+    }
+  })
 }

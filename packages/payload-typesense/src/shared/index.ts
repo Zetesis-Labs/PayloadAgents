@@ -3,8 +3,8 @@
  */
 
 // Cache
-export * from "./cache/cache";
+export * from './cache/cache'
 
 // Types
-export * from "./types/plugin-types";
-export * from "./types/types";
+export * from './types/plugin-types'
+export * from './types/types'

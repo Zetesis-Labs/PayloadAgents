@@ -1,14 +1,10 @@
-import type { PayloadHandler, PayloadRequest } from "payload";
-import type Stripe from "stripe";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
-import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user";
-import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create";
-import { stripeBuilder } from "../../utils/stripe/stripe-builder";
-import {
-  errorResponse,
-  redirectResponse,
-  validateAuthenticatedRequest,
-} from "../validators/request-validator";
+import type { PayloadHandler, PayloadRequest } from 'payload'
+import type Stripe from 'stripe'
+import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
+import { upsertCustomerInventoryAndSyncWithUser } from '../../utils/payload/upsert-customer-inventory-and-sync-with-user'
+import { getCustomerFromStripeOrCreate } from '../../utils/stripe/get-customer-from-stripe-or-create'
+import { stripeBuilder } from '../../utils/stripe/stripe-builder'
+import { errorResponse, redirectResponse, validateAuthenticatedRequest } from '../validators/request-validator'
 
 /**
  * Creates a handler for Stripe checkout sessions (subscriptions)
@@ -16,81 +12,68 @@ import {
  * @param config - Endpoint configuration
  * @returns PayloadHandler for checkout endpoint
  */
-export function createCheckoutHandler(
-  config: StripeEndpointConfig,
-): PayloadHandler {
+export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
       // Validate authenticated user
-      const validated = await validateAuthenticatedRequest(request, config);
+      const validated = await validateAuthenticatedRequest(request, config)
       if (!validated.success) {
-        return validated.error;
+        return validated.error
       }
 
-      const { user, payload } = validated;
+      const { user, payload } = validated
 
       // Validate user email
       if (!user.email) {
-        return errorResponse("User email is required", 400);
+        return errorResponse('User email is required', 400)
       }
 
       // Extract priceId from query params
-      const url = new URL(request.url || "");
-      const priceId = url.searchParams.get("priceId");
+      const url = new URL(request.url || '')
+      const priceId = url.searchParams.get('priceId')
 
       if (!priceId) {
-        return errorResponse("priceId is required", 400);
+        return errorResponse('priceId is required', 400)
       }
 
-      const stripe = stripeBuilder();
+      const stripe = stripeBuilder()
 
       // Get or create Stripe customer
-      const customerId = await getCustomerFromStripeOrCreate(
-        user.email,
-        user.name,
-      );
+      const customerId = await getCustomerFromStripeOrCreate(user.email, user.name)
 
       // Sync customer inventory
-      await upsertCustomerInventoryAndSyncWithUser(
-        payload,
-        user.customer?.inventory,
-        user.email,
-        customerId,
-      );
+      await upsertCustomerInventoryAndSyncWithUser(payload, user.customer?.inventory, user.email, customerId)
 
       // Prepare checkout session
       const metadata: Stripe.MetadataParam = {
-        type: "subscription",
-      };
+        type: 'subscription'
+      }
 
       const checkoutResult = await stripe.checkout.sessions.create({
         success_url: `${process.env.DOMAIN}${config.routes.subscriptionPageHref}?success=${Date.now()}`,
         cancel_url: `${process.env.DOMAIN}${config.routes.subscriptionPageHref}?error=${Date.now()}`,
-        mode: "subscription",
+        mode: 'subscription',
         customer: customerId,
         client_reference_id: String(user.id),
         line_items: [{ price: priceId, quantity: 1 }],
         metadata,
         tax_id_collection: { enabled: true },
         customer_update: {
-          name: "auto",
-          address: "auto",
-          shipping: "auto",
+          name: 'auto',
+          address: 'auto',
+          shipping: 'auto'
         },
-        subscription_data: { metadata },
-      });
+        subscription_data: { metadata }
+      })
 
       if (checkoutResult.url) {
-        return redirectResponse(checkoutResult.url, 303);
+        return redirectResponse(checkoutResult.url, 303)
       }
 
-      return errorResponse("Failed to create checkout URL", 406);
+      return errorResponse('Failed to create checkout URL', 406)
     } catch (error) {
-      console.error("[Stripe Checkout Error]", error);
-      return errorResponse(
-        error instanceof Error ? error.message : "Unknown error occurred",
-        500,
-      );
+      console.error('[Stripe Checkout Error]', error)
+      return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
-  };
+  }
 }

@@ -10,7 +10,7 @@ export const readFileAsText = (file: File): Promise<string> => {
 }
 
 export const loadingLabels: Record<ImportMode, string> = {
-  'import': 'Importando...',
+  import: 'Importando...',
   'import-sync': 'Importando y sincronizando...',
-  'sync': 'Sincronizando...',
+  sync: 'Sincronizando...'
 }

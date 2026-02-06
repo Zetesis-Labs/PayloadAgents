@@ -1,6 +1,6 @@
 /**
  * Extracts the ID from an object or returns the value if already a primitive.
- * 
+ *
  * Works with union types like `number | Tenant` → returns `number`
  */
 

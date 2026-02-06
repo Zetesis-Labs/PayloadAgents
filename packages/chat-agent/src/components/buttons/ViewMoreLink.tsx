@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
-import { DefaultLink, LinkComponent } from '../../types/components'
+import { DefaultLink, type LinkComponent } from '../../types/components'
 
 interface ViewMoreLinkProps {
   type: 'article' | 'book'
@@ -18,12 +18,12 @@ export const ViewMoreLink = ({
   title,
   onClick,
   generateHref,
-  LinkComponent: Link = DefaultLink,
+  LinkComponent: Link = DefaultLink
 }: ViewMoreLinkProps) => {
   const contentType = type === 'article' ? 'articulos' : 'libros'
   const href = generateHref({
     type: contentType,
-    value: { id: parseInt(slug.split('-')?.[0] || '0'), slug },
+    value: { id: parseInt(slug.split('-')?.[0] || '0'), slug }
   })
   if (!href) return null
 

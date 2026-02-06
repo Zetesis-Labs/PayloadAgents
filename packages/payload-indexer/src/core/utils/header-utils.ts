@@ -10,28 +10,28 @@
  */
 export const buildHeaderHierarchy = (metadata?: Record<string, string>): string[] => {
   if (!metadata || Object.keys(metadata).length === 0) {
-    return [];
+    return []
   }
 
-  const headers: string[] = [];
+  const headers: string[] = []
   const headerLevels = Object.keys(metadata)
     .filter(key => key.startsWith('Header '))
     .sort((a, b) => {
-      const levelA = parseInt(a.replace('Header ', ''));
-      const levelB = parseInt(b.replace('Header ', ''));
-      return levelA - levelB;
-    });
+      const levelA = parseInt(a.replace('Header ', ''))
+      const levelB = parseInt(b.replace('Header ', ''))
+      return levelA - levelB
+    })
 
-  let currentPath: string[] = [];
+  const currentPath: string[] = []
 
   for (const headerKey of headerLevels) {
-    const headerValue = metadata[headerKey];
+    const headerValue = metadata[headerKey]
     if (!headerValue) {
-      continue;
+      continue
     }
-    currentPath.push(headerValue);
-    headers.push(currentPath.join(' > '));
+    currentPath.push(headerValue)
+    headers.push(currentPath.join(' > '))
   }
 
-  return headers;
-};
+  return headers
+}

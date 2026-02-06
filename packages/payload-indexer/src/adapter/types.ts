@@ -7,28 +7,28 @@
  * Helper type to extract the schema type from an adapter
  * @example type MySchema = InferSchema<TypesenseAdapter> // TypesenseCollectionSchema
  */
-export type InferSchema<A> = A extends IndexerAdapter<infer S> ? S : BaseCollectionSchema;
+export type InferSchema<A> = A extends IndexerAdapter<infer S> ? S : BaseCollectionSchema
 
 /**
  * Result of a document sync operation
  */
 export interface SyncResult {
-  success: boolean;
-  documentId: string;
-  collectionName: string;
-  chunksCreated?: number;
-  error?: Error;
+  success: boolean
+  documentId: string
+  collectionName: string
+  chunksCreated?: number
+  error?: Error
 }
 
 /**
  * Result of a document delete operation
  */
 export interface DeleteResult {
-  success: boolean;
-  documentId: string;
-  collectionName: string;
-  chunksDeleted?: number;
-  error?: Error;
+  success: boolean
+  documentId: string
+  collectionName: string
+  chunksDeleted?: number
+  error?: Error
 }
 
 /**
@@ -36,26 +36,26 @@ export interface DeleteResult {
  * Each adapter can extend this with backend-specific fields
  */
 export interface BaseCollectionSchema {
-  name: string;
-  fields: Array<{ name: string; [key: string]: unknown }>;
+  name: string
+  fields: Array<{ name: string; [key: string]: unknown }>
 }
 
 /**
  * Document ready for indexing (transformed)
  */
 export interface IndexDocument {
-  id: string;
-  [key: string]: unknown;
+  id: string
+  [key: string]: unknown
 }
 
 /**
  * Options for vector search
  */
 export interface VectorSearchOptions {
-  limit?: number;
-  filter?: Record<string, unknown>;
-  includeFields?: string[];
-  excludeFields?: string[];
+  limit?: number
+  filter?: Record<string, unknown>
+  includeFields?: string[]
+  excludeFields?: string[]
 }
 
 /**
@@ -63,9 +63,9 @@ export interface VectorSearchOptions {
  * @typeParam TDoc - The document type returned in search results
  */
 export interface AdapterSearchResult<TDoc = Record<string, unknown>> {
-  id: string;
-  score: number;
-  document: TDoc;
+  id: string
+  score: number
+  document: TDoc
 }
 
 /**
@@ -77,20 +77,18 @@ export interface AdapterSearchResult<TDoc = Record<string, unknown>> {
  * @example
  * class TypesenseAdapter implements IndexerAdapter<TypesenseCollectionSchema> { ... }
  */
-export interface IndexerAdapter<
-  TSchema extends BaseCollectionSchema = BaseCollectionSchema
-> {
+export interface IndexerAdapter<TSchema extends BaseCollectionSchema = BaseCollectionSchema> {
   /**
    * Unique identifier for this adapter (e.g., 'typesense', 'meilisearch')
    */
-  readonly name: string;
+  readonly name: string
 
   // === Connection Management ===
 
   /**
    * Test connection to the search backend
    */
-  testConnection(): Promise<boolean>;
+  testConnection(): Promise<boolean>
 
   // === Schema Management ===
 
@@ -98,43 +96,40 @@ export interface IndexerAdapter<
    * Create or update a collection/index schema
    * The schema type is adapter-specific
    */
-  ensureCollection(schema: TSchema): Promise<void>;
+  ensureCollection(schema: TSchema): Promise<void>
 
   /**
    * Check if a collection exists
    */
-  collectionExists(collectionName: string): Promise<boolean>;
+  collectionExists(collectionName: string): Promise<boolean>
 
   /**
    * Delete a collection
    */
-  deleteCollection(collectionName: string): Promise<void>;
+  deleteCollection(collectionName: string): Promise<void>
 
   // === Document Operations ===
 
   /**
    * Upsert a single document
    */
-  upsertDocument(collectionName: string, document: IndexDocument): Promise<void>;
+  upsertDocument(collectionName: string, document: IndexDocument): Promise<void>
 
   /**
    * Upsert multiple documents (batch)
    */
-  upsertDocuments(collectionName: string, documents: IndexDocument[]): Promise<void>;
+  upsertDocuments(collectionName: string, documents: IndexDocument[]): Promise<void>
 
   /**
    * Delete a document by ID
    */
-  deleteDocument(collectionName: string, documentId: string): Promise<void>;
+  deleteDocument(collectionName: string, documentId: string): Promise<void>
 
   /**
    * Delete documents matching a filter
    * Returns the number of deleted documents
    */
-  deleteDocumentsByFilter(
-    collectionName: string,
-    filter: Record<string, unknown>
-  ): Promise<number>;
+  deleteDocumentsByFilter(collectionName: string, filter: Record<string, unknown>): Promise<number>
 
   // === Optional: Vector Search ===
 
@@ -146,5 +141,5 @@ export interface IndexerAdapter<
     collectionName: string,
     vector: number[],
     options?: VectorSearchOptions
-  ): Promise<AdapterSearchResult<TDoc>[]>;
+  ): Promise<AdapterSearchResult<TDoc>[]>
 }

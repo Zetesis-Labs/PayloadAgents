@@ -1,17 +1,17 @@
-import type { Customer } from "./customer.types";
+import type { Customer } from './customer.types'
 
 export interface Subscription {
-  status?: string;
+  status?: string
 }
 
 export interface BaseUser<T = any> {
-  id: string | number;
-  name?: string;
-  email?: string;
-  customer?: Customer | null;
-  roles?: string[];
-  inventory?: T;
-  [key: string]: any;
+  id: string | number
+  name?: string
+  email?: string
+  customer?: Customer | null
+  roles?: string[]
+  inventory?: T
+  [key: string]: any
 }
 
 export interface User extends BaseUser {}

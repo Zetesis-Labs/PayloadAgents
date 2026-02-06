@@ -1,15 +1,15 @@
 import type { CollectionSlug, Endpoint } from 'payload'
 import { APIError } from 'payload'
 import { isSuperAdmin } from '@/access/isSuperAdmin'
-import { importHardcodedAgents } from '@/payload/plugins/typesense/agents/importer'
 import { agents as hardcodedAgents } from '@/payload/plugins/typesense/agents'
+import { importHardcodedAgents } from '@/payload/plugins/typesense/agents/importer'
 
 /**
  * Endpoint to import hardcoded agents into the database
  * POST /api/agents/import
  */
 export const importAgents: Endpoint = {
-  handler: async (req) => {
+  handler: async req => {
     // Check authentication
     if (!req.user) {
       throw new APIError('Unauthorized', 401, null, true)
@@ -26,16 +26,15 @@ export const importAgents: Endpoint = {
       // Use shared importer service
       const results = await importHardcodedAgents(req.payload)
 
-
       console.log(
-        `[Agents Import] Completed: ${results.imported.length} imported, ${results.skipped.length} skipped, ${results.errors.length} errors`,
+        `[Agents Import] Completed: ${results.imported.length} imported, ${results.skipped.length} skipped, ${results.errors.length} errors`
       )
 
       return Response.json({
         success: true,
         message: 'Import completed',
         totalAgents: hardcodedAgents.length,
-        results,
+        results
       })
     } catch (error) {
       if (error instanceof APIError) {
@@ -46,10 +45,10 @@ export const importAgents: Endpoint = {
         `Failed to import agents: ${error instanceof Error ? error.message : 'Unknown error'}`,
         500,
         null,
-        true,
+        true
       )
     }
   },
   method: 'post',
-  path: '/import',
+  path: '/import'
 }

@@ -40,7 +40,7 @@ export type SessionConfig<TSlug extends CollectionSlug> = {
 export async function getActiveSession<TSlug extends CollectionSlug>(
   payload: Payload,
   userId: string | number,
-  config: SessionConfig<TSlug> = {},
+  config: SessionConfig<TSlug> = {}
 ): Promise<ChatSessionData | null> {
   const collectionName = config.collectionName
   if (!collectionName) {
@@ -56,23 +56,23 @@ export async function getActiveSession<TSlug extends CollectionSlug>(
       and: [
         {
           user: {
-            equals: userId,
-          },
+            equals: userId
+          }
         },
         {
           status: {
-            equals: 'active',
-          },
+            equals: 'active'
+          }
         },
         {
           last_activity: {
-            greater_than: cutoffTime.toISOString(),
-          },
-        },
-      ],
+            greater_than: cutoffTime.toISOString()
+          }
+        }
+      ]
     },
     sort: '-last_activity',
-    limit: 1,
+    limit: 1
   })
 
   if (!chatSessions.docs.length) {
@@ -95,7 +95,7 @@ export async function getSessionByConversationId<TSlug extends CollectionSlug>(
   payload: Payload,
   userId: string | number,
   conversationId: string,
-  config: SessionConfig<TSlug> = {},
+  config: SessionConfig<TSlug> = {}
 ): Promise<ChatSessionData | null> {
   const collectionName = config.collectionName
   if (!collectionName) {
@@ -108,17 +108,17 @@ export async function getSessionByConversationId<TSlug extends CollectionSlug>(
       and: [
         {
           conversation_id: {
-            equals: conversationId,
-          },
+            equals: conversationId
+          }
         },
         {
           user: {
-            equals: userId,
-          },
-        },
-      ],
+            equals: userId
+          }
+        }
+      ]
     },
-    limit: 1,
+    limit: 1
   })
 
   if (!chatSessions.docs.length) {
@@ -141,7 +141,7 @@ export async function closeSession<TSlug extends CollectionSlug>(
   payload: Payload,
   userId: string | number,
   conversationId: string,
-  config: SessionConfig<TSlug> = {},
+  config: SessionConfig<TSlug> = {}
 ): Promise<ChatSessionData | null> {
   const collectionName = config.collectionName
   if (!collectionName) {
@@ -153,17 +153,17 @@ export async function closeSession<TSlug extends CollectionSlug>(
       and: [
         {
           conversation_id: {
-            equals: conversationId,
-          },
+            equals: conversationId
+          }
         },
         {
           user: {
-            equals: userId,
-          },
-        },
-      ],
+            equals: userId
+          }
+        }
+      ]
     },
-    limit: 1,
+    limit: 1
   })
 
   if (!chatSessions.docs.length) {
@@ -178,13 +178,13 @@ export async function closeSession<TSlug extends CollectionSlug>(
     collection: collectionName,
     where: {
       conversation_id: {
-        equals: conversationId,
-      },
+        equals: conversationId
+      }
     },
     data: {
       status: 'closed',
-      closed_at: new Date().toISOString(),
-    } as any,
+      closed_at: new Date().toISOString()
+    } as any
   })
 
   return {
@@ -193,7 +193,7 @@ export async function closeSession<TSlug extends CollectionSlug>(
     status: 'closed',
     total_tokens: session.total_tokens,
     total_cost: session.total_cost,
-    last_activity: session.last_activity,
+    last_activity: session.last_activity
   }
 }
 
@@ -208,7 +208,7 @@ export async function closeSession<TSlug extends CollectionSlug>(
 export async function getUserSessions<TSlug extends CollectionSlug>(
   payload: Payload,
   userId: string | number,
-  config: SessionConfig<TSlug> = {},
+  config: SessionConfig<TSlug> = {}
 ): Promise<ChatSessionData[]> {
   const collectionName = config.collectionName
   if (!collectionName) {
@@ -219,16 +219,16 @@ export async function getUserSessions<TSlug extends CollectionSlug>(
     collection: collectionName,
     where: {
       user: {
-        equals: userId,
-      },
+        equals: userId
+      }
     },
     sort: '-last_activity',
-    limit: 50,
+    limit: 50
   })
 
   return chatSessions.docs.map(doc => ({
     ...doc,
-    title: (doc as any).title, // Force type as schema might not be updated yet
+    title: (doc as any).title // Force type as schema might not be updated yet
   })) as unknown as ChatSessionData[]
 }
 
@@ -247,7 +247,7 @@ export async function renameSession<TSlug extends CollectionSlug>(
   userId: string | number,
   conversationId: string,
   newTitle: string,
-  config: SessionConfig<TSlug> = {},
+  config: SessionConfig<TSlug> = {}
 ): Promise<ChatSessionData | null> {
   const collectionName = config.collectionName
   if (!collectionName) {
@@ -257,12 +257,9 @@ export async function renameSession<TSlug extends CollectionSlug>(
   const chatSessions = await payload.find({
     collection: collectionName,
     where: {
-      and: [
-        { conversation_id: { equals: conversationId } },
-        { user: { equals: userId } },
-      ],
+      and: [{ conversation_id: { equals: conversationId } }, { user: { equals: userId } }]
     },
-    limit: 1,
+    limit: 1
   })
 
   if (!chatSessions.docs.length) return null
@@ -270,14 +267,13 @@ export async function renameSession<TSlug extends CollectionSlug>(
   const updated = await payload.update({
     collection: collectionName,
     where: {
-      conversation_id: { equals: conversationId },
+      conversation_id: { equals: conversationId }
     },
     data: {
-      title: newTitle,
-    } as any,
+      title: newTitle
+    } as any
   })
 
   if (!updated.docs.length) return null
   return updated.docs[0] as unknown as ChatSessionData
 }
-

@@ -2,4 +2,4 @@
  * Chat request validators
  */
 
-export * from "./request-validator";
+export * from './request-validator'

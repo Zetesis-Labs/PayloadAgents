@@ -1,8 +1,7 @@
 'use client'
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { Message, SessionSummary } from '../adapters/ChatAdapter'
-import { ChatAdapter, PublicAgentInfo, TokenUsage } from '../adapters/ChatAdapter'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { ChatAdapter, Message, PublicAgentInfo, SessionSummary, TokenUsage } from '../adapters/ChatAdapter'
 import { NexoPayloadChatAdapter } from '../adapters/NexoPayloadChatAdapter'
 import { useChatSession } from '../hooks/useChatSession'
 
@@ -109,7 +108,7 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
   // Update token usage (called from SSE events)
   // Memoized to prevent infinite loops in useEffect dependencies
   const updateTokenUsage = useCallback((newUsage: Partial<TokenUsage>) => {
-    setTokenUsage((prev) => {
+    setTokenUsage(prev => {
       if (!prev) {
         // First time: create full object from partial
         return newUsage as TokenUsage
@@ -117,7 +116,7 @@ export const ChatProvider = ({ children, adapter: customAdapter }: { children: R
       // Subsequent updates: merge
       return {
         ...prev,
-        ...newUsage,
+        ...newUsage
       }
     })
   }, [])
@@ -187,4 +186,3 @@ export const useChat = () => {
   }
   return context
 }
-

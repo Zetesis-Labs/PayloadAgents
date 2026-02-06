@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { debounce } from 'lodash'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -40,7 +40,7 @@ export function useDocumentSearch() {
         query_by: 'title',
         simple: 'true',
         mode: 'simple',
-        per_page: '15',
+        per_page: '15'
       })
       // Add multiple collection parameters
       params.append('collection', 'book')
@@ -64,8 +64,10 @@ export function useDocumentSearch() {
         console.log('[DocumentSelector] Documents found:', data.documents?.length || 0)
 
         if (data.documents && data.documents.length > 0) {
-          console.log('[DocumentSelector] Sample document titles:',
-            data.documents.slice(0, 3).map((d: any) => d.title))
+          console.log(
+            '[DocumentSelector] Sample document titles:',
+            data.documents.slice(0, 3).map((d: any) => d.title)
+          )
         }
       }
 
@@ -80,10 +82,7 @@ export function useDocumentSearch() {
   }, [])
 
   // Create debounced version using useMemo
-  const debouncedSearch = useMemo(
-    () => debounce(performSearch, 300),
-    [performSearch]
-  )
+  const debouncedSearch = useMemo(() => debounce(performSearch, 300), [performSearch])
 
   // Cleanup debounced function on unmount
   useEffect(() => {
@@ -93,32 +92,33 @@ export function useDocumentSearch() {
   }, [debouncedSearch])
 
   // Handle search query changes
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query)
-    if (query.trim().length >= 2) {
-      setIsLoading(true)
-      debouncedSearch(query)
-    } else {
-      setSearchResults([])
-      setIsLoading(false)
-    }
-  }, [debouncedSearch])
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query)
+      if (query.trim().length >= 2) {
+        setIsLoading(true)
+        debouncedSearch(query)
+      } else {
+        setSearchResults([])
+        setIsLoading(false)
+      }
+    },
+    [debouncedSearch]
+  )
 
   return {
     searchQuery,
     searchResults,
     isLoading,
     error,
-    handleSearchChange,
+    handleSearchChange
   }
 }
 
 /**
  * Hook for managing document selection
  */
-export function useDocumentSelection(
-  onSelectionChange?: (selectedDocuments: Document[]) => void
-) {
+export function useDocumentSelection(onSelectionChange?: (selectedDocuments: Document[]) => void) {
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([])
 
   // Keep a ref to the latest onSelectionChange to avoid unnecessary effect runs
@@ -136,9 +136,7 @@ export function useDocumentSelection(
   const toggleDocument = useCallback((document: Document) => {
     setSelectedDocuments(prev => {
       const isSelected = prev.some(d => d.id === document.id)
-      return isSelected
-        ? prev.filter(d => d.id !== document.id)
-        : [...prev, document]
+      return isSelected ? prev.filter(d => d.id !== document.id) : [...prev, document]
     })
   }, [])
 
@@ -157,7 +155,7 @@ export function useDocumentSelection(
     selectedDocuments,
     toggleDocument,
     removeDocument,
-    clearAllSelections,
+    clearAllSelections
   }
 }
 
@@ -165,10 +163,7 @@ export function useDocumentSelection(
  * Hook for combining selected documents with search results
  * Optimized with Set for O(n) complexity instead of O(n*m)
  */
-export function useCombinedDocuments(
-  selectedDocuments: Document[],
-  searchResults: Document[]
-) {
+export function useCombinedDocuments(selectedDocuments: Document[], searchResults: Document[]) {
   return useMemo(() => {
     const combined = [...selectedDocuments]
     const selectedIds = new Set(selectedDocuments.map(doc => doc.id))

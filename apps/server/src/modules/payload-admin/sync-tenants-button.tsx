@@ -1,85 +1,72 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import { Button } from "@payloadcms/ui";
+import { Button } from '@payloadcms/ui'
+import type React from 'react'
+import { useState } from 'react'
 
 interface SyncResult {
-  success: boolean;
-  message: string;
-  totalOrganizations?: number;
+  success: boolean
+  message: string
+  totalOrganizations?: number
   results?: {
-    created: string[];
-    updated: string[];
-    skipped: string[];
-    errors: string[];
-  };
+    created: string[]
+    updated: string[]
+    skipped: string[]
+    errors: string[]
+  }
 }
 
 export const SyncTenantsButton: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<SyncResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false)
+  const [result, setResult] = useState<SyncResult | null>(null)
 
   const handleSync = async () => {
-    setIsLoading(true);
-    setResult(null);
+    setIsLoading(true)
+    setResult(null)
 
     try {
-      const response = await fetch("/api/tenants/sync-from-keycloak", {
-        method: "POST",
+      const response = await fetch('/api/tenants/sync-from-keycloak', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-        },
-      });
+          'Content-Type': 'application/json'
+        }
+      })
 
-      const data: SyncResult = await response.json();
-      setResult(data);
+      const data: SyncResult = await response.json()
+      setResult(data)
 
       if (data.success) {
         // Recargar la página para mostrar los nuevos tenants
         setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+          window.location.reload()
+        }, 2000)
       }
     } catch (error) {
       setResult({
         success: false,
-        message: error instanceof Error ? error.message : "Error desconocido",
-      });
+        message: error instanceof Error ? error.message : 'Error desconocido'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-      <Button
-        onClick={handleSync}
-        disabled={isLoading}
-      >
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <Button onClick={handleSync} disabled={isLoading}>
         {isLoading ? (
           <>
             <svg
               style={{
-                animation: "spin 1s linear infinite",
-                width: "16px",
-                height: "16px",
+                animation: 'spin 1s linear infinite',
+                width: '16px',
+                height: '16px'
               }}
               fill="none"
               viewBox="0 0 24 24"
             >
-              <circle
-                style={{ opacity: 0.25 }}
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                style={{ opacity: 0.75 }}
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
+              <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             Sincronizando...
           </>
@@ -108,17 +95,16 @@ export const SyncTenantsButton: React.FC = () => {
       {result && (
         <div
           style={{
-            padding: "8px 12px",
-            borderRadius: "6px",
-            fontSize: "13px",
-            backgroundColor: result.success ? "#dcfce7" : "#fee2e2",
-            color: result.success ? "#166534" : "#991b1b",
+            padding: '8px 12px',
+            borderRadius: '6px',
+            fontSize: '13px',
+            backgroundColor: result.success ? '#dcfce7' : '#fee2e2',
+            color: result.success ? '#166534' : '#991b1b'
           }}
         >
           {result.success ? (
             <>
-              ✓ {result.results?.created.length || 0} creados,{" "}
-              {result.results?.updated.length || 0} actualizados,{" "}
+              ✓ {result.results?.created.length || 0} creados, {result.results?.updated.length || 0} actualizados,{' '}
               {result.results?.skipped.length || 0} sin cambios
             </>
           ) : (
@@ -136,9 +122,7 @@ export const SyncTenantsButton: React.FC = () => {
         `}
       </style>
     </div>
-  );
-};
+  )
+}
 
-export default SyncTenantsButton;
-
-
+export default SyncTenantsButton

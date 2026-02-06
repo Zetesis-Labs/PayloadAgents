@@ -1,6 +1,6 @@
-import type { TableConfig } from "@nexo-labs/payload-indexer";
-import type { BuildMultiCollectionVectorSearchParamsOptions } from "../types";
-import { buildVectorSearchParams } from "./build-params";
+import type { TableConfig } from '@nexo-labs/payload-indexer'
+import type { BuildMultiCollectionVectorSearchParamsOptions } from '../types'
+import { buildVectorSearchParams } from './build-params'
 
 /**
  * Builds multi-collection vector search parameters
@@ -8,27 +8,23 @@ import { buildVectorSearchParams } from "./build-params";
 export const buildMultiCollectionVectorSearchParams = (
   searchVector: number[],
   enabledCollections: Array<[string, TableConfig]>,
-  options: BuildMultiCollectionVectorSearchParamsOptions,
+  options: BuildMultiCollectionVectorSearchParamsOptions
 ): Array<Record<string, unknown>> => {
-  const { query, k, hybrid, alpha, page, per_page, filter_by, sort_by } =
-    options;
+  const { query, k, hybrid, alpha, page, per_page, filter_by, sort_by } = options
 
   return enabledCollections.map(([collectionName, config]) => {
     // Extract search fields
-    let searchFields: string[] | undefined;
+    let searchFields: string[] | undefined
     if (config) {
-      let fields: { name: string; index?: boolean; type?: string }[] = [];
-      fields = config.fields;
+      let fields: { name: string; index?: boolean; type?: string }[] = []
+      fields = config.fields
       // Filter for indexed fields that are searchable (string or string[] types only)
       // Typesense only accepts string/string[] fields in query_by parameter
       const extracted = fields
-        .filter(
-          (f) =>
-            f.index !== false && (f.type === "string" || f.type === "string[]"),
-        )
-        .map((f) => f.name);
+        .filter(f => f.index !== false && (f.type === 'string' || f.type === 'string[]'))
+        .map(f => f.name)
       if (extracted.length > 0) {
-        searchFields = extracted;
+        searchFields = extracted
       }
     }
 
@@ -44,15 +40,15 @@ export const buildMultiCollectionVectorSearchParams = (
       // Don't add filter_by here - will be handled in handler after schema check
       ...(sort_by !== undefined && { sort_by }),
       ...(searchFields !== undefined && {
-        searchFields: searchFields,
-      }),
-    });
+        searchFields: searchFields
+      })
+    })
 
     // Store filter_by separately - handler will add it conditionally
     return {
       collection: collectionName,
       ...collectionSearchParams,
-      _filter_by: filter_by, // Internal flag for handler to check schema and add filter
-    };
-  });
-};
+      _filter_by: filter_by // Internal flag for handler to check schema and add filter
+    }
+  })
+}

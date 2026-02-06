@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import type { ImportResult } from './admin-types'
 
 export const ImportResultDisplay: React.FC<{ result: ImportResult | null }> = ({ result }) => {
@@ -11,7 +11,7 @@ export const ImportResultDisplay: React.FC<{ result: ImportResult | null }> = ({
         borderRadius: '6px',
         fontSize: '13px',
         backgroundColor: result.success ? '#dcfce7' : '#fee2e2',
-        color: result.success ? '#166534' : '#991b1b',
+        color: result.success ? '#166534' : '#991b1b'
       }}
     >
       {result.success ? (
@@ -19,7 +19,8 @@ export const ImportResultDisplay: React.FC<{ result: ImportResult | null }> = ({
           {result.results && (
             <div>
               {result.dataFile && <>Archivo: {result.dataFile} | </>}
-              {result.results.imported} importados, {result.results.skipped} existentes, {result.results.errors.length} errores
+              {result.results.imported} importados, {result.results.skipped} existentes, {result.results.errors.length}{' '}
+              errores
             </div>
           )}
           {result.syncResults && (

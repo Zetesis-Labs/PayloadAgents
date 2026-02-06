@@ -1,9 +1,9 @@
 'use client'
 
 import { FloatingChatManager } from '@nexo-labs/chat-agent'
-import { useUser } from '@/components/organisms/user-context'
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useUser } from '@/components/organisms/user-context'
 
 // ============================================================================
 // COMPONENT

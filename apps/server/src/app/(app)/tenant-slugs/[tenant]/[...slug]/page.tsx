@@ -1,8 +1,7 @@
-import type { Where } from 'payload'
-
 import configPromise from '@payload-config'
 import { headers as getHeaders } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
+import type { Where } from 'payload'
 import { getPayload } from 'payload'
 import React from 'react'
 
@@ -10,7 +9,7 @@ import { RenderPage } from '../../../../components/RenderPage'
 
 // eslint-disable-next-line no-restricted-exports
 export default async function Page({
-  params: paramsPromise,
+  params: paramsPromise
 }: {
   params: Promise<{ slug?: string[]; tenant: string }>
 }) {
@@ -29,17 +28,17 @@ export default async function Page({
       user,
       where: {
         slug: {
-          equals: params.tenant,
-        },
-      },
+          equals: params.tenant
+        }
+      }
     })
     // If no tenant is found, the user does not have access
     // Show the login view
     if (tenantsQuery.docs.length === 0) {
       redirect(
         `/tenant-slugs/${params.tenant}/login?redirect=${encodeURIComponent(
-          `/tenant-slugs/${params.tenant}${slug ? `/${slug.join('/')}` : ''}`,
-        )}`,
+          `/tenant-slugs/${params.tenant}${slug ? `/${slug.join('/')}` : ''}`
+        )}`
       )
     }
   } catch (e) {
@@ -47,35 +46,35 @@ export default async function Page({
     // Show the login view
     redirect(
       `/tenant-slugs/${params.tenant}/login?redirect=${encodeURIComponent(
-        `/tenant-slugs/${params.tenant}${slug ? `/${slug.join('/')}` : ''}`,
-      )}`,
+        `/tenant-slugs/${params.tenant}${slug ? `/${slug.join('/')}` : ''}`
+      )}`
     )
   }
 
   const slugConstraint: Where = slug
     ? {
         slug: {
-          equals: slug.join('/'),
-        },
+          equals: slug.join('/')
+        }
       }
     : {
         or: [
           {
             slug: {
-              equals: '',
-            },
+              equals: ''
+            }
           },
           {
             slug: {
-              equals: 'home',
-            },
+              equals: 'home'
+            }
           },
           {
             slug: {
-              exists: false,
-            },
-          },
-        ],
+              exists: false
+            }
+          }
+        ]
       }
 
   const pageQuery = await payload.find({
@@ -86,12 +85,12 @@ export default async function Page({
       and: [
         {
           'tenant.slug': {
-            equals: params.tenant,
-          },
+            equals: params.tenant
+          }
         },
-        slugConstraint,
-      ],
-    },
+        slugConstraint
+      ]
+    }
   })
 
   const pageData = pageQuery.docs?.[0]

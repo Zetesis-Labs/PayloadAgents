@@ -1,9 +1,8 @@
 // Permission Types
-export * from "./permission.types";
 
 // User Inventory Types
-export * from "./customer.types";
-export * from "./user-inventory.types";
-
+export * from './customer.types'
+export * from './permission.types'
 // Result Types
-export * from "./result.types";
+export * from './result.types'
+export * from './user-inventory.types'

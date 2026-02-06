@@ -1,17 +1,16 @@
-import type { Config } from 'payload'
 import { createIndexerPlugin } from '@nexo-labs/payload-indexer'
 import { createTypesenseAdapter, createTypesenseRAGPlugin } from '@nexo-labs/payload-typesense'
-
-// Configuration modules
-import { typesenseConnection, embeddingConfig, SEARCH_COLLECTIONS } from './config'
-import { collections } from './collections'
+import type { Config } from 'payload'
 import { loadAgentsFromPayload } from './agents/agent-loader'
 import { importHardcodedAgents } from './agents/importer'
 import { callbacks } from './callbacks'
+import { collections } from './collections'
+// Configuration modules
+import { embeddingConfig, SEARCH_COLLECTIONS, typesenseConnection } from './config'
 
+export { collections, getTableConfig } from './collections'
 // Re-export constants
 export { SEARCH_COLLECTIONS } from './config'
-export { collections, getTableConfig } from './collections'
 
 // ============================================================================
 // PLUGIN COMPOSITION
@@ -25,9 +24,9 @@ const { plugin: indexerPlugin } = createIndexerPlugin({
   adapter,
   features: {
     embedding: embeddingConfig,
-    sync: { enabled: true },
+    sync: { enabled: true }
   },
-  collections,
+  collections
 })
 
 // 3. Create Typesense RAG plugin (search + RAG + schema sync + agent sync)
@@ -41,30 +40,30 @@ const typesenseRAGPlugin = createTypesenseRAGPlugin({
     defaults: {
       mode: 'semantic',
       perPage: 10,
-      tables: SEARCH_COLLECTIONS,
-    },
+      tables: SEARCH_COLLECTIONS
+    }
   },
   agents: loadAgentsFromPayload,
   callbacks,
   hybrid: {
     alpha: 0.9,
     rerankMatches: true,
-    queryFields: 'chunk_text,title',
+    queryFields: 'chunk_text,title'
   },
   hnsw: {
     efConstruction: 200,
     M: 16,
     ef: 100,
     maxConnections: 64,
-    distanceMetric: 'cosine',
+    distanceMetric: 'cosine'
   },
   advanced: {
     typoTokensThreshold: 1,
     numTypos: 2,
     prefix: true,
     dropTokensThreshold: 1,
-    enableStemming: true,
-  },
+    enableStemming: true
+  }
 })
 
 // ============================================================================
@@ -81,7 +80,7 @@ export const typesensePlugin = (config: Config): Config => {
 
   // Add hook to auto-import agents on initialization if DB is empty
   const existingOnInit = config.onInit
-  config.onInit = async (payload) => {
+  config.onInit = async payload => {
     // Call existing onInit handlers first
     if (existingOnInit) {
       await existingOnInit(payload)

@@ -21,13 +21,29 @@ export type {
   InferSchema,
   // Operation result types
   SyncResult,
-  VectorSearchOptions,
-} from "./adapter";
+  VectorSearchOptions
+} from './adapter'
 
 // ============================================================================
 // EMBEDDING EXPORTS
 // ============================================================================
 
+// Chunking
+export { chunkMarkdown } from './embedding/chunking/strategies/markdown-chunker'
+export {
+  chunkText,
+  shouldChunk
+} from './embedding/chunking/strategies/text-chunker'
+export type { ChunkOptions, TextChunk } from './embedding/chunking/types'
+
+// Providers
+export { GeminiEmbeddingProvider } from './embedding/providers/gemini-provider'
+export { OpenAIEmbeddingProvider } from './embedding/providers/openai-provider'
+// Service
+export {
+  createEmbeddingService,
+  EmbeddingServiceImpl
+} from './embedding/service'
 // Types
 export type {
   BatchEmbeddingResult,
@@ -40,32 +56,15 @@ export type {
   GeminiEmbeddingModel,
   GeminiProviderConfig,
   OpenAIEmbeddingModel,
-  OpenAIProviderConfig,
-} from "./embedding/types";
-
-export type { IndexableCollectionConfig } from "./plugin/types";
-// Service
-export {
-  EmbeddingServiceImpl,
-  createEmbeddingService,
-} from "./embedding/service";
-
-// Providers
-export { GeminiEmbeddingProvider } from "./embedding/providers/gemini-provider";
-export { OpenAIEmbeddingProvider } from "./embedding/providers/openai-provider";
-
-// Chunking
-export { chunkMarkdown } from "./embedding/chunking/strategies/markdown-chunker";
-export {
-  chunkText,
-  shouldChunk,
-} from "./embedding/chunking/strategies/text-chunker";
-export type { ChunkOptions, TextChunk } from "./embedding/chunking/types";
+  OpenAIProviderConfig
+} from './embedding/types'
+export type { IndexableCollectionConfig } from './plugin/types'
 
 // ============================================================================
 // DOCUMENT EXPORTS
 // ============================================================================
 
+export { mapPayloadDocumentToIndex } from './document/field-mapper'
 export type {
   BaseDocument,
   ChunkDocument,
@@ -76,10 +75,8 @@ export type {
   IndexedDocument,
   PayloadDocument,
   SourceField,
-  TableConfig,
-} from "./document/types";
-
-export { mapPayloadDocumentToIndex } from "./document/field-mapper";
+  TableConfig
+} from './document/types'
 
 // ============================================================================
 // CORE EXPORTS
@@ -94,74 +91,67 @@ export {
   DEFAULT_OVERLAP,
   MAX_CHUNK_SIZE,
   MIN_CHUNK_SIZE,
-  MIN_EMBEDDING_TEXT_LENGTH,
-} from "./core/config/constants";
-
+  MIN_EMBEDDING_TEXT_LENGTH
+} from './core/config/constants'
+export type { LogContext, LoggerConfig, LogLevel } from './core/logging/logger'
 // Logging
 export {
-  Logger,
   configureLogger,
   createLogger,
   getLogger,
+  Logger,
   logger,
-  setLogger,
-} from "./core/logging/logger";
-export type { LogContext, LogLevel, LoggerConfig } from "./core/logging/logger";
-
+  setLogger
+} from './core/logging/logger'
+export type {
+  ChunkHeaderMetadata,
+  ParsedChunk
+} from './core/utils/chunk-format-utils'
 // Utilities
 export {
   CHUNK_HEADER_SEPARATOR,
   extractContentOnly,
   extractHeaderMetadata,
   formatChunkWithHeaders,
-  parseChunkText,
-} from "./core/utils/chunk-format-utils";
+  parseChunkText
+} from './core/utils/chunk-format-utils'
 
-export type {
-  ChunkHeaderMetadata,
-  ParsedChunk,
-} from "./core/utils/chunk-format-utils";
-
-export { buildHeaderHierarchy } from "./core/utils/header-utils";
-
+export { buildHeaderHierarchy } from './core/utils/header-utils'
+export type { SummarizeLexicalConfig } from './core/utils/transforms'
 export {
   createSummarizeLexicalTransform,
   createSummarizeTransform,
-  transformLexicalToMarkdown,
   type SummarizeConfig,
-} from "./core/utils/transforms";
-export type { SummarizeLexicalConfig } from "./core/utils/transforms";
+  transformLexicalToMarkdown
+} from './core/utils/transforms'
 
 // ============================================================================
 // HOOKS EXPORTS
 // ============================================================================
 
-export type { SyncHookContext } from "./hooks";
+export type { SyncHookContext } from './hooks'
 
 // ============================================================================
 // PLUGIN EXPORTS
 // ============================================================================
 
-// Main factory
-export { createIndexerPlugin } from "./plugin";
-export type { IndexerPluginResult } from "./plugin";
-
 // Plugin types
 export type {
   IndexerFeatureConfig,
   IndexerPluginConfig,
+  IndexerPluginResult,
   SearchFeatureConfig,
   SearchMode,
-  SyncFeatureConfig,
-} from "./plugin";
-
+  SyncFeatureConfig
+} from './plugin'
+// Main factory
 // Sync utilities (for custom implementations)
-export {
-  DocumentSyncer,
-  applySyncHooks,
-  deleteDocumentFromIndex,
-  syncDocumentToIndex,
-} from "./plugin";
-
 // Naming utilities
-export { getIndexCollectionName } from "./plugin";
+export {
+  applySyncHooks,
+  createIndexerPlugin,
+  DocumentSyncer,
+  deleteDocumentFromIndex,
+  getIndexCollectionName,
+  syncDocumentToIndex
+} from './plugin'

@@ -3,7 +3,7 @@
  * Configuration for AI agents that power the chat
  */
 
-import { AgentConfig } from '@nexo-labs/payload-typesense'
+import type { AgentConfig } from '@nexo-labs/payload-typesense'
 
 // Export the agent loader
 export { loadAgentsFromPayload } from './agent-loader'
@@ -52,7 +52,7 @@ Tu objetivo es ser una puerta de acceso al pensamiento de Javier Recuenco sobre 
 // AGENTS
 // ============================================================================
 
-export const agents: AgentConfig<["posts_chunk", "books_chunk"]>[] = [
+export const agents: AgentConfig<['posts_chunk', 'books_chunk']>[] = [
   {
     slug: 'escohotado',
     name: 'Oráculo de Escohotado',
@@ -69,24 +69,24 @@ export const agents: AgentConfig<["posts_chunk", "books_chunk"]>[] = [
       {
         prompt: 'Que opina Escohotado sobre las drogas?',
         title: 'Que opina sobre las drogas?',
-        description: 'Historia general y su vision filosofica',
+        description: 'Historia general y su vision filosofica'
       },
       {
         prompt: "Explicame la tesis de 'Caos y Orden'",
         title: "Tesis de 'Caos y Orden'",
-        description: 'Conceptos clave de su obra magna',
+        description: 'Conceptos clave de su obra magna'
       },
       {
         prompt: 'Cual es la diferencia entre comercio y guerra?',
         title: 'Comercio vs Guerra',
-        description: 'Los enemigos del comercio',
+        description: 'Los enemigos del comercio'
       },
       {
         prompt: 'Hablame de su etapa en Ibiza',
         title: 'Su etapa en Ibiza',
-        description: 'Amnesia, traduccion y vida',
-      },
-    ],
+        description: 'Amnesia, traduccion y vida'
+      }
+    ]
   },
   {
     slug: 'bastos',
@@ -105,24 +105,24 @@ export const agents: AgentConfig<["posts_chunk", "books_chunk"]>[] = [
       {
         prompt: 'Que es la Escuela Austriaca de Economia?',
         title: 'Escuela Austriaca',
-        description: 'Fundamentos y principios clave',
+        description: 'Fundamentos y principios clave'
       },
       {
         prompt: 'Cual es la vision de Bastos sobre el Estado?',
         title: 'Vision sobre el Estado',
-        description: 'Intervencionismo y libertad',
+        description: 'Intervencionismo y libertad'
       },
       {
         prompt: 'Explicame la teoria del valor subjetivo',
         title: 'Valor subjetivo',
-        description: 'Concepto central de la economia austriaca',
+        description: 'Concepto central de la economia austriaca'
       },
       {
         prompt: 'Que opina sobre el sistema monetario actual?',
         title: 'Sistema monetario',
-        description: 'Banca central y dinero fiduciario',
-      },
-    ],
+        description: 'Banca central y dinero fiduciario'
+      }
+    ]
   },
   {
     slug: 'recuenco',
@@ -141,23 +141,23 @@ export const agents: AgentConfig<["posts_chunk", "books_chunk"]>[] = [
       {
         prompt: 'Que es el Complex Problem Solving (CPS)?',
         title: 'Que es CPS?',
-        description: 'Framework para resolver problemas complejos',
+        description: 'Framework para resolver problemas complejos'
       },
       {
         prompt: 'Como se forma un CPSer desde la infancia?',
         title: 'CPS para niños',
-        description: 'Educacion y formacion en CPS',
+        description: 'Educacion y formacion en CPS'
       },
       {
         prompt: 'Que opina Recuenco sobre el sistema educativo?',
         title: 'Sistema educativo',
-        description: 'Critica y alternativas',
+        description: 'Critica y alternativas'
       },
       {
         prompt: 'Explicame la paradoja del barco de Teseo aplicada al CPS',
         title: 'Barco de Teseo',
-        description: 'Identidad y transformacion',
-      },
-    ],
-  },
+        description: 'Identidad y transformacion'
+      }
+    ]
+  }
 ]

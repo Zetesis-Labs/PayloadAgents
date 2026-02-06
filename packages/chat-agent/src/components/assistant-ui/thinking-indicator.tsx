@@ -14,7 +14,7 @@ interface ThinkingIndicatorProps {
  * Features a double-ring spinner with opposite rotations and sparkles icon
  */
 export const ThinkingIndicator: FC<ThinkingIndicatorProps> = ({
-  message = "El Oraculo esta pensando...",
+  message = 'El Oraculo esta pensando...',
   className
 }) => {
   return (
@@ -34,7 +34,7 @@ export const ThinkingIndicator: FC<ThinkingIndicatorProps> = ({
           transition={{
             duration: 3,
             repeat: Infinity,
-            ease: "linear"
+            ease: 'linear'
           }}
         />
         {/* Inner ring - counter-clockwise */}
@@ -44,7 +44,7 @@ export const ThinkingIndicator: FC<ThinkingIndicatorProps> = ({
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: "linear"
+            ease: 'linear'
           }}
         />
         {/* Center sparkles icon */}
@@ -57,7 +57,7 @@ export const ThinkingIndicator: FC<ThinkingIndicatorProps> = ({
             transition={{
               duration: 2,
               repeat: Infinity,
-              ease: "easeInOut"
+              ease: 'easeInOut'
             }}
           >
             <Sparkles className="w-6 h-6 text-primary" />
