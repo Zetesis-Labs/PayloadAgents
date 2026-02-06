@@ -102,4 +102,4 @@ pnpm release
 
 ## Licencia
 
-MIT - Nexo Labs
+MIT - Zetesis

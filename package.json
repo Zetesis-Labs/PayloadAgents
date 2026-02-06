@@ -1,5 +1,12 @@
 {
+  "name": "payload-agents",
   "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Zetesis - Rubén Garcia",
+    "email": "ruben@zetesis.xyz",
+    "url": "https://zetesis.xyz"
+  },
   "scripts": {
     "changeset": "changeset",
     "version": "changeset version",
@@ -33,7 +40,6 @@
     "node": "25.x || 22.x || 23.x || 24.x"
   },
   "type": "module",
-  "name": "keycloak-multi-tenant",
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
     "cross-env": "^7.0.3"
