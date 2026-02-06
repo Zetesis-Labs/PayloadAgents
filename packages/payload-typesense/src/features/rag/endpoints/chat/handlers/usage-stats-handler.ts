@@ -1,7 +1,7 @@
-import type { Payload } from 'payload';
-import type { ChatEndpointConfig } from '../route.js';
-import { logger } from '../../../../../core/logging/logger.js';
-import { SpendingEntry, SSEEvent } from '../../../../../shared/index.js';
+import type { Payload } from "payload";
+import { logger } from "../../../../../core/logging/logger";
+import { SpendingEntry, SSEEvent } from "../../../../../shared/index";
+import type { ChatEndpointConfig } from "../route";
 
 /**
  * Calculates total usage from spending entries
@@ -12,14 +12,14 @@ export function calculateTotalUsage(spendingEntries: SpendingEntry[]): {
 } {
   const totalTokensUsed = spendingEntries.reduce(
     (sum, entry) => sum + entry.tokens.total,
-    0
+    0,
   );
   const totalCostUSD = spendingEntries.reduce(
     (sum, entry) => sum + (entry.cost_usd || 0),
-    0
+    0,
   );
 
-  logger.info('Total token usage calculated', {
+  logger.info("Total token usage calculated", {
     totalTokens: totalTokensUsed,
     totalCostUsd: totalCostUSD,
   });
@@ -36,7 +36,7 @@ export async function sendUsageStatsIfNeeded(
   userId: string | number,
   totalTokens: number,
   totalCostUSD: number,
-  sendEvent: (event: SSEEvent) => void
+  sendEvent: (event: SSEEvent) => void,
 ): Promise<void> {
   if (!config.getUserUsageStats) {
     return;
@@ -45,7 +45,7 @@ export async function sendUsageStatsIfNeeded(
   const usageStats = await config.getUserUsageStats(payload, userId);
 
   sendEvent({
-    type: 'usage',
+    type: "usage",
     data: {
       tokens_used: totalTokens,
       cost_usd: totalCostUSD,

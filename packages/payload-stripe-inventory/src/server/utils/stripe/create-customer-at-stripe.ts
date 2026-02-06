@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { stripeBuilder } from "./stripe-builder.js";
+import { stripeBuilder } from "./stripe-builder";
 
 export async function createCustomerAtStripe({
   stripe,

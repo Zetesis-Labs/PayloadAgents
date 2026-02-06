@@ -1,6 +1,6 @@
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import type { BuildMultiCollectionVectorSearchParamsOptions } from "../types.js";
-import { buildVectorSearchParams } from "./build-params.js";
+import type { BuildMultiCollectionVectorSearchParamsOptions } from "../types";
+import { buildVectorSearchParams } from "./build-params";
 
 /**
  * Builds multi-collection vector search parameters
@@ -8,36 +8,28 @@ import { buildVectorSearchParams } from "./build-params.js";
 export const buildMultiCollectionVectorSearchParams = (
   searchVector: number[],
   enabledCollections: Array<[string, TableConfig]>,
-  options: BuildMultiCollectionVectorSearchParamsOptions
+  options: BuildMultiCollectionVectorSearchParamsOptions,
 ): Array<Record<string, unknown>> => {
-  const {
-    query,
-    k,
-    hybrid,
-    alpha,
-    page,
-    per_page,
-    filter_by,
-    sort_by,
-  } = options;
+  const { query, k, hybrid, alpha, page, per_page, filter_by, sort_by } =
+    options;
 
   return enabledCollections.map(([collectionName, config]) => {
     // Extract search fields
     let searchFields: string[] | undefined;
     if (config) {
-        let fields: { name: string; index?: boolean; type?: string }[] = [];
-        fields = config.fields;
-        // Filter for indexed fields that are searchable (string or string[] types only)
-        // Typesense only accepts string/string[] fields in query_by parameter
-        const extracted = fields
-            .filter(f =>
-                f.index !== false &&
-                (f.type === 'string' || f.type === 'string[]')
-            )
-            .map(f => f.name);
-        if (extracted.length > 0) {
-            searchFields = extracted;
-        }
+      let fields: { name: string; index?: boolean; type?: string }[] = [];
+      fields = config.fields;
+      // Filter for indexed fields that are searchable (string or string[] types only)
+      // Typesense only accepts string/string[] fields in query_by parameter
+      const extracted = fields
+        .filter(
+          (f) =>
+            f.index !== false && (f.type === "string" || f.type === "string[]"),
+        )
+        .map((f) => f.name);
+      if (extracted.length > 0) {
+        searchFields = extracted;
+      }
     }
 
     // Build search params - don't add filter_by here
@@ -64,6 +56,3 @@ export const buildMultiCollectionVectorSearchParams = (
     };
   });
 };
-
-
-

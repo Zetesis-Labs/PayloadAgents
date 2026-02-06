@@ -1,2 +1,2 @@
-export type * from "./builder.js";
-export type * from "./renderer.js";
+export type * from "./builder";
+export type * from "./renderer";

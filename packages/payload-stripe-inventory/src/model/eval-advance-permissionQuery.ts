@@ -1,7 +1,7 @@
-import type { BaseUser } from "../types/index.js";
-import { QUERY_PERMISSION_TYPES } from "./constants.js";
-import { evalPermissionByRoleQuery } from "./eval-permission-by-role-query.js";
-import { getUserPermissions } from "./get-user-permissions.js";
+import type { BaseUser } from "../types";
+import { QUERY_PERMISSION_TYPES } from "./constants";
+import { evalPermissionByRoleQuery } from "./eval-permission-by-role-query";
+import { getUserPermissions } from "./get-user-permissions";
 
 /**
  * Evalúa permisos avanzados basados en el tipo de permiso y usuario

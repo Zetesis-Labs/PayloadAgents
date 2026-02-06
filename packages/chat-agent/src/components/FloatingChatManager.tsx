@@ -1,9 +1,9 @@
 'use client'
 
-import FloatingChatPanel from './FloatingChatPanel.js'
-import FloatingChatButton from './buttons/FloatingChatButton.js'
-import { useChat } from './chat-context.js'
-import { ImageComponent, LinkComponent } from '../types/components.js'
+import { ImageComponent, LinkComponent } from '../types/components'
+import FloatingChatPanel from './FloatingChatPanel'
+import FloatingChatButton from './buttons/FloatingChatButton'
+import { useChat } from './chat-context'
 
 /**
  * Minimal user type - consumer provides their own user type

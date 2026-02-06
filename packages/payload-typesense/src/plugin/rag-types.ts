@@ -2,17 +2,20 @@
  * Types for the composable Typesense RAG plugin
  */
 
-import type { EmbeddingProviderConfig, TableConfig } from "@nexo-labs/payload-indexer";
 import type {
-  TypesenseConnectionConfig,
+  EmbeddingProviderConfig,
+  TableConfig,
+} from "@nexo-labs/payload-indexer";
+import { CollectionSlug } from "payload";
+import type {
+  AdvancedSearchConfig,
   AgentConfig,
   AgentProvider,
-  RAGCallbacks,
-  HybridSearchConfig,
   HNSWConfig,
-  AdvancedSearchConfig,
-} from "../shared/types/plugin-types.js";
-import { CollectionSlug } from "payload";
+  HybridSearchConfig,
+  RAGCallbacks,
+  TypesenseConnectionConfig,
+} from "../shared/types/plugin-types";
 
 /**
  * Search feature configuration for the Typesense RAG plugin
@@ -24,7 +27,7 @@ export interface TypesenseSearchConfig {
   /** Default search settings */
   defaults?: {
     /** Search mode: 'semantic' | 'hybrid' | 'keyword' */
-    mode?: 'semantic' | 'hybrid' | 'keyword';
+    mode?: "semantic" | "hybrid" | "keyword";
     /** Results per page */
     perPage?: number;
     /** Tables to search by default */

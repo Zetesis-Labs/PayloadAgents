@@ -1,2 +1,2 @@
-export * from "./access-queries.js";
-export * from "./get-user-from-request.js";
+export * from "./access-queries";
+export * from "./get-user-from-request";

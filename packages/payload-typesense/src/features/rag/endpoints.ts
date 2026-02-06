@@ -6,13 +6,20 @@
  */
 
 import type { CollectionSlug, PayloadHandler } from "payload";
-import type { TypesenseRAGPluginConfig } from "../../plugin/rag-types.js";
-import { createChatPOSTHandler } from "./endpoints/chat/route.js";
-import { defaultHandleNonStreamingResponse, defaultHandleStreamingResponse } from "./stream-handlers/index.js";
-import { createSessionDELETEHandler, createSessionGETHandler, createSessionPATCHHandler } from "./endpoints/chat/session/route.js";
-import { createSessionsListGETHandler } from "./endpoints/chat/sessions/route.js";
-import { createChunksGETHandler } from "./endpoints/chunks/[id]/route.js";
-import { createAgentsGETHandler } from "./endpoints/chat/agents/route.js";
+import type { TypesenseRAGPluginConfig } from "../../plugin/rag-types";
+import { createAgentsGETHandler } from "./endpoints/chat/agents/route";
+import { createChatPOSTHandler } from "./endpoints/chat/route";
+import {
+  createSessionDELETEHandler,
+  createSessionGETHandler,
+  createSessionPATCHHandler,
+} from "./endpoints/chat/session/route";
+import { createSessionsListGETHandler } from "./endpoints/chat/sessions/route";
+import { createChunksGETHandler } from "./endpoints/chunks/[id]/route";
+import {
+  defaultHandleNonStreamingResponse,
+  defaultHandleStreamingResponse,
+} from "./stream-handlers";
 
 /**
  * Creates Payload handlers for RAG endpoints
@@ -21,11 +28,39 @@ import { createAgentsGETHandler } from "./endpoints/chat/agents/route.js";
  */
 export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
   config: TypesenseRAGPluginConfig<TSlug>,
-): Array<{ path: string; method: 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put'; handler: PayloadHandler }> {
-  const endpoints: Array<{ path: string; method: 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put'; handler: PayloadHandler }> = [];
+): Array<{
+  path: string;
+  method:
+    | "connect"
+    | "delete"
+    | "get"
+    | "head"
+    | "options"
+    | "patch"
+    | "post"
+    | "put";
+  handler: PayloadHandler;
+}> {
+  const endpoints: Array<{
+    path: string;
+    method:
+      | "connect"
+      | "delete"
+      | "get"
+      | "head"
+      | "options"
+      | "patch"
+      | "post"
+      | "put";
+    handler: PayloadHandler;
+  }> = [];
 
   // Validate required config
-  if (!config.agents || (Array.isArray(config.agents) && config.agents.length === 0) || !config.callbacks) {
+  if (
+    !config.agents ||
+    (Array.isArray(config.agents) && config.agents.length === 0) ||
+    !config.callbacks
+  ) {
     return endpoints;
   }
 
@@ -33,7 +68,7 @@ export function createRAGPayloadHandlers<TSlug extends CollectionSlug>(
 
   // Get valid collections from agents configuration
   const agentCollections = Array.isArray(agents)
-    ? agents.flatMap(agent => agent.searchCollections)
+    ? agents.flatMap((agent) => agent.searchCollections)
     : [];
   const validCollections = Array.from(new Set(agentCollections));
 

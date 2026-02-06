@@ -1,19 +1,24 @@
 import { Payload } from "payload";
 import type Stripe from "stripe";
-import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from "../../model/index.js";
-import { findOrCreateCustomer } from "../utils/payload/find-or-create-customer.js";
-import { resolveStripeCustomer } from "../utils/stripe/get-customer.js";
-import { removeCustomerByStripeId } from "../utils/payload/remove-customer-by-stripe-id.js";
+import {
+  COLLECTION_SLUG_CUSTOMERS,
+  generateCustomerInventory,
+} from "../../model";
+import { findOrCreateCustomer } from "../utils/payload/find-or-create-customer";
+import { removeCustomerByStripeId } from "../utils/payload/remove-customer-by-stripe-id";
+import { resolveStripeCustomer } from "../utils/stripe/get-customer";
 
 export const invoiceSucceeded = async (
   invoiceIntent: Stripe.Invoice,
-  payload: Payload
+  payload: Payload,
 ) => {
   const { id, customer: paymentCustomer } = invoiceIntent;
-  const stripeCustomer = await resolveStripeCustomer({ customer: paymentCustomer });
+  const stripeCustomer = await resolveStripeCustomer({
+    customer: paymentCustomer,
+  });
   if (!stripeCustomer) {
     payload.logger.error("No stripe customer found for payment");
-    return
+    return;
   }
   if (stripeCustomer.deleted) {
     await removeCustomerByStripeId({ stripeId: stripeCustomer.id, payload });
@@ -31,7 +36,9 @@ export const invoiceSucceeded = async (
       stripeId: stripeCustomer.id,
     });
     if (!customer) {
-      payload.logger.error(`Customer not found for invoice: ${stripeCustomer.email}`);
+      payload.logger.error(
+        `Customer not found for invoice: ${stripeCustomer.email}`,
+      );
       return;
     }
 
@@ -45,7 +52,7 @@ export const invoiceSucceeded = async (
     });
 
     payload.logger.info(
-      `✅ Successfully recorded ${stripeCustomer.metadata?.type ?? "subscription"} with Payment Intent ID: ${id} for user: ${stripeCustomer.email}`
+      `✅ Successfully recorded ${stripeCustomer.metadata?.type ?? "subscription"} with Payment Intent ID: ${id} for user: ${stripeCustomer.email}`,
     );
   } catch (error) {
     payload.logger.error(`- Error recording payment: ${error}`);

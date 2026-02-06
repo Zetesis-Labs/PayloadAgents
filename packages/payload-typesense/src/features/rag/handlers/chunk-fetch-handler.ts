@@ -4,32 +4,32 @@
  * Handles fetching individual chunk documents by ID from Typesense
  */
 
-import type { Client } from 'typesense'
-import { TypesenseRAGChunkDocument } from '../../../shared/index.js'
+import type { Client } from "typesense";
+import { TypesenseRAGChunkDocument } from "../../../shared/index";
 
 /**
  * Configuration for fetching a chunk by ID
  */
 export type ChunkFetchConfig = {
   /** Chunk document ID */
-  chunkId: string
+  chunkId: string;
   /** Collection name */
-  collectionName: string
+  collectionName: string;
   /** Valid collection names for validation */
-  validCollections?: string[]
-}
+  validCollections?: string[];
+};
 
 /**
  * Result of fetching a chunk
  */
 export type ChunkFetchResult = {
-  id: string
-  chunk_text: string
-  title?: string
-  slug?: string
-  chunk_index?: number
-  collection: string
-}
+  id: string;
+  chunk_text: string;
+  title?: string;
+  slug?: string;
+  chunk_index?: number;
+  collection: string;
+};
 
 /**
  * Fetch a chunk document by ID from Typesense
@@ -43,13 +43,13 @@ export async function fetchChunkById(
   client: Client,
   config: ChunkFetchConfig,
 ): Promise<ChunkFetchResult> {
-  const { chunkId, collectionName, validCollections } = config
+  const { chunkId, collectionName, validCollections } = config;
 
   // Validate collection if validCollections is provided
   if (validCollections && !validCollections.includes(collectionName)) {
     throw new Error(
-      `Invalid collection: ${collectionName}. Must be one of: ${validCollections.join(', ')}`,
-    )
+      `Invalid collection: ${collectionName}. Must be one of: ${validCollections.join(", ")}`,
+    );
   }
 
   try {
@@ -57,13 +57,13 @@ export async function fetchChunkById(
     const document = (await client
       .collections(collectionName)
       .documents(chunkId)
-      .retrieve()) as TypesenseRAGChunkDocument
+      .retrieve()) as TypesenseRAGChunkDocument;
 
     // Extract chunk data
-    const chunkText = document.chunk_text || ''
+    const chunkText = document.chunk_text || "";
 
     if (!chunkText) {
-      throw new Error('Chunk contains no text')
+      throw new Error("Chunk contains no text");
     }
 
     return {
@@ -73,12 +73,17 @@ export async function fetchChunkById(
       slug: document.slug,
       chunk_index: document.chunk_index,
       collection: collectionName,
-    }
+    };
   } catch (error: unknown) {
     // Handle Typesense 404 errors
-    if (error && typeof error === 'object' && 'httpStatus' in error && error.httpStatus === 404) {
-      throw new Error(`Chunk not found: ${chunkId}`)
+    if (
+      error &&
+      typeof error === "object" &&
+      "httpStatus" in error &&
+      error.httpStatus === 404
+    ) {
+      throw new Error(`Chunk not found: ${chunkId}`);
     }
-    throw error
+    throw error;
   }
 }

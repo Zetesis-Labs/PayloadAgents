@@ -10,19 +10,19 @@
 // ============================================================================
 
 export type {
-  // Core adapter interface
-  IndexerAdapter,
+  AdapterSearchResult,
   // Schema types
   BaseCollectionSchema,
-  IndexDocument,
-  // Operation result types
-  SyncResult,
   DeleteResult,
-  VectorSearchOptions,
-  AdapterSearchResult,
+  IndexDocument,
+  // Core adapter interface
+  IndexerAdapter,
   // Type inference helper
   InferSchema,
-} from "./adapter/index.js";
+  // Operation result types
+  SyncResult,
+  VectorSearchOptions,
+} from "./adapter";
 
 // ============================================================================
 // EMBEDDING EXPORTS
@@ -30,50 +30,56 @@ export type {
 
 // Types
 export type {
-  EmbeddingProvider,
-  EmbeddingService,
-  EmbeddingResult,
   BatchEmbeddingResult,
-  EmbeddingUsage,
-  EmbeddingProviderType,
+  EmbeddingProvider,
   EmbeddingProviderConfig,
-  OpenAIProviderConfig,
+  EmbeddingProviderType,
+  EmbeddingResult,
+  EmbeddingService,
+  EmbeddingUsage,
+  GeminiEmbeddingModel,
   GeminiProviderConfig,
   OpenAIEmbeddingModel,
-  GeminiEmbeddingModel,
-} from "./embedding/types.js";
+  OpenAIProviderConfig,
+} from "./embedding/types";
 
-export type { IndexableCollectionConfig } from "./plugin/types.js";
+export type { IndexableCollectionConfig } from "./plugin/types";
 // Service
-export { EmbeddingServiceImpl, createEmbeddingService } from "./embedding/service.js";
+export {
+  EmbeddingServiceImpl,
+  createEmbeddingService,
+} from "./embedding/service";
 
 // Providers
-export { OpenAIEmbeddingProvider } from "./embedding/providers/openai-provider.js";
-export { GeminiEmbeddingProvider } from "./embedding/providers/gemini-provider.js";
+export { GeminiEmbeddingProvider } from "./embedding/providers/gemini-provider";
+export { OpenAIEmbeddingProvider } from "./embedding/providers/openai-provider";
 
 // Chunking
-export type { ChunkOptions, TextChunk } from "./embedding/chunking/types.js";
-export { chunkText, shouldChunk } from "./embedding/chunking/strategies/text-chunker.js";
-export { chunkMarkdown } from "./embedding/chunking/strategies/markdown-chunker.js";
+export { chunkMarkdown } from "./embedding/chunking/strategies/markdown-chunker";
+export {
+  chunkText,
+  shouldChunk,
+} from "./embedding/chunking/strategies/text-chunker";
+export type { ChunkOptions, TextChunk } from "./embedding/chunking/types";
 
 // ============================================================================
 // DOCUMENT EXPORTS
 // ============================================================================
 
 export type {
-  FieldMapping,
-  SourceField,
-  ChunkingConfig,
-  EmbeddingTableConfig,
-  TableConfig,
-  CollectionConfig,
   BaseDocument,
-  PayloadDocument,
-  IndexedDocument,
   ChunkDocument,
-} from "./document/types.js";
+  ChunkingConfig,
+  CollectionConfig,
+  EmbeddingTableConfig,
+  FieldMapping,
+  IndexedDocument,
+  PayloadDocument,
+  SourceField,
+  TableConfig,
+} from "./document/types";
 
-export { mapPayloadDocumentToIndex } from "./document/field-mapper.js";
+export { mapPayloadDocumentToIndex } from "./document/field-mapper";
 
 // ============================================================================
 // CORE EXPORTS
@@ -82,72 +88,80 @@ export { mapPayloadDocumentToIndex } from "./document/field-mapper.js";
 // Constants
 export {
   DEFAULT_CHUNK_SIZE,
-  DEFAULT_OVERLAP,
-  MIN_CHUNK_SIZE,
-  MAX_CHUNK_SIZE,
-  MIN_EMBEDDING_TEXT_LENGTH,
+  DEFAULT_EMBEDDING_DIMENSIONS,
   DEFAULT_EMBEDDING_MODEL,
   DEFAULT_GEMINI_EMBEDDING_MODEL,
-  DEFAULT_EMBEDDING_DIMENSIONS,
-} from "./core/config/constants.js";
+  DEFAULT_OVERLAP,
+  MAX_CHUNK_SIZE,
+  MIN_CHUNK_SIZE,
+  MIN_EMBEDDING_TEXT_LENGTH,
+} from "./core/config/constants";
 
 // Logging
-export type { LogLevel, LogContext, LoggerConfig } from "./core/logging/logger.js";
 export {
   Logger,
-  logger,
   configureLogger,
   createLogger,
   getLogger,
+  logger,
   setLogger,
-} from "./core/logging/logger.js";
+} from "./core/logging/logger";
+export type { LogContext, LogLevel, LoggerConfig } from "./core/logging/logger";
 
 // Utilities
 export {
   CHUNK_HEADER_SEPARATOR,
-  formatChunkWithHeaders,
-  parseChunkText,
   extractContentOnly,
   extractHeaderMetadata,
-} from "./core/utils/chunk-format-utils.js";
+  formatChunkWithHeaders,
+  parseChunkText,
+} from "./core/utils/chunk-format-utils";
 
-export type { ChunkHeaderMetadata, ParsedChunk } from "./core/utils/chunk-format-utils.js";
+export type {
+  ChunkHeaderMetadata,
+  ParsedChunk,
+} from "./core/utils/chunk-format-utils";
 
-export { buildHeaderHierarchy } from "./core/utils/header-utils.js";
+export { buildHeaderHierarchy } from "./core/utils/header-utils";
 
-export { transformLexicalToMarkdown, createSummarizeLexicalTransform, createSummarizeTransform, type SummarizeConfig } from "./core/utils/transforms.js";
-export type { SummarizeLexicalConfig } from "./core/utils/transforms.js";
+export {
+  createSummarizeLexicalTransform,
+  createSummarizeTransform,
+  transformLexicalToMarkdown,
+  type SummarizeConfig,
+} from "./core/utils/transforms";
+export type { SummarizeLexicalConfig } from "./core/utils/transforms";
 
 // ============================================================================
 // HOOKS EXPORTS
 // ============================================================================
 
-export type { SyncHookContext } from "./hooks/index.js";
+export type { SyncHookContext } from "./hooks";
 
 // ============================================================================
 // PLUGIN EXPORTS
 // ============================================================================
 
 // Main factory
-export { createIndexerPlugin } from "./plugin/index.js";
-export type { IndexerPluginResult } from "./plugin/index.js";
+export { createIndexerPlugin } from "./plugin";
+export type { IndexerPluginResult } from "./plugin";
 
 // Plugin types
 export type {
-  IndexerPluginConfig,
   IndexerFeatureConfig,
-  SyncFeatureConfig,
+  IndexerPluginConfig,
   SearchFeatureConfig,
   SearchMode,
-} from "./plugin/index.js";
+  SyncFeatureConfig,
+} from "./plugin";
 
 // Sync utilities (for custom implementations)
 export {
-  syncDocumentToIndex,
-  deleteDocumentFromIndex,
   DocumentSyncer,
   applySyncHooks,
-} from "./plugin/index.js";
+  deleteDocumentFromIndex,
+  syncDocumentToIndex,
+} from "./plugin";
 
 // Naming utilities
-export { getIndexCollectionName } from "./plugin/index.js";
+export { getIndexCollectionName } from "./plugin";

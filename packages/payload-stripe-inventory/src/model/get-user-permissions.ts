@@ -1,4 +1,4 @@
-import { BaseUser, Customer } from "../types/index.js";
+import { BaseUser, Customer } from "../types";
 
 /**
  * Obtiene los permisos de un usuario basados en su inventario y suscripciones activas
@@ -12,10 +12,10 @@ export const getUserPermissions = (user?: BaseUser | null): string[] => {
 
   const subscriptionPermissions = Object.values(inventory.subscriptions)
     ?.filter(
-      subscription =>
-        subscription.status === "active" || subscription.status === "trialing"
+      (subscription) =>
+        subscription.status === "active" || subscription.status === "trialing",
     )
-    ?.flatMap(subscription => subscription.permissions);
+    ?.flatMap((subscription) => subscription.permissions);
 
   return subscriptionPermissions;
 };

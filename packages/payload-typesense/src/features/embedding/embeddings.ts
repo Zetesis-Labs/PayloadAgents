@@ -1,14 +1,11 @@
-import OpenAI from "openai";
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
+import { logger, MIN_EMBEDDING_TEXT_LENGTH } from "@nexo-labs/payload-indexer";
+import OpenAI from "openai";
 import type {
+  BatchEmbeddingWithUsage,
   EmbeddingProviderConfig,
   EmbeddingWithUsage,
-  BatchEmbeddingWithUsage,
-} from "../../shared/types/plugin-types.js";
-import {
-  logger,
-  MIN_EMBEDDING_TEXT_LENGTH,
-} from "@nexo-labs/payload-indexer";
+} from "../../shared/types/plugin-types";
 
 let openaiClient: OpenAI | null = null;
 let currentOpenAIApiKey: string | null = null;
@@ -58,16 +55,16 @@ const getGeminiClient = (apiKey?: string): GoogleGenerativeAI | null => {
  */
 export const generateEmbedding = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<number[] | null> => {
   if (!text || text.trim().length < MIN_EMBEDDING_TEXT_LENGTH) {
-    logger.debug('Skipping embedding generation for empty or invalid text');
+    logger.debug("Skipping embedding generation for empty or invalid text");
     return null;
   }
 
-  const provider = config?.type || 'openai';
+  const provider = config?.type || "openai";
 
-  if (provider === 'gemini') {
+  if (provider === "gemini") {
     return generateGeminiEmbedding(text, config);
   } else {
     return generateOpenAIEmbedding(text, config);
@@ -79,16 +76,20 @@ export const generateEmbedding = async (
  */
 const generateOpenAIEmbedding = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<number[] | null> => {
   const client = getOpenAIClient(config?.apiKey);
 
   if (!client) {
-    logger.debug('OpenAI API key not configured, skipping embedding generation');
+    logger.debug(
+      "OpenAI API key not configured, skipping embedding generation",
+    );
     return null;
   }
   if (!config) {
-    logger.debug('No embedding configuration provided, skipping embedding generation');
+    logger.debug(
+      "No embedding configuration provided, skipping embedding generation",
+    );
     return null;
   }
 
@@ -96,7 +97,11 @@ const generateOpenAIEmbedding = async (
     const model = config.model;
     const dimensions = config.dimensions;
 
-    logger.debug('Generating OpenAI embedding', { model, dimensions, textLength: text.length });
+    logger.debug("Generating OpenAI embedding", {
+      model,
+      dimensions,
+      textLength: text.length,
+    });
 
     const response = await client.embeddings.create({
       model,
@@ -106,14 +111,16 @@ const generateOpenAIEmbedding = async (
 
     const embedding = response.data[0]?.embedding;
 
-    logger.debug('OpenAI embedding generated', { embeddingLength: embedding?.length });
+    logger.debug("OpenAI embedding generated", {
+      embeddingLength: embedding?.length,
+    });
 
     if (
       !embedding ||
       !Array.isArray(embedding) ||
       embedding.length !== dimensions
     ) {
-      logger.warn('Generated embedding has invalid dimensions', {
+      logger.warn("Generated embedding has invalid dimensions", {
         expected: dimensions,
         received: embedding?.length,
       });
@@ -122,7 +129,7 @@ const generateOpenAIEmbedding = async (
 
     return embedding;
   } catch (error) {
-    logger.error('Failed to generate OpenAI embedding', error, {
+    logger.error("Failed to generate OpenAI embedding", error, {
       textLength: text.length,
       model: config?.model,
     });
@@ -135,16 +142,20 @@ const generateOpenAIEmbedding = async (
  */
 const generateGeminiEmbedding = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<number[] | null> => {
   const client = getGeminiClient(config?.apiKey);
 
   if (!client) {
-    logger.debug('Google API key not configured, skipping embedding generation');
+    logger.debug(
+      "Google API key not configured, skipping embedding generation",
+    );
     return null;
   }
   if (!config) {
-    logger.debug('No embedding configuration provided, skipping embedding generation');
+    logger.debug(
+      "No embedding configuration provided, skipping embedding generation",
+    );
     return null;
   }
 
@@ -152,7 +163,11 @@ const generateGeminiEmbedding = async (
     const model = config.model;
     const dimensions = config?.dimensions;
 
-    logger.debug('Generating Gemini embedding', { model, dimensions, textLength: text.length });
+    logger.debug("Generating Gemini embedding", {
+      model,
+      dimensions,
+      textLength: text.length,
+    });
 
     const embeddingModel = client.getGenerativeModel({ model });
     const result = await embeddingModel.embedContent({
@@ -162,14 +177,16 @@ const generateGeminiEmbedding = async (
 
     const embedding = result.embedding.values;
 
-    logger.debug('Gemini embedding generated', { embeddingLength: embedding?.length });
+    logger.debug("Gemini embedding generated", {
+      embeddingLength: embedding?.length,
+    });
 
     if (
       !embedding ||
       !Array.isArray(embedding) ||
       embedding.length !== dimensions
     ) {
-      logger.warn('Generated embedding has invalid dimensions', {
+      logger.warn("Generated embedding has invalid dimensions", {
         expected: dimensions,
         received: embedding?.length,
       });
@@ -178,7 +195,7 @@ const generateGeminiEmbedding = async (
 
     return embedding;
   } catch (error) {
-    logger.error('Failed to generate Gemini embedding', error, {
+    logger.error("Failed to generate Gemini embedding", error, {
       textLength: text.length,
       model: config?.model,
     });
@@ -197,16 +214,16 @@ const generateGeminiEmbedding = async (
  */
 export const generateEmbeddingWithUsage = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<EmbeddingWithUsage | null> => {
   if (!text || text.trim().length < MIN_EMBEDDING_TEXT_LENGTH) {
-    logger.debug('Skipping embedding generation for empty or invalid text');
+    logger.debug("Skipping embedding generation for empty or invalid text");
     return null;
   }
 
-  const provider = config?.type || 'openai';
+  const provider = config?.type || "openai";
 
-  if (provider === 'gemini') {
+  if (provider === "gemini") {
     return generateGeminiEmbeddingWithUsage(text, config);
   } else {
     return generateOpenAIEmbeddingWithUsage(text, config);
@@ -218,16 +235,20 @@ export const generateEmbeddingWithUsage = async (
  */
 const generateOpenAIEmbeddingWithUsage = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<EmbeddingWithUsage | null> => {
   const client = getOpenAIClient(config?.apiKey);
 
   if (!client) {
-    logger.debug('OpenAI API key not configured, skipping embedding generation');
+    logger.debug(
+      "OpenAI API key not configured, skipping embedding generation",
+    );
     return null;
   }
   if (!config) {
-    logger.debug('No embedding configuration provided, skipping embedding generation');
+    logger.debug(
+      "No embedding configuration provided, skipping embedding generation",
+    );
     return null;
   }
 
@@ -235,7 +256,10 @@ const generateOpenAIEmbeddingWithUsage = async (
     const model = config.model;
     const dimensions = config.dimensions;
 
-    logger.debug('Generating OpenAI embedding with usage tracking', { model, dimensions });
+    logger.debug("Generating OpenAI embedding with usage tracking", {
+      model,
+      dimensions,
+    });
 
     const response = await client.embeddings.create({
       model,
@@ -250,7 +274,7 @@ const generateOpenAIEmbeddingWithUsage = async (
       !Array.isArray(embedding) ||
       embedding.length !== dimensions
     ) {
-      logger.warn('Generated embedding has invalid dimensions', {
+      logger.warn("Generated embedding has invalid dimensions", {
         expected: dimensions,
         received: embedding?.length,
       });
@@ -265,7 +289,7 @@ const generateOpenAIEmbeddingWithUsage = async (
       },
     };
   } catch (error) {
-    logger.error('Failed to generate OpenAI embedding with usage', error, {
+    logger.error("Failed to generate OpenAI embedding with usage", error, {
       textLength: text.length,
       model: config?.model,
     });
@@ -279,7 +303,7 @@ const generateOpenAIEmbeddingWithUsage = async (
  */
 const generateGeminiEmbeddingWithUsage = async (
   text: string,
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<EmbeddingWithUsage | null> => {
   const embeddingResult = await generateGeminiEmbedding(text, config);
 
@@ -308,24 +332,28 @@ const generateGeminiEmbeddingWithUsage = async (
  */
 export const generateEmbeddingsBatchWithUsage = async (
   texts: string[],
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<BatchEmbeddingWithUsage | null> => {
   if (!texts || texts.length === 0) {
-    logger.debug('No texts provided for batch embedding generation');
+    logger.debug("No texts provided for batch embedding generation");
     return null;
   }
 
   // Filter out empty texts
-  const validTexts = texts.filter(t => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH);
+  const validTexts = texts.filter(
+    (t) => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH,
+  );
 
   if (validTexts.length === 0) {
-    logger.debug('No valid texts after filtering for batch embedding generation');
+    logger.debug(
+      "No valid texts after filtering for batch embedding generation",
+    );
     return null;
   }
 
-  const provider = config?.type || 'openai';
+  const provider = config?.type || "openai";
 
-  if (provider === 'gemini') {
+  if (provider === "gemini") {
     return generateGeminiBatchEmbeddingsWithUsage(validTexts, config);
   } else {
     return generateOpenAIBatchEmbeddingsWithUsage(validTexts, config);
@@ -337,16 +365,20 @@ export const generateEmbeddingsBatchWithUsage = async (
  */
 const generateOpenAIBatchEmbeddingsWithUsage = async (
   validTexts: string[],
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<BatchEmbeddingWithUsage | null> => {
   const client = getOpenAIClient(config?.apiKey);
 
   if (!client) {
-    logger.debug('OpenAI API key not configured, skipping batch embedding generation');
+    logger.debug(
+      "OpenAI API key not configured, skipping batch embedding generation",
+    );
     return null;
   }
   if (!config) {
-    logger.debug('No embedding configuration provided, skipping batch embedding generation');
+    logger.debug(
+      "No embedding configuration provided, skipping batch embedding generation",
+    );
     return null;
   }
 
@@ -354,7 +386,7 @@ const generateOpenAIBatchEmbeddingsWithUsage = async (
     const model = config.model;
     const dimensions = config.dimensions;
 
-    logger.debug('Generating OpenAI batch embeddings with usage tracking', {
+    logger.debug("Generating OpenAI batch embeddings with usage tracking", {
       model,
       dimensions,
       batchSize: validTexts.length,
@@ -362,26 +394,26 @@ const generateOpenAIBatchEmbeddingsWithUsage = async (
 
     const response = await client.embeddings.create({
       model,
-      input: validTexts.map(t => t.trim()),
+      input: validTexts.map((t) => t.trim()),
       dimensions,
     });
 
-    const embeddings = response.data.map(item => item.embedding);
+    const embeddings = response.data.map((item) => item.embedding);
 
     // Validate all embeddings
     const allValid = embeddings.every(
-      emb => Array.isArray(emb) && emb.length === dimensions
+      (emb) => Array.isArray(emb) && emb.length === dimensions,
     );
 
     if (!allValid) {
-      logger.warn('Some generated embeddings have invalid dimensions', {
+      logger.warn("Some generated embeddings have invalid dimensions", {
         expected: dimensions,
         batchSize: embeddings.length,
       });
       return null;
     }
 
-    logger.info('OpenAI batch embeddings generated successfully', {
+    logger.info("OpenAI batch embeddings generated successfully", {
       count: embeddings.length,
       totalTokens: response.usage?.total_tokens || 0,
     });
@@ -394,10 +426,14 @@ const generateOpenAIBatchEmbeddingsWithUsage = async (
       },
     };
   } catch (error) {
-    logger.error('Failed to generate OpenAI batch embeddings with usage', error, {
-      batchSize: validTexts.length,
-      model: config?.model,
-    });
+    logger.error(
+      "Failed to generate OpenAI batch embeddings with usage",
+      error,
+      {
+        batchSize: validTexts.length,
+        model: config?.model,
+      },
+    );
     return null;
   }
 };
@@ -408,16 +444,20 @@ const generateOpenAIBatchEmbeddingsWithUsage = async (
  */
 const generateGeminiBatchEmbeddingsWithUsage = async (
   validTexts: string[],
-  config?: EmbeddingProviderConfig
+  config?: EmbeddingProviderConfig,
 ): Promise<BatchEmbeddingWithUsage | null> => {
   const client = getGeminiClient(config?.apiKey);
 
   if (!client) {
-    logger.debug('Google API key not configured, skipping batch embedding generation');
+    logger.debug(
+      "Google API key not configured, skipping batch embedding generation",
+    );
     return null;
   }
   if (!config) {
-    logger.debug('No embedding configuration provided, skipping batch embedding generation');
+    logger.debug(
+      "No embedding configuration provided, skipping batch embedding generation",
+    );
     return null;
   }
 
@@ -425,7 +465,7 @@ const generateGeminiBatchEmbeddingsWithUsage = async (
     const model = config.model;
     const dimensions = config?.dimensions;
 
-    logger.debug('Generating Gemini batch embeddings with usage tracking', {
+    logger.debug("Generating Gemini batch embeddings with usage tracking", {
       model,
       dimensions,
       batchSize: validTexts.length,
@@ -448,18 +488,18 @@ const generateGeminiBatchEmbeddingsWithUsage = async (
 
     // Validate all embeddings
     const allValid = embeddings.every(
-      emb => Array.isArray(emb) && emb.length === dimensions
+      (emb) => Array.isArray(emb) && emb.length === dimensions,
     );
 
     if (!allValid) {
-      logger.warn('Some generated embeddings have invalid dimensions', {
+      logger.warn("Some generated embeddings have invalid dimensions", {
         expected: dimensions,
         batchSize: embeddings.length,
       });
       return null;
     }
 
-    logger.info('Gemini batch embeddings generated successfully', {
+    logger.info("Gemini batch embeddings generated successfully", {
       count: embeddings.length,
       estimatedTokens: totalEstimatedTokens,
     });
@@ -472,10 +512,14 @@ const generateGeminiBatchEmbeddingsWithUsage = async (
       },
     };
   } catch (error) {
-    logger.error('Failed to generate Gemini batch embeddings with usage', error, {
-      batchSize: validTexts.length,
-      model: config?.model,
-    });
+    logger.error(
+      "Failed to generate Gemini batch embeddings with usage",
+      error,
+      {
+        batchSize: validTexts.length,
+        model: config?.model,
+      },
+    );
     return null;
   }
 };

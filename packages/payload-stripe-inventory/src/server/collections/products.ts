@@ -1,6 +1,6 @@
 import { CollectionConfig } from "payload";
-import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from "../../model/index.js";
-import { isAdminOrStripeActive } from "../access/index.js";
+import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from "../../model";
+import { isAdminOrStripeActive } from "../access";
 
 export const products: CollectionConfig = {
   slug: COLLECTION_SLUG_PRODUCTS,

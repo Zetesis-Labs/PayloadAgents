@@ -1,6 +1,6 @@
-import type { CollectionCreateSchema } from "typesense/lib/Typesense/Collections.js";
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import type { TypesenseFieldMapping } from "../../adapter/types.js";
+import type { CollectionCreateSchema } from "typesense/lib/Typesense/Collections";
+import type { TypesenseFieldMapping } from "../../adapter/types";
 
 /**
  * Field schema definitions for Typesense collections
@@ -29,10 +29,7 @@ const getBaseFields = () => [
  * @param optional - Whether the embedding field is optional
  * @param dimensions - Number of dimensions for the embedding vector (default: 1536)
  */
-const getEmbeddingField = (
-  optional: boolean = true,
-  dimensions: number
-) => ({
+const getEmbeddingField = (optional: boolean = true, dimensions: number) => ({
   name: "embedding",
   type: "float[]" as const,
   num_dim: dimensions,
@@ -42,14 +39,16 @@ const getEmbeddingField = (
 /**
  * Maps TypesenseFieldMapping to TypesenseFieldSchema
  */
-const mapFieldMappingsToSchema = (fields: TypesenseFieldMapping[]): TypesenseFieldSchema[] => {
-    return fields.map(field => ({
-        name: field.name,
-        type: field.type === 'auto' ? 'string' : field.type,
-        facet: field.facet,
-        index: field.index,
-        optional: field.optional
-    }));
+const mapFieldMappingsToSchema = (
+  fields: TypesenseFieldMapping[],
+): TypesenseFieldSchema[] => {
+  return fields.map((field) => ({
+    name: field.name,
+    type: field.type === "auto" ? "string" : field.type,
+    facet: field.facet,
+    index: field.index,
+    optional: field.optional,
+  }));
 };
 
 /**
@@ -69,18 +68,20 @@ const getChunkFields = () => [
 export const getChunkCollectionSchema = (
   collectionSlug: string,
   tableConfig: TableConfig<TypesenseFieldMapping>,
-  embeddingDimensions: number
+  embeddingDimensions: number,
 ) => {
-  const fields = tableConfig.fields ? mapFieldMappingsToSchema(tableConfig.fields) : [];
-  
+  const fields = tableConfig.fields
+    ? mapFieldMappingsToSchema(tableConfig.fields)
+    : [];
+
   // Get user-defined field names to avoid duplicates
   const userFieldNames = new Set([
-    ...fields.map(f => f.name),
-    ...getChunkFields().map(f => f.name)
+    ...fields.map((f) => f.name),
+    ...getChunkFields().map((f) => f.name),
   ]);
-  
+
   // Filter base fields to exclude any that are already defined by user or chunk fields
-  const baseFields = getBaseFields().filter(f => !userFieldNames.has(f.name));
+  const baseFields = getBaseFields().filter((f) => !userFieldNames.has(f.name));
 
   return {
     name: collectionSlug,
@@ -99,15 +100,15 @@ export const getChunkCollectionSchema = (
 export const getFullDocumentCollectionSchema = (
   collectionSlug: string,
   tableConfig: TableConfig<TypesenseFieldMapping>,
-  embeddingDimensions: number
+  embeddingDimensions: number,
 ) => {
   const mappedFields = mapFieldMappingsToSchema(tableConfig.fields);
-  
+
   // Get user-defined field names to avoid duplicates
-  const userFieldNames = new Set(mappedFields.map(f => f.name));
-  
+  const userFieldNames = new Set(mappedFields.map((f) => f.name));
+
   // Filter base fields to exclude any that are already defined by user
-  const baseFields = getBaseFields().filter(f => !userFieldNames.has(f.name));
+  const baseFields = getBaseFields().filter((f) => !userFieldNames.has(f.name));
 
   return {
     name: collectionSlug,
@@ -115,7 +116,7 @@ export const getFullDocumentCollectionSchema = (
       ...baseFields,
       ...mappedFields,
       // Optional embedding for full documents
-      getEmbeddingField(true, embeddingDimensions) 
+      getEmbeddingField(true, embeddingDimensions),
     ],
   };
 };

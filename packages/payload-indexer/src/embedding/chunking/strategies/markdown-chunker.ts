@@ -4,8 +4,11 @@
  */
 
 import { MarkdownTextSplitter } from "@langchain/textsplitters";
-import type { ChunkOptions, TextChunk } from "../types.js";
-import { DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP } from "../../../core/config/constants.js";
+import {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_OVERLAP,
+} from "../../../core/config/constants";
+import type { ChunkOptions, TextChunk } from "../types";
 
 /**
  * Header information extracted from markdown
@@ -27,7 +30,7 @@ const extractHeaders = (text: string): HeaderInfo[] => {
   while ((match = headerRegex.exec(text)) !== null) {
     headers.push({
       level: match[1]?.length ?? 0,
-      text: match[2]?.trim() ?? '',
+      text: match[2]?.trim() ?? "",
       position: match.index,
     });
   }
@@ -38,16 +41,24 @@ const extractHeaders = (text: string): HeaderInfo[] => {
 /**
  * Finds the headers that apply to a given chunk based on its content
  */
-const findChunkHeaders = (chunkText: string, allHeaders: HeaderInfo[], fullText: string): Record<string, string> => {
+const findChunkHeaders = (
+  chunkText: string,
+  allHeaders: HeaderInfo[],
+  fullText: string,
+): Record<string, string> => {
   // Find the position of this chunk in the original text
-  const chunkPosition = fullText.indexOf(chunkText.substring(0, Math.min(50, chunkText.length)));
+  const chunkPosition = fullText.indexOf(
+    chunkText.substring(0, Math.min(50, chunkText.length)),
+  );
 
   if (chunkPosition === -1) {
     return {};
   }
 
   // Find all headers that come before or at this chunk's position
-  const applicableHeaders = allHeaders.filter(h => h.position <= chunkPosition);
+  const applicableHeaders = allHeaders.filter(
+    (h) => h.position <= chunkPosition,
+  );
 
   if (applicableHeaders.length === 0) {
     return {};
@@ -83,12 +94,10 @@ const findChunkHeaders = (chunkText: string, allHeaders: HeaderInfo[], fullText:
  */
 export const chunkMarkdown = async (
   text: string,
-  options: ChunkOptions = {}
+  options: ChunkOptions = {},
 ): Promise<TextChunk[]> => {
-  const {
-    maxChunkSize = DEFAULT_CHUNK_SIZE,
-    overlap = DEFAULT_OVERLAP,
-  } = options;
+  const { maxChunkSize = DEFAULT_CHUNK_SIZE, overlap = DEFAULT_OVERLAP } =
+    options;
 
   if (!text || text.trim().length === 0) {
     return [];

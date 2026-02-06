@@ -3,25 +3,25 @@
  */
 
 // Main factory
-export { createIndexerPlugin } from "./create-indexer-plugin.js";
-export type { IndexerPluginResult } from "./create-indexer-plugin.js";
+export { createIndexerPlugin } from "./create-indexer-plugin";
+export type { IndexerPluginResult } from "./create-indexer-plugin";
 
 // Types
 export type {
-  IndexerPluginConfig,
   IndexerFeatureConfig,
-  SyncFeatureConfig,
+  IndexerPluginConfig,
   SearchFeatureConfig,
   SearchMode,
-} from "./types.js";
+  SyncFeatureConfig,
+} from "./types";
 
 // Sync utilities (for custom implementations)
 export {
-  syncDocumentToIndex,
-  deleteDocumentFromIndex,
   DocumentSyncer,
   applySyncHooks,
-} from "./sync/index.js";
+  deleteDocumentFromIndex,
+  syncDocumentToIndex,
+} from "./sync";
 
 // Naming utilities
-export { getIndexCollectionName } from "./utils/index.js";
+export { getIndexCollectionName } from "./utils";

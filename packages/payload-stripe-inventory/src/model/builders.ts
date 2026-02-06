@@ -1,4 +1,4 @@
-import { CustomerInventory, UserInventory } from "../types/index.js";
+import { CustomerInventory, UserInventory } from "../types";
 
 export const generateUserInventory = (): UserInventory => ({
   unlocks: [],

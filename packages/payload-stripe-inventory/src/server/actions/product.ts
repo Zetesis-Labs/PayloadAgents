@@ -2,21 +2,24 @@
 
 import type { Payload } from "payload";
 import type Stripe from "stripe";
-import { COLLECTION_SLUG_PRODUCTS } from "../../model/index.js";
-import { payloadUpsert } from "../utils/payload/upsert.js";
-import { stripeBuilder } from "../utils/stripe/stripe-builder.js";
+import { COLLECTION_SLUG_PRODUCTS } from "../../model";
+import { payloadUpsert } from "../utils/payload/upsert";
+import { stripeBuilder } from "../utils/stripe/stripe-builder";
 
 const logs = false;
 
 export const updateProducts = async (payload: Payload) => {
   const stripe = await stripeBuilder();
   const products = await stripe.products.list({ limit: 100, active: true });
-  await Promise.all(products.data.map(product => productSync(product, payload)));
+  await Promise.all(
+    products.data.map((product) => productSync(product, payload)),
+  );
 };
 
 export const productSync = async (object: Stripe.Product, payload: Payload) => {
   const { id: stripeProductID, name, description, images } = object;
-  if (object.deleted !== undefined) return await productDeleted(object, payload);
+  if (object.deleted !== undefined)
+    return await productDeleted(object, payload);
   try {
     await payloadUpsert({
       payload,
@@ -29,7 +32,7 @@ export const productSync = async (object: Stripe.Product, payload: Payload) => {
         type: object.type,
         name,
         description,
-        images: images?.map(image => ({ url: image })) || [],
+        images: images?.map((image) => ({ url: image })) || [],
       },
       where: {
         stripeID: { equals: stripeProductID },
@@ -43,7 +46,7 @@ export const productSync = async (object: Stripe.Product, payload: Payload) => {
 
 export const productDeleted = async (
   object: Stripe.Product,
-  payload: Payload
+  payload: Payload,
 ) => {
   const { id: stripeProductID } = object;
 
@@ -65,7 +68,7 @@ export const productDeleted = async (
 
       if (logs)
         payload.logger.info(
-          `✅ Successfully deleted product with Stripe ID: ${stripeProductID}`
+          `✅ Successfully deleted product with Stripe ID: ${stripeProductID}`,
         );
     }
   } catch (error) {

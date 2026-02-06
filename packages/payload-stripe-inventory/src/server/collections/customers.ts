@@ -1,6 +1,6 @@
 import { CollectionConfig } from "payload";
-import { isAdmin } from "../access/index.js";
-import { COLLECTION_SLUG_CUSTOMERS } from "../../model/index.js";
+import { COLLECTION_SLUG_CUSTOMERS } from "../../model";
+import { isAdmin } from "../access";
 
 export const customers: CollectionConfig = {
   slug: COLLECTION_SLUG_CUSTOMERS,

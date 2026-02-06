@@ -1,7 +1,11 @@
-import type { EmbeddingService, EmbeddingProvider, EmbeddingProviderConfig } from "./types.js";
-import type { Logger } from "../core/logging/logger.js";
-import { OpenAIEmbeddingProvider } from "./providers/openai-provider.js";
-import { GeminiEmbeddingProvider } from "./providers/gemini-provider.js";
+import type { Logger } from "../core/logging/logger";
+import { GeminiEmbeddingProvider } from "./providers/gemini-provider";
+import { OpenAIEmbeddingProvider } from "./providers/openai-provider";
+import type {
+  EmbeddingProvider,
+  EmbeddingProviderConfig,
+  EmbeddingService,
+} from "./types";
 
 /**
  * Implementation of the EmbeddingService interface
@@ -10,7 +14,7 @@ export class EmbeddingServiceImpl implements EmbeddingService {
   constructor(
     private provider: EmbeddingProvider,
     private logger: Logger,
-    private config: EmbeddingProviderConfig
+    private config: EmbeddingProviderConfig,
   ) {}
 
   async getEmbedding(text: string): Promise<number[] | null> {
@@ -35,7 +39,7 @@ export class EmbeddingServiceImpl implements EmbeddingService {
  */
 export function createEmbeddingService(
   config: EmbeddingProviderConfig,
-  logger: Logger
+  logger: Logger,
 ): EmbeddingService {
   let provider: EmbeddingProvider;
 
@@ -47,7 +51,9 @@ export function createEmbeddingService(
       provider = new GeminiEmbeddingProvider(config, logger);
       break;
     default:
-      throw new Error(`Unsupported embedding provider: ${(config as any).type}`);
+      throw new Error(
+        `Unsupported embedding provider: ${(config as any).type}`,
+      );
   }
 
   return new EmbeddingServiceImpl(provider, logger, config);

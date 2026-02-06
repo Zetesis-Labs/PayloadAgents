@@ -2,34 +2,34 @@
  * Query builder utilities for Typesense Conversational RAG
  */
 
-import type { TypesenseConnectionConfig } from '../../index.js'
-import { TypesenseQueryConfig, AdvancedSearchConfig } from '../../shared/index.js'
+import type { TypesenseConnectionConfig } from "../../index";
+import { AdvancedSearchConfig, TypesenseQueryConfig } from "../../shared/index";
 
 /**
  * Typesense search request object
  */
 interface TypesenseSearchRequest {
-  collection: string
-  query_by: string
-  vector_query: string
-  exclude_fields: string
-  filter_by?: string
-  typo_tokens_threshold?: number
-  num_typos?: number
-  prefix?: boolean
-  drop_tokens_threshold?: number
-  enable_stemming?: boolean
+  collection: string;
+  query_by: string;
+  vector_query: string;
+  exclude_fields: string;
+  filter_by?: string;
+  typo_tokens_threshold?: number;
+  num_typos?: number;
+  prefix?: boolean;
+  drop_tokens_threshold?: number;
+  enable_stemming?: boolean;
 }
 
 /**
  * Advanced search parameters object
  */
 interface AdvancedSearchParams {
-  typo_tokens_threshold?: number
-  num_typos?: number
-  prefix?: boolean
-  drop_tokens_threshold?: number
-  enable_stemming?: boolean
+  typo_tokens_threshold?: number;
+  num_typos?: number;
+  prefix?: boolean;
+  drop_tokens_threshold?: number;
+  enable_stemming?: boolean;
 }
 
 /**
@@ -45,25 +45,25 @@ interface AdvancedSearchParams {
 export function buildConversationalUrl(
   config: { userMessage: string; chatId?: string },
   conversationModelId: string,
-  typesenseConfig: TypesenseConnectionConfig
+  typesenseConfig: TypesenseConnectionConfig,
 ): URL {
-  const protocol = typesenseConfig.nodes[0].protocol || 'http'
+  const protocol = typesenseConfig.nodes[0].protocol || "http";
   const typesenseUrl = new URL(
-    `${protocol}://${typesenseConfig.nodes[0].host}:${typesenseConfig.nodes[0].port}/multi_search`
-  )
+    `${protocol}://${typesenseConfig.nodes[0].host}:${typesenseConfig.nodes[0].port}/multi_search`,
+  );
 
   // Add conversation parameters to URL
-  typesenseUrl.searchParams.set('q', config.userMessage)
-  typesenseUrl.searchParams.set('conversation', 'true')
-  typesenseUrl.searchParams.set('conversation_model_id', conversationModelId)
+  typesenseUrl.searchParams.set("q", config.userMessage);
+  typesenseUrl.searchParams.set("conversation", "true");
+  typesenseUrl.searchParams.set("conversation_model_id", conversationModelId);
 
   if (config.chatId) {
-    typesenseUrl.searchParams.set('conversation_id', config.chatId)
+    typesenseUrl.searchParams.set("conversation_id", config.chatId);
   }
 
-  typesenseUrl.searchParams.set('conversation_stream', 'true')
+  typesenseUrl.searchParams.set("conversation_stream", "true");
 
-  return typesenseUrl
+  return typesenseUrl;
 }
 
 /**
@@ -80,42 +80,44 @@ export function buildMultiSearchRequests(config: TypesenseQueryConfig) {
     kResults = 10,
     advancedConfig = {},
     taxonomySlugs,
-  } = config
+  } = config;
 
   return searchCollections.map((collection: string) => {
     const request: TypesenseSearchRequest = {
       collection,
-      query_by: 'chunk_text,title,headers',
-      vector_query: `embedding:([${queryEmbedding.join(',')}], k:${kResults})`,
-      exclude_fields: 'embedding',
+      query_by: "chunk_text,title,headers",
+      vector_query: `embedding:([${queryEmbedding.join(",")}], k:${kResults})`,
+      exclude_fields: "embedding",
       ...buildAdvancedSearchParams(advancedConfig),
-    }
+    };
 
     // Build filters array
-    const filters: string[] = []
+    const filters: string[] = [];
 
     // Add document filter if documents are selected
     if (selectedDocuments && selectedDocuments.length > 0) {
-      const documentIds = selectedDocuments.map((id: string) => `"${id}"`).join(',')
-      filters.push(`parent_doc_id:[${documentIds}]`)
+      const documentIds = selectedDocuments
+        .map((id: string) => `"${id}"`)
+        .join(",");
+      filters.push(`parent_doc_id:[${documentIds}]`);
     }
 
     // Add taxonomy filter - REQUIRED to prevent global searches
     if (taxonomySlugs && taxonomySlugs.length > 0) {
-      const taxFilter = taxonomySlugs.map((s: string) => `"${s}"`).join(',')
-      filters.push(`taxonomy_slugs:[${taxFilter}]`)
+      const taxFilter = taxonomySlugs.map((s: string) => `"${s}"`).join(",");
+      filters.push(`taxonomy_slugs:[${taxFilter}]`);
     } else {
       // No taxonomies assigned = no search results allowed (prevent global search)
-      filters.push(`id:=__BLOCKED_NO_TAXONOMIES__`)
+      filters.push(`id:=__BLOCKED_NO_TAXONOMIES__`);
     }
 
     // Apply combined filters
     if (filters.length > 0) {
-      request.filter_by = filters.join(' && ')
+      request.filter_by = filters.join(" && ");
     }
 
-    return request
-  })
+    return request;
+  });
 }
 
 /**
@@ -124,30 +126,32 @@ export function buildMultiSearchRequests(config: TypesenseQueryConfig) {
  * @param config - Advanced search configuration
  * @returns Object with advanced search parameters
  */
-function buildAdvancedSearchParams(config: AdvancedSearchConfig): AdvancedSearchParams {
-  const params: AdvancedSearchParams = {}
+function buildAdvancedSearchParams(
+  config: AdvancedSearchConfig,
+): AdvancedSearchParams {
+  const params: AdvancedSearchParams = {};
 
   if (config.typoTokensThreshold !== undefined) {
-    params.typo_tokens_threshold = config.typoTokensThreshold
+    params.typo_tokens_threshold = config.typoTokensThreshold;
   }
 
   if (config.numTypos !== undefined) {
-    params.num_typos = config.numTypos
+    params.num_typos = config.numTypos;
   }
 
   if (config.prefix !== undefined) {
-    params.prefix = config.prefix
+    params.prefix = config.prefix;
   }
 
   if (config.dropTokensThreshold !== undefined) {
-    params.drop_tokens_threshold = config.dropTokensThreshold
+    params.drop_tokens_threshold = config.dropTokensThreshold;
   }
 
   if (config.enableStemming !== undefined) {
-    params.enable_stemming = config.enableStemming
+    params.enable_stemming = config.enableStemming;
   }
 
-  return params
+  return params;
 }
 
 /**
@@ -159,7 +163,7 @@ function buildAdvancedSearchParams(config: AdvancedSearchConfig): AdvancedSearch
 export function buildMultiSearchRequestBody(config: TypesenseQueryConfig) {
   return {
     searches: buildMultiSearchRequests(config),
-  }
+  };
 }
 
 /**
@@ -173,11 +177,11 @@ export function buildMultiSearchRequestBody(config: TypesenseQueryConfig) {
 export function buildHybridSearchParams(
   alpha = 0.9,
   rerankMatches = true,
-  queryFields = 'chunk_text,title'
+  queryFields = "chunk_text,title",
 ) {
   return {
     alpha,
     rerank_hybrid_matches: rerankMatches,
     query_fields: queryFields,
-  }
+  };
 }

@@ -1,10 +1,10 @@
 'use client'
 
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react'
-import { useChatSession } from '../hooks/useChatSession.js'
-import type { Message, SessionSummary } from '../adapters/ChatAdapter.js'
-import { ChatAdapter, PublicAgentInfo, TokenUsage } from '../adapters/ChatAdapter.js'
-import { NexoPayloadChatAdapter } from '../adapters/NexoPayloadChatAdapter.js'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { Message, SessionSummary } from '../adapters/ChatAdapter'
+import { ChatAdapter, PublicAgentInfo, TokenUsage } from '../adapters/ChatAdapter'
+import { NexoPayloadChatAdapter } from '../adapters/NexoPayloadChatAdapter'
+import { useChatSession } from '../hooks/useChatSession'
 
 interface AgentsResponse {
   agents: PublicAgentInfo[]

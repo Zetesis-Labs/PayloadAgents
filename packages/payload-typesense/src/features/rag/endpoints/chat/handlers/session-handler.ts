@@ -1,7 +1,7 @@
-import type { Payload } from 'payload';
-import type { ChatEndpointConfig } from '../route.js';
-import { logger } from '../../../../../core/logging/logger.js';
-import { ChunkSource, SpendingEntry } from '../../../../../shared/index.js';
+import type { Payload } from "payload";
+import { logger } from "../../../../../core/logging/logger";
+import { ChunkSource, SpendingEntry } from "../../../../../shared/index";
+import type { ChatEndpointConfig } from "../route";
 
 /**
  * Saves chat session if function is provided
@@ -15,7 +15,7 @@ export async function saveChatSessionIfNeeded(
   assistantMessage: string,
   sources: ChunkSource[],
   spendingEntries: SpendingEntry[],
-  agentSlug?: string
+  agentSlug?: string,
 ): Promise<void> {
   if (!conversationId || !config.saveChatSession) {
     return;
@@ -30,10 +30,10 @@ export async function saveChatSessionIfNeeded(
     sources,
     spendingEntries,
     config.collectionName,
-    agentSlug
+    agentSlug,
   );
 
-  logger.info('Chat session saved to PayloadCMS', {
+  logger.info("Chat session saved to PayloadCMS", {
     conversationId,
     agentSlug,
   });

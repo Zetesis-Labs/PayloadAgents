@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { stripeBuilder } from "./stripe-builder.js";
+import { stripeBuilder } from "./stripe-builder";
 
 export async function getCustomer({
   stripe,
@@ -14,11 +14,13 @@ export async function getCustomer({
   const customers = await stripe.customers.search({
     query: `email:'${sanitizedEmail}'`,
   });
-  return customers.data.length ? customers.data[0] as Stripe.Customer : null;
+  return customers.data.length ? (customers.data[0] as Stripe.Customer) : null;
 }
 
-export async function resolveStripeCustomer({ customer }: {
-  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null
+export async function resolveStripeCustomer({
+  customer,
+}: {
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null;
 }): Promise<Stripe.Customer | Stripe.DeletedCustomer | null> {
   const stripe = stripeBuilder();
   if (typeof customer === "string") {

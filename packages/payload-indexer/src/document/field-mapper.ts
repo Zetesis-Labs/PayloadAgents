@@ -1,4 +1,4 @@
-import type { PayloadDocument, FieldMapping } from "./types.js";
+import type { FieldMapping, PayloadDocument } from "./types";
 
 /**
  * Extended field mapping with backend-specific properties
@@ -13,10 +13,10 @@ interface ExtendedFieldMapping extends FieldMapping {
  * Extracts a value from a document using dot notation path
  */
 const getValueByPath = (obj: unknown, path: string): unknown => {
-  if (!obj || typeof obj !== 'object') return undefined;
+  if (!obj || typeof obj !== "object") return undefined;
 
-  return path.split('.').reduce((acc: unknown, part: string) => {
-    if (acc && typeof acc === 'object' && part in acc) {
+  return path.split(".").reduce((acc: unknown, part: string) => {
+    if (acc && typeof acc === "object" && part in acc) {
       return (acc as Record<string, unknown>)[part];
     }
     return undefined;
@@ -31,7 +31,7 @@ const getValueByPath = (obj: unknown, path: string): unknown => {
  */
 export const mapPayloadDocumentToIndex = async (
   doc: PayloadDocument,
-  fields: FieldMapping[]
+  fields: FieldMapping[],
 ): Promise<Record<string, unknown>> => {
   const result: Record<string, unknown> = {};
 
@@ -50,23 +50,24 @@ export const mapPayloadDocumentToIndex = async (
       if (value === undefined || value === null) {
         if (extField.optional) continue;
         // Default values based on type
-        if (extField.type === 'string') value = "";
-        else if (extField.type === 'string[]') value = [];
-        else if (extField.type === 'bool') value = false;
-        else if (extField.type.startsWith('int') || extField.type === 'float') value = 0;
+        if (extField.type === "string") value = "";
+        else if (extField.type === "string[]") value = [];
+        else if (extField.type === "bool") value = false;
+        else if (extField.type.startsWith("int") || extField.type === "float")
+          value = 0;
       }
 
       // Type conversion/validation (only if no transform was applied)
-      if (extField.type === 'string' && typeof value !== 'string') {
-        if (typeof value === 'object' && value !== null) {
+      if (extField.type === "string" && typeof value !== "string") {
+        if (typeof value === "object" && value !== null) {
           // Try to extract text from rich text or objects
           value = JSON.stringify(value);
         } else {
           value = String(value);
         }
-      } else if (extField.type === 'string[]' && !Array.isArray(value)) {
+      } else if (extField.type === "string[]" && !Array.isArray(value)) {
         value = [String(value)];
-      } else if (extField.type === 'bool') {
+      } else if (extField.type === "bool") {
         value = Boolean(value);
       }
     }
@@ -79,4 +80,3 @@ export const mapPayloadDocumentToIndex = async (
 
   return result;
 };
-

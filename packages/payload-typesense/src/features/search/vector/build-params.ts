@@ -4,15 +4,15 @@ import {
   DEFAULT_PAGE,
   DEFAULT_PER_PAGE,
   DEFAULT_SEARCH_FIELDS,
-} from "../constants.js";
-import type { BuildVectorSearchParamsOptions } from "../types.js";
+} from "../constants";
+import type { BuildVectorSearchParamsOptions } from "../types";
 
 /**
  * Builds vector search parameters for a single collection
  */
 export const buildVectorSearchParams = (
   searchVector: number[],
-  options: BuildVectorSearchParamsOptions
+  options: BuildVectorSearchParamsOptions,
 ): Record<string, unknown> => {
   const {
     query,
@@ -31,13 +31,14 @@ export const buildVectorSearchParams = (
     vector_query: `embedding:([${searchVector.join(",")}], k:${k})`,
     per_page,
     page,
-    exclude_fields: 'embedding',
+    exclude_fields: "embedding",
   };
 
   // Add keyword search if hybrid mode
   if (hybrid && query) {
     searchParams.q = query;
-    searchParams.query_by = searchFields?.join(",") || DEFAULT_SEARCH_FIELDS.join(",");
+    searchParams.query_by =
+      searchFields?.join(",") || DEFAULT_SEARCH_FIELDS.join(",");
     searchParams.vector_query = `embedding:([${searchVector.join(",")}], k:${k}, alpha:${alpha})`;
   }
 
@@ -53,6 +54,3 @@ export const buildVectorSearchParams = (
 
   return searchParams;
 };
-
-
-

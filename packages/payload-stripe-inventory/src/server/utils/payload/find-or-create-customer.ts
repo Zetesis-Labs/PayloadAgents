@@ -2,8 +2,8 @@ import { Payload } from "payload";
 import {
   COLLECTION_SLUG_CUSTOMERS,
   generateCustomerInventory,
-} from "../../../model/index.js";
-import { Customer, CustomerInventory } from "../../../types/index.js";
+} from "../../../model";
+import { Customer, CustomerInventory } from "../../../types";
 
 interface FindOrCreateCustomerProps {
   email: string;
@@ -36,7 +36,8 @@ export async function findOrCreateCustomer({
       },
     });
 
-    let existingCustomer: Customer | null = userQuery.docs?.[0] as unknown as Customer | null;
+    let existingCustomer: Customer | null = userQuery
+      .docs?.[0] as unknown as Customer | null;
     if (existingCustomer) {
       existingCustomer.inventory = existingCustomer?.inventory
         ? (existingCustomer.inventory as unknown as CustomerInventory)
@@ -59,7 +60,7 @@ export async function findOrCreateCustomer({
     return newCustomer as unknown as Customer;
   } catch (error) {
     payload.logger.error(
-      `Error finding or creating customer for email ${email}: ${error}`
+      `Error finding or creating customer for email ${email}: ${error}`,
     );
     throw error;
   }

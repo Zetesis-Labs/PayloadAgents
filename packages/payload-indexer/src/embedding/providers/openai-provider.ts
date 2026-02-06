@@ -1,7 +1,12 @@
 import OpenAI from "openai";
-import type { EmbeddingProvider, EmbeddingResult, BatchEmbeddingResult, OpenAIProviderConfig } from "../types.js";
-import type { Logger } from "../../core/logging/logger.js";
-import { MIN_EMBEDDING_TEXT_LENGTH } from "../../core/config/constants.js";
+import { MIN_EMBEDDING_TEXT_LENGTH } from "../../core/config/constants";
+import type { Logger } from "../../core/logging/logger";
+import type {
+  BatchEmbeddingResult,
+  EmbeddingProvider,
+  EmbeddingResult,
+  OpenAIProviderConfig,
+} from "../types";
 
 export class OpenAIEmbeddingProvider implements EmbeddingProvider {
   private client: OpenAI;
@@ -10,7 +15,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 
   constructor(
     config: OpenAIProviderConfig,
-    private logger: Logger
+    private logger: Logger,
   ) {
     if (!config.apiKey) {
       throw new Error("OpenAI API key is required");
@@ -46,34 +51,41 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
       this.logger.error("OpenAI embedding generation failed", error, {
         model: this.model,
         textLength: text.length,
-        textPreview: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
+        textPreview: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
       });
       return null;
     }
   }
 
-  async generateBatchEmbeddings(texts: string[]): Promise<BatchEmbeddingResult | null> {
-    const validTexts = texts.filter(t => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH);
+  async generateBatchEmbeddings(
+    texts: string[],
+  ): Promise<BatchEmbeddingResult | null> {
+    const validTexts = texts.filter(
+      (t) => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH,
+    );
     if (validTexts.length === 0) return null;
 
     try {
       const response = await this.client.embeddings.create({
         model: this.model,
-        input: validTexts.map(t => t.trim()),
+        input: validTexts.map((t) => t.trim()),
         dimensions: this.dimensions,
       });
 
-      const embeddings = response.data.map(d => d.embedding);
+      const embeddings = response.data.map((d) => d.embedding);
 
       return {
         embeddings,
         usage: {
           promptTokens: response.usage?.prompt_tokens || 0,
           totalTokens: response.usage?.total_tokens || 0,
-        }
+        },
       };
     } catch (error) {
-      this.logger.error("OpenAI batch embedding generation failed", error, { model: this.model, count: texts.length });
+      this.logger.error("OpenAI batch embedding generation failed", error, {
+        model: this.model,
+        count: texts.length,
+      });
       return null;
     }
   }

@@ -2,9 +2,9 @@ import { PayloadRequest } from "payload";
 import {
   getValidationErrors,
   validateSearchParams,
-} from "../../../../../core/config/config-validation.js";
-import { extractCollectionName } from "../../../utils/extract-collection-name.js";
-import { extractSearchParams } from "../../../utils/extract-search-params.js";
+} from "../../../../../core/config/config-validation";
+import { extractCollectionName } from "../../../utils/extract-collection-name";
+import { extractSearchParams } from "../../../utils/extract-search-params";
 
 /**
  * Result type for request validation
@@ -21,7 +21,9 @@ export type ValidationResult =
 /**
  * Validates search request and returns parsed parameters
  */
-export function validateSearchRequest(request: PayloadRequest): ValidationResult {
+export function validateSearchRequest(
+  request: PayloadRequest,
+): ValidationResult {
   const { query } = request;
   const { collectionName, collectionNameStr } = extractCollectionName(request);
   const searchParams = extractSearchParams(query as Record<string, unknown>);
@@ -50,7 +52,7 @@ export function validateSearchRequest(request: PayloadRequest): ValidationResult
           details: getValidationErrors(validation.errors || []),
           error: "Invalid search parameters",
         },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }

@@ -1,5 +1,5 @@
-import type { ModularPluginConfig } from "../../../../../core/config/types.js";
-import { getTypesenseCollectionName } from "../../../../../core/utils/naming.js";
+import type { ModularPluginConfig } from "../../../../../core/config/types";
+import { getTypesenseCollectionName } from "../../../../../core/utils/naming";
 
 export class TargetCollectionResolver {
   private allowedTableNames: string[];
@@ -8,29 +8,31 @@ export class TargetCollectionResolver {
     this.allowedTableNames = this.getAllowedTableNames(pluginOptions);
   }
 
-  private getAllowedTableNames(
-    pluginOptions: ModularPluginConfig
-  ): string[] {
-    const configuredAllowed = pluginOptions.features.search?.defaults?.tables || [];
+  private getAllowedTableNames(pluginOptions: ModularPluginConfig): string[] {
+    const configuredAllowed =
+      pluginOptions.features.search?.defaults?.tables || [];
     const allowedTableNames: Set<string> = new Set();
     const allTableNames: Set<string> = new Set();
-  
+
     for (const [collectionSlug, tableConfigs] of Object.entries(
-      pluginOptions.collections || {}
+      pluginOptions.collections || {},
     )) {
       if (Array.isArray(tableConfigs)) {
         for (const tableConfig of tableConfigs) {
           if (!tableConfig.enabled) continue;
-  
-          const tableName = getTypesenseCollectionName(collectionSlug, tableConfig);
+
+          const tableName = getTypesenseCollectionName(
+            collectionSlug,
+            tableConfig,
+          );
           allTableNames.add(tableName);
-  
+
           // If no restrictions are configured, everything is allowed
           if (configuredAllowed.length === 0) {
             allowedTableNames.add(tableName);
             continue;
           }
-  
+
           // STRICT MODE: Only allow if the exact table name is in the allowed list.
           // Do NOT allow by collection slug.
           if (configuredAllowed.includes(tableName)) {
@@ -39,11 +41,10 @@ export class TargetCollectionResolver {
         }
       }
     }
-  
+
     return Array.from(allowedTableNames);
-  };
-  
-  
+  }
+
   /**
    * Resolves target table names based on request parameters.
    * Handles both multi-collection (array) and single-collection (slug) requests.
@@ -51,14 +52,14 @@ export class TargetCollectionResolver {
    */
   resolveTargetTables(
     collectionNameSlug: string | null,
-    requestedCollections: string[] | undefined
+    requestedCollections: string[] | undefined,
   ): string[] {
     // Case 1: Multi-collection search (no path param)
     if (!collectionNameSlug) {
       if (requestedCollections && requestedCollections.length > 0) {
         // Strict filtering: Only keep requested tables that are explicitly allowed
         return requestedCollections.filter((c) =>
-          this.allowedTableNames.includes(c)
+          this.allowedTableNames.includes(c),
         );
       }
       // Default: Return all allowed tables
@@ -74,7 +75,7 @@ export class TargetCollectionResolver {
         if (config.enabled) {
           const tableName = getTypesenseCollectionName(
             collectionNameSlug,
-            config
+            config,
           );
           if (this.allowedTableNames.includes(tableName)) {
             targetTables.push(tableName);

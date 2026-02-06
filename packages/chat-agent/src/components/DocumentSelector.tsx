@@ -1,14 +1,14 @@
 'use client'
 
-import { Search, BookOpen, FileText, ChevronDown, Loader2, X } from 'lucide-react'
+import { BookOpen, ChevronDown, FileText, Loader2, Search, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { cn } from '../lib/utils'
 import {
   Document,
   useCombinedDocuments,
   useDocumentSearch,
   useDocumentSelection,
-} from './useDocumentSelector.js'
-import { cn } from '../lib/utils.js'
+} from './useDocumentSelector'
 
 interface DocumentSelectorProps {
   onSelectionChange?: (selectedDocuments: Document[]) => void

@@ -1,15 +1,15 @@
 import type { Endpoint } from "payload";
-import type { StripeEndpointConfig } from "../plugin/stripe-inventory-types.js";
-import { createCheckoutHandler } from "./handlers/checkout-handler.js";
-import { createDonationHandler } from "./handlers/donation-handler.js";
-import { createPortalHandler } from "./handlers/portal-handler.js";
-import { createUpdateHandler } from "./handlers/update-handler.js";
+import type { StripeEndpointConfig } from "../plugin/stripe-inventory-types";
+import { createCheckoutHandler } from "./handlers/checkout-handler";
+import { createDonationHandler } from "./handlers/donation-handler";
+import { createPortalHandler } from "./handlers/portal-handler";
+import { createUpdateHandler } from "./handlers/update-handler";
 
-export * from "./handlers/checkout-handler.js";
-export * from "./handlers/donation-handler.js";
-export * from "./handlers/portal-handler.js";
-export * from "./handlers/update-handler.js";
-export * from "./validators/index.js";
+export * from "./handlers/checkout-handler";
+export * from "./handlers/donation-handler";
+export * from "./handlers/portal-handler";
+export * from "./handlers/update-handler";
+export * from "./validators";
 
 /**
  * Creates all Stripe inventory endpoints
@@ -32,7 +32,7 @@ export * from "./validators/index.js";
  */
 export function createStripeEndpoints(
   config: StripeEndpointConfig,
-  basePath: string = "/stripe"
+  basePath: string = "/stripe",
 ): Endpoint[] {
   return [
     {

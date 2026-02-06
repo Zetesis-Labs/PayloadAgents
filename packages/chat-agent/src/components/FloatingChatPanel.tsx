@@ -1,13 +1,13 @@
 "use client";
 
-import { X, Maximize2, Minimize2, Bot } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Bot, Maximize2, Minimize2, X } from "lucide-react";
 import { useRef } from "react";
-import { useChat } from "./chat-context.js";
-import ChatInterface, { ChatInterfaceRef } from "./ChatInterface.js";
-import ChatMenuDropdown from "./ChatMenuDropdown.js";
-import { DefaultImage, DefaultLink, ImageComponent, LinkComponent } from "../types/components.js";
-import { cn } from "../lib/utils.js";
+import { cn } from "../lib/utils";
+import { DefaultImage, DefaultLink, ImageComponent, LinkComponent } from "../types/components";
+import { useChat } from "./chat-context";
+import ChatInterface, { ChatInterfaceRef } from "./ChatInterface";
+import ChatMenuDropdown from "./ChatMenuDropdown";
 
 interface FloatingChatPanelProps {
   isOpen: boolean;

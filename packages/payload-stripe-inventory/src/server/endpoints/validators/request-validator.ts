@@ -1,6 +1,6 @@
 import type { Payload, PayloadRequest } from "payload";
-import type { BaseUser } from "../../../types/index.js";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types.js";
+import type { BaseUser } from "../../../types";
+import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
 
 /**
  * Creates a JSON response using Web API Response
@@ -27,10 +27,7 @@ export function redirectResponse(url: string, status: number = 303): Response {
 /**
  * Creates an error response
  */
-export function errorResponse(
-  message: string,
-  status: number = 400
-): Response {
+export function errorResponse(message: string, status: number = 400): Response {
   return jsonResponse({ error: message }, { status });
 }
 
@@ -51,7 +48,7 @@ export type AuthenticatedRequestResult =
  */
 export async function validateAuthenticatedRequest(
   request: PayloadRequest,
-  config: StripeEndpointConfig
+  config: StripeEndpointConfig,
 ): Promise<AuthenticatedRequestResult> {
   // Check custom permissions if provided
   if (config.checkPermissions) {
@@ -76,7 +73,10 @@ export async function validateAuthenticatedRequest(
   if (!user) {
     return {
       success: false,
-      error: errorResponse("You must be logged in to access this endpoint", 401),
+      error: errorResponse(
+        "You must be logged in to access this endpoint",
+        401,
+      ),
     };
   }
 

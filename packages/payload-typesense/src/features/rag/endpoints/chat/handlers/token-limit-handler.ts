@@ -1,7 +1,7 @@
-import type { Payload } from 'payload';
-import type { ChatEndpointConfig } from '../route.js';
-import { jsonResponse } from '../validators/index.js';
-import { logger } from '../../../../../core/logging/logger.js';
+import type { Payload } from "payload";
+import { logger } from "../../../../../core/logging/logger";
+import type { ChatEndpointConfig } from "../route";
+import { jsonResponse } from "../validators/index";
 
 /**
  * Checks token limits before processing request
@@ -11,7 +11,7 @@ export async function checkTokenLimitsIfNeeded(
   payload: Payload,
   userId: string | number,
   userEmail: string,
-  userMessage: string
+  userMessage: string,
 ): Promise<Response | null> {
   if (!config.estimateTokensFromText || !config.checkTokenLimit) {
     return null; // No token limit check needed
@@ -21,10 +21,14 @@ export async function checkTokenLimitsIfNeeded(
   const estimatedLLMTokens = config.estimateTokensFromText(userMessage) * 10;
   const estimatedTotalTokens = estimatedEmbeddingTokens + estimatedLLMTokens;
 
-  const limitCheck = await config.checkTokenLimit(payload, userId, estimatedTotalTokens);
+  const limitCheck = await config.checkTokenLimit(
+    payload,
+    userId,
+    estimatedTotalTokens,
+  );
 
   if (!limitCheck.allowed) {
-    logger.warn('Token limit exceeded for user', {
+    logger.warn("Token limit exceeded for user", {
       userId,
       limit: limitCheck.limit,
       used: limitCheck.used,
@@ -32,7 +36,7 @@ export async function checkTokenLimitsIfNeeded(
     });
     return jsonResponse(
       {
-        error: 'Has alcanzado tu límite diario de tokens.',
+        error: "Has alcanzado tu límite diario de tokens.",
         limit_info: {
           limit: limitCheck.limit,
           used: limitCheck.used,
@@ -40,11 +44,11 @@ export async function checkTokenLimitsIfNeeded(
           reset_at: limitCheck.reset_at,
         },
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
-  logger.info('Chat request started with token limit check passed', {
+  logger.info("Chat request started with token limit check passed", {
     userId,
     userEmail,
     limit: limitCheck.limit,

@@ -2,17 +2,14 @@
 
 import type { Payload } from "payload";
 import type Stripe from "stripe";
-import {
-  COLLECTION_SLUG_PRICES,
-  COLLECTION_SLUG_PRODUCTS,
-} from "../../model/index.js";
-import { payloadUpsert } from "../utils/payload/upsert.js";
-import { stripeBuilder } from "../utils/stripe/stripe-builder.js";
+import { COLLECTION_SLUG_PRICES, COLLECTION_SLUG_PRODUCTS } from "../../model";
+import { payloadUpsert } from "../utils/payload/upsert";
+import { stripeBuilder } from "../utils/stripe/stripe-builder";
 
 export const updatePrices = async (payload: Payload) => {
   const stripe = await stripeBuilder();
   const prices = await stripe.prices.list({ limit: 100, active: true });
-  const promises = prices.data.map(price => priceUpsert(price, payload));
+  const promises = prices.data.map((price) => priceUpsert(price, payload));
   const pricesUpserted = await Promise.all(promises);
 
   const pricesByProductId = pricesUpserted
@@ -25,7 +22,7 @@ export const updatePrices = async (payload: Payload) => {
         acc[productId].push(priceId);
         return acc;
       },
-      {} as Record<string, number[]>
+      {} as Record<string, number[]>,
     );
 
   await Promise.all(
@@ -39,7 +36,7 @@ export const updatePrices = async (payload: Payload) => {
           stripeID: { equals: productId },
         },
       });
-    })
+    }),
   );
 };
 
@@ -50,7 +47,7 @@ interface PriceUpserted {
 
 export async function priceUpsert(
   price: Stripe.Price,
-  payload: Payload
+  payload: Payload,
 ): Promise<PriceUpserted | null> {
   const stripeProductID =
     typeof price.product === "string" ? price.product : price.product.id;

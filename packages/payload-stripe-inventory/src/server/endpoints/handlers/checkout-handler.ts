@@ -1,14 +1,14 @@
 import type { PayloadHandler, PayloadRequest } from "payload";
 import type Stripe from "stripe";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types.js";
-import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user.js";
-import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create.js";
-import { stripeBuilder } from "../../utils/stripe/stripe-builder.js";
+import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
+import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user";
+import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create";
+import { stripeBuilder } from "../../utils/stripe/stripe-builder";
 import {
   errorResponse,
   redirectResponse,
   validateAuthenticatedRequest,
-} from "../validators/request-validator.js";
+} from "../validators/request-validator";
 
 /**
  * Creates a handler for Stripe checkout sessions (subscriptions)
@@ -16,7 +16,9 @@ import {
  * @param config - Endpoint configuration
  * @returns PayloadHandler for checkout endpoint
  */
-export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHandler {
+export function createCheckoutHandler(
+  config: StripeEndpointConfig,
+): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
       // Validate authenticated user
@@ -45,7 +47,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
         user.email,
-        user.name
+        user.name,
       );
 
       // Sync customer inventory
@@ -53,7 +55,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
         payload,
         user.customer?.inventory,
         user.email,
-        customerId
+        customerId,
       );
 
       // Prepare checkout session
@@ -87,7 +89,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
       console.error("[Stripe Checkout Error]", error);
       return errorResponse(
         error instanceof Error ? error.message : "Unknown error occurred",
-        500
+        500,
       );
     }
   };

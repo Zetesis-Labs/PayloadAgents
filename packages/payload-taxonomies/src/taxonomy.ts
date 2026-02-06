@@ -1,6 +1,6 @@
 import { JSONSchema4 } from "json-schema";
 import { slugField, type CollectionConfig } from "payload";
-import { COLLECTION_SLUG_TAXONOMY } from "./constants.js";
+import { COLLECTION_SLUG_TAXONOMY } from "./constants";
 type TaxonomyTypescriptSchema = {
   payloadTypescriptSchema?: Array<
     (args: { jsonSchema: JSONSchema4 }) => JSONSchema4
@@ -8,7 +8,7 @@ type TaxonomyTypescriptSchema = {
 };
 
 export const taxonomiesCollection: (
-  config: Partial<CollectionConfig> & TaxonomyTypescriptSchema
+  config: Partial<CollectionConfig> & TaxonomyTypescriptSchema,
 ) => CollectionConfig = ({ payloadTypescriptSchema, ...config }) => ({
   ...config,
   slug: COLLECTION_SLUG_TAXONOMY,
@@ -31,7 +31,7 @@ export const taxonomiesCollection: (
       localized: true,
       required: true,
     },
-    slugField({useAsSlug: 'name'}),
+    slugField({ useAsSlug: "name" }),
     {
       name: "payload",
       label: "Payload Adicional",

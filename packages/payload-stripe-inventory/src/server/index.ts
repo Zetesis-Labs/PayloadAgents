@@ -1,25 +1,25 @@
 // Plugin
-export * from "./plugin/create-stripe-inventory-plugin.js";
-export * from "./plugin/stripe-inventory-types.js";
+export * from "./plugin/create-stripe-inventory-plugin";
+export * from "./plugin/stripe-inventory-types";
 
 // Endpoints
-export * from "./endpoints/index.js";
+export * from "./endpoints";
 
 // Actions (webhook handlers)
-export * from "./actions/index.js";
+export * from "./actions";
 
 // Collections
-export * from "./collections/customers.js";
-export * from "./collections/prices.js";
-export * from "./collections/products.js";
+export * from "./collections/customers";
+export * from "./collections/prices";
+export * from "./collections/products";
 
 // Utilities
-export * from "./utils/payload/sync-customer-by-email.js";
-export * from "./utils/payload/upsert.js";
-export * from "./utils/payload/upsert-customer-inventory-and-sync-with-user.js";
-export * from "./utils/stripe/create-customer-at-stripe.js";
-export * from "./utils/stripe/get-customer.js";
-export * from "./utils/stripe/stripe-builder.js";
+export * from "./utils/payload/sync-customer-by-email";
+export * from "./utils/payload/upsert";
+export * from "./utils/payload/upsert-customer-inventory-and-sync-with-user";
+export * from "./utils/stripe/create-customer-at-stripe";
+export * from "./utils/stripe/get-customer";
+export * from "./utils/stripe/stripe-builder";
 
 // Access Control
-export * from "./access/index.js";
+export * from "./access";

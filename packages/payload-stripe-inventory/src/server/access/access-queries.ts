@@ -1,5 +1,5 @@
 import { Access } from "payload";
-import { permissionSlugs } from "../../model/constants.js";
+import { permissionSlugs } from "../../model/constants";
 
 export const isAdmin: Access = ({ req }) => {
   return req?.user?.roles?.includes(permissionSlugs.webAdmin) || false;

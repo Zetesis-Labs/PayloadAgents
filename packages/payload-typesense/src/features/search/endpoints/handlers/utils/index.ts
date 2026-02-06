@@ -1,3 +1,3 @@
-export { transformToSimpleFormat } from "./document-transformer.js";
-export { TargetCollectionResolver } from "./target-resolver.js";
-export { SearchConfigMapper } from "./config-mapper.js";
+export { SearchConfigMapper } from "./config-mapper";
+export { transformToSimpleFormat } from "./document-transformer";
+export { TargetCollectionResolver } from "./target-resolver";

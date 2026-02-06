@@ -1,3 +1,10 @@
-export { Thread, ThreadWelcome, Composer, UserMessage, AssistantMessage, TypingIndicator } from './thread.js'
-export { MarkdownText } from './markdown-text.js'
-export { ThinkingIndicator } from './thinking-indicator.js'
+export { MarkdownText } from "./markdown-text";
+export { ThinkingIndicator } from "./thinking-indicator";
+export {
+  AssistantMessage,
+  Composer,
+  Thread,
+  ThreadWelcome,
+  TypingIndicator,
+  UserMessage,
+} from "./thread";

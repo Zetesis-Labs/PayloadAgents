@@ -1,11 +1,11 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
-import { useAssistantRuntime } from '../hooks/useAssistantRuntime.js'
-import DocumentSelector from './DocumentSelector.js'
-import { useChat } from './chat-context.js'
-import { LinkComponent } from '../types/components.js'
-import { Thread } from './assistant-ui/thread.js'
+import { useAssistantRuntime } from '../hooks/useAssistantRuntime'
+import { LinkComponent } from '../types/components'
+import DocumentSelector from './DocumentSelector'
+import { Thread } from './assistant-ui/thread'
+import { useChat } from './chat-context'
 
 interface Document {
   id: string

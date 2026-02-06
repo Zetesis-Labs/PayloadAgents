@@ -1,14 +1,14 @@
 import type { PayloadHandler, PayloadRequest } from "payload";
 import type Stripe from "stripe";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types.js";
-import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user.js";
-import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create.js";
-import { stripeBuilder } from "../../utils/stripe/stripe-builder.js";
+import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
+import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user";
+import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create";
+import { stripeBuilder } from "../../utils/stripe/stripe-builder";
 import {
   errorResponse,
   jsonResponse,
   validateAuthenticatedRequest,
-} from "../validators/request-validator.js";
+} from "../validators/request-validator";
 
 /**
  * Creates a handler for one-time donation payments
@@ -16,7 +16,9 @@ import {
  * @param config - Endpoint configuration
  * @returns PayloadHandler for donation endpoint
  */
-export function createDonationHandler(config: StripeEndpointConfig): PayloadHandler {
+export function createDonationHandler(
+  config: StripeEndpointConfig,
+): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
       // Validate authenticated user
@@ -43,7 +45,10 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
       const amount = parseInt(amountParam, 10);
 
       if (isNaN(amount) || amount < 100) {
-        return errorResponse("Minimum donation amount is 1 EUR (100 cents)", 400);
+        return errorResponse(
+          "Minimum donation amount is 1 EUR (100 cents)",
+          400,
+        );
       }
 
       const stripe = stripeBuilder();
@@ -51,7 +56,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
         user.email,
-        user.name
+        user.name,
       );
 
       // Sync customer inventory
@@ -59,11 +64,12 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
         payload,
         user.customer?.inventory,
         user.email,
-        customerId
+        customerId,
       );
 
       // Determine redirect URLs
-      const donationPageHref = config.routes.donationPageHref || config.routes.subscriptionPageHref;
+      const donationPageHref =
+        config.routes.donationPageHref || config.routes.subscriptionPageHref;
 
       // Prepare metadata
       const metadata: Stripe.MetadataParam = {
@@ -100,7 +106,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
       console.error("[Stripe Donation Error]", error);
       return errorResponse(
         error instanceof Error ? error.message : "Unknown error occurred",
-        500
+        500,
       );
     }
   };

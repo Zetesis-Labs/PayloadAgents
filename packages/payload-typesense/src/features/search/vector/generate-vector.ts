@@ -1,5 +1,5 @@
-import type { EmbeddingProviderConfig } from "../../../shared/types/plugin-types.js";
-import { generateEmbedding } from "../../embedding/embeddings.js";
+import type { EmbeddingProviderConfig } from "../../../shared/types/plugin-types";
+import { generateEmbedding } from "../../embedding/embeddings";
 
 /**
  * Generates or retrieves a search vector from query text or provided vector
@@ -7,7 +7,7 @@ import { generateEmbedding } from "../../embedding/embeddings.js";
 export const generateOrGetVector = async (
   query?: string,
   vector?: number[],
-  embeddingConfig?: EmbeddingProviderConfig
+  embeddingConfig?: EmbeddingProviderConfig,
 ): Promise<number[] | null> => {
   // Use provided vector if available
   if (vector && Array.isArray(vector) && vector.length > 0) {
@@ -25,6 +25,3 @@ export const generateOrGetVector = async (
 
   return null;
 };
-
-
-

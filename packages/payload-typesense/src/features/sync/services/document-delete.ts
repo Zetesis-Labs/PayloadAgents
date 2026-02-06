@@ -1,7 +1,7 @@
-import type { Client } from "typesense";
-import { getTypesenseCollectionName } from "../../../core/utils/naming.js";
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import { logger } from "../../../core/logging/logger.js";
+import type { Client } from "typesense";
+import { logger } from "../../../core/logging/logger";
+import { getTypesenseCollectionName } from "../../../core/utils/naming";
 
 /**
  * Deletes a document from Typesense
@@ -11,13 +11,13 @@ export const deleteDocumentFromTypesense = async (
   typesenseClient: Client,
   collectionSlug: string,
   docId: string,
-  tableConfig: TableConfig
+  tableConfig: TableConfig,
 ) => {
   try {
     // Build table name from collection slug + tableSuffix
     const tableName = getTypesenseCollectionName(collectionSlug, tableConfig);
 
-    logger.debug('Attempting to delete document from Typesense', {
+    logger.debug("Attempting to delete document from Typesense", {
       documentId: docId,
       collection: collectionSlug,
       tableName,
@@ -26,7 +26,7 @@ export const deleteDocumentFromTypesense = async (
     // Try to delete the document directly first
     try {
       await typesenseClient.collections(tableName).documents(docId).delete();
-      logger.info('Document deleted from Typesense', {
+      logger.info("Document deleted from Typesense", {
         documentId: docId,
         tableName,
       });
@@ -35,7 +35,7 @@ export const deleteDocumentFromTypesense = async (
 
       // If document doesn't exist, try to delete chunks by parent_doc_id
       if (typesenseError.httpStatus === 404) {
-        logger.debug('Document not found, attempting to delete chunks', {
+        logger.debug("Document not found, attempting to delete chunks", {
           documentId: docId,
           tableName,
         });
@@ -47,7 +47,7 @@ export const deleteDocumentFromTypesense = async (
             .delete({
               filter_by: `parent_doc_id:${docId}`,
             });
-          logger.info('All chunks deleted for document', {
+          logger.info("All chunks deleted for document", {
             documentId: docId,
             tableName,
           });
@@ -56,12 +56,16 @@ export const deleteDocumentFromTypesense = async (
 
           // Ignore 404 errors (collection might not exist)
           if (chunkError.httpStatus !== 404) {
-            logger.error('Failed to delete chunks for document', chunkDeleteError as Error, {
-              documentId: docId,
-              tableName,
-            });
+            logger.error(
+              "Failed to delete chunks for document",
+              chunkDeleteError as Error,
+              {
+                documentId: docId,
+                tableName,
+              },
+            );
           } else {
-            logger.debug('No chunks found to delete', { documentId: docId });
+            logger.debug("No chunks found to delete", { documentId: docId });
           }
         }
       } else {
@@ -72,7 +76,7 @@ export const deleteDocumentFromTypesense = async (
     // Build table name for error message
     const tableName = getTypesenseCollectionName(collectionSlug, tableConfig);
 
-    logger.error('Failed to delete document from Typesense', error as Error, {
+    logger.error("Failed to delete document from Typesense", error as Error, {
       documentId: docId,
       collection: collectionSlug,
       tableName,

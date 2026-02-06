@@ -5,7 +5,7 @@
  */
 
 // Streaming Handler
-export { defaultHandleStreamingResponse } from './streaming-handler.js'
+export { defaultHandleStreamingResponse } from "./streaming-handler";
 
 // Non-Streaming Handler
-export { defaultHandleNonStreamingResponse } from './non-streaming-handler.js'
+export { defaultHandleNonStreamingResponse } from "./non-streaming-handler";

@@ -1,7 +1,12 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
-import type { EmbeddingProvider, EmbeddingResult, BatchEmbeddingResult, GeminiProviderConfig } from "../types.js";
-import type { Logger } from "../../core/logging/logger.js";
-import { MIN_EMBEDDING_TEXT_LENGTH } from "../../core/config/constants.js";
+import { MIN_EMBEDDING_TEXT_LENGTH } from "../../core/config/constants";
+import type { Logger } from "../../core/logging/logger";
+import type {
+  BatchEmbeddingResult,
+  EmbeddingProvider,
+  EmbeddingResult,
+  GeminiProviderConfig,
+} from "../types";
 
 export class GeminiEmbeddingProvider implements EmbeddingProvider {
   private client: GoogleGenerativeAI;
@@ -9,7 +14,7 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
 
   constructor(
     config: GeminiProviderConfig,
-    private logger: Logger
+    private logger: Logger,
   ) {
     if (!config.apiKey) {
       throw new Error("Gemini API key is required");
@@ -39,20 +44,24 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
         usage: {
           promptTokens: estimatedTokens,
           totalTokens: estimatedTokens,
-        }
+        },
       };
     } catch (error) {
       this.logger.error("Gemini embedding generation failed", error, {
         model: this.model,
         textLength: text.length,
-        textPreview: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
+        textPreview: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
       });
       return null;
     }
   }
 
-  async generateBatchEmbeddings(texts: string[]): Promise<BatchEmbeddingResult | null> {
-    const validTexts = texts.filter(t => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH);
+  async generateBatchEmbeddings(
+    texts: string[],
+  ): Promise<BatchEmbeddingResult | null> {
+    const validTexts = texts.filter(
+      (t) => t && t.trim().length >= MIN_EMBEDDING_TEXT_LENGTH,
+    );
     if (validTexts.length === 0) return null;
 
     try {
@@ -74,11 +83,14 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
         embeddings,
         usage: {
           promptTokens: totalTokens,
-          totalTokens: totalTokens
-        }
+          totalTokens: totalTokens,
+        },
       };
     } catch (error) {
-      this.logger.error("Gemini batch embedding generation failed", error, { model: this.model, count: texts.length });
+      this.logger.error("Gemini batch embedding generation failed", error, {
+        model: this.model,
+        count: texts.length,
+      });
       return null;
     }
   }

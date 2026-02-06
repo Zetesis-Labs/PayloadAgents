@@ -2,7 +2,7 @@
  * Naming utilities for index collections
  */
 
-import type { TableConfig } from "../../document/types.js";
+import type { TableConfig } from "../../document/types";
 
 /**
  * Generates the index collection name based on the configuration.
@@ -17,7 +17,7 @@ import type { TableConfig } from "../../document/types.js";
  */
 export const getIndexCollectionName = (
   collectionSlug: string,
-  tableConfig: TableConfig
+  tableConfig: TableConfig,
 ): string => {
   return tableConfig.tableName ?? collectionSlug;
 };

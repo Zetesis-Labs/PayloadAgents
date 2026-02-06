@@ -1,6 +1,6 @@
 import type { Payload, PayloadRequest } from "payload";
 import type Stripe from "stripe";
-import type { BaseUser } from "../../types/index.js";
+import type { BaseUser } from "../../types";
 
 /**
  * URL routes configuration for Stripe redirects
@@ -19,7 +19,7 @@ export interface StripeInventoryRoutes {
  */
 export interface StripeInventoryPluginConfig<
   TProduct = unknown,
-  TContent = unknown
+  TContent = unknown,
 > {
   /**
    * URL routes for redirects after Stripe operations
@@ -39,7 +39,7 @@ export interface StripeInventoryPluginConfig<
    */
   onSubscriptionUpdate?: (
     type: "create" | "delete",
-    userId: string
+    userId: string,
   ) => Promise<void>;
 
   /**
@@ -86,7 +86,7 @@ export interface StripeInventoryPluginConfig<
 export type ResolveSubscriptionPermissions<TProduct = unknown> = (
   subscription: Stripe.Subscription,
   product: TProduct,
-  payload: Payload
+  payload: Payload,
 ) => Promise<string[]>;
 
 /**
@@ -95,7 +95,7 @@ export type ResolveSubscriptionPermissions<TProduct = unknown> = (
  */
 export type ResolveContentPermissions<TContent = unknown> = (
   content: TContent,
-  payload: Payload
+  payload: Payload,
 ) => Promise<string[]>;
 
 /**

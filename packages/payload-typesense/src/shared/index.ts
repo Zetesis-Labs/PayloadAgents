@@ -3,8 +3,8 @@
  */
 
 // Cache
-export * from './cache/cache.js';
+export * from "./cache/cache";
 
 // Types
-export * from './types/types.js';
-export * from './types/plugin-types.js';
+export * from "./types/plugin-types";
+export * from "./types/types";

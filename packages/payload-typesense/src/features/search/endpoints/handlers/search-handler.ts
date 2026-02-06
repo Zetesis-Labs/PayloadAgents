@@ -1,20 +1,20 @@
 import type { PayloadHandler, PayloadRequest } from "payload";
 import type { Client } from "typesense";
-import type { ModularPluginConfig } from "../../../../core/config/types.js";
-import { SearchService } from "../../services/search-service.js";
+import type { ModularPluginConfig } from "../../../../core/config/types";
+import { SearchService } from "../../services/search-service";
 import {
   SearchConfigMapper,
   TargetCollectionResolver,
   transformToSimpleFormat,
-} from "./utils/index.js";
-import { validateSearchRequest } from "./validators/index.js";
+} from "./utils";
+import { validateSearchRequest } from "./validators";
 
 /**
  * Creates a handler for standard search requests
  */
 export const createSearchHandler = (
   typesenseClient: Client,
-  pluginOptions: ModularPluginConfig
+  pluginOptions: ModularPluginConfig,
 ): PayloadHandler => {
   const searchService = new SearchService(typesenseClient, pluginOptions);
   const targetResolver = new TargetCollectionResolver(pluginOptions);
@@ -31,22 +31,34 @@ export const createSearchHandler = (
       // 2. Resolve Target Tables (Atomized Logic)
       const targetCollections = targetResolver.resolveTargetTables(
         collectionName, // Pass null if multi-search, or slug if single
-        searchParams.collections
+        searchParams.collections,
       );
 
       // Validation: Check if we have valid targets
       if (targetCollections.length === 0) {
         const isMultiSearch = !collectionName;
-        const hasExplicitRequest = isMultiSearch && searchParams.collections && searchParams.collections.length > 0;
-        
+        const hasExplicitRequest =
+          isMultiSearch &&
+          searchParams.collections &&
+          searchParams.collections.length > 0;
+
         if (hasExplicitRequest) {
-             return Response.json({ error: "None of the requested collections are allowed" }, { status: 403 });
+          return Response.json(
+            { error: "None of the requested collections are allowed" },
+            { status: 403 },
+          );
         }
-        return Response.json({ error: "Collection not allowed or not enabled" }, { status: 403 });
+        return Response.json(
+          { error: "Collection not allowed or not enabled" },
+          { status: 403 },
+        );
       }
 
       if (!searchParams.q || searchParams.q.trim() === "") {
-         return Response.json({ error: 'Query parameter "q" is required' }, { status: 400 });
+        return Response.json(
+          { error: 'Query parameter "q" is required' },
+          { status: 400 },
+        );
       }
 
       // 3. Prepare Search Configuration (Atomized Logic)
@@ -57,14 +69,14 @@ export const createSearchHandler = (
         searchParams.q,
         searchConfigs,
         {
-            filters: {},
-            page: searchParams.page,
-            per_page: searchParams.per_page,
-            sort_by: searchParams.sort_by,
-            mode: searchParams.mode,
-            exclude_fields: searchParams.exclude_fields,
-            query_by: searchParams.query_by,
-        }
+          filters: {},
+          page: searchParams.page,
+          per_page: searchParams.per_page,
+          sort_by: searchParams.sort_by,
+          mode: searchParams.mode,
+          exclude_fields: searchParams.exclude_fields,
+          query_by: searchParams.query_by,
+        },
       );
 
       // 5. Format Response
@@ -73,14 +85,13 @@ export const createSearchHandler = (
       }
 
       return Response.json(searchResult);
-
     } catch (error) {
       return Response.json(
         {
           details: error instanceof Error ? error.message : "Unknown error",
           error: "Search handler failed",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   };

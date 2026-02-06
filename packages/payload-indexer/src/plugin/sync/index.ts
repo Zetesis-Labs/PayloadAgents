@@ -2,5 +2,9 @@
  * Sync module exports
  */
 
-export { syncDocumentToIndex, deleteDocumentFromIndex, DocumentSyncer } from "./document-syncer.js";
-export { applySyncHooks } from "./hooks.js";
+export {
+  DocumentSyncer,
+  deleteDocumentFromIndex,
+  syncDocumentToIndex,
+} from "./document-syncer";
+export { applySyncHooks } from "./hooks";

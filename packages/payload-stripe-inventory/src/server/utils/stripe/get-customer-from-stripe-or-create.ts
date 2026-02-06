@@ -1,10 +1,10 @@
-import { createCustomerAtStripe } from "./create-customer-at-stripe.js";
-import { getCustomer } from "./get-customer.js";
-import { stripeBuilder } from "./stripe-builder.js";
+import { createCustomerAtStripe } from "./create-customer-at-stripe";
+import { getCustomer } from "./get-customer";
+import { stripeBuilder } from "./stripe-builder";
 
 export async function getCustomerFromStripeOrCreate(
   email: string,
-  name?: string
+  name?: string,
 ): Promise<string> {
   const stripe = stripeBuilder();
   let customer = await getCustomer({ stripe, email });

@@ -1,10 +1,10 @@
 'use client'
 
+import { Check, ChevronDown, ChevronLeft, History, MessageSquarePlus } from 'lucide-react'
 import { useState } from 'react'
-import { useChat } from './chat-context.js'
-import { cn } from '../lib/utils.js'
-import { ChevronDown, Check, MessageSquarePlus, History, ChevronLeft } from 'lucide-react'
-import { ChatHistoryList } from './ChatHistoryList.js'
+import { cn } from '../lib/utils'
+import { useChat } from './chat-context'
+import { ChatHistoryList } from './ChatHistoryList'
 
 interface ChatMenuDropdownProps {
   title: string

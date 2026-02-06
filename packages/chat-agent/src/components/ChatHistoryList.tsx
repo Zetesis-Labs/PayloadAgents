@@ -1,11 +1,11 @@
 'use client'
-import React, { useState, useEffect } from 'react'
-import { MoreHorizontal, MessageSquare, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { cn } from '../lib/utils.js'
-import { SessionSummary } from '../hooks/useChatSession.js'
-import { PublicAgentInfo } from '../adapters/ChatAdapter.js'
+import { Check, Edit2, Loader2, MessageSquare, MoreHorizontal, Trash2, X } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { PublicAgentInfo } from '../adapters/ChatAdapter'
+import { SessionSummary } from '../hooks/useChatSession'
+import { cn } from '../lib/utils'
 
 interface ChatHistoryListProps {
     sessions: SessionSummary[]

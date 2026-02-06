@@ -5,8 +5,8 @@ import {
   PricingPlanInterval,
   PricingType,
   formatOptions,
-} from "../../model/index.js";
-import { isAdmin, isAdminOrStripeActive } from "../access/index.js";
+} from "../../model";
+import { isAdmin, isAdminOrStripeActive } from "../access";
 
 export const prices: CollectionConfig = {
   slug: COLLECTION_SLUG_PRICES,

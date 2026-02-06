@@ -1,21 +1,21 @@
 import {
     AssistantRuntimeProvider,
-    ThreadPrimitive,
     ComposerPrimitive,
     MessagePrimitive,
+    ThreadPrimitive,
     useMessageRuntime,
     useThreadRuntime,
 } from "@assistant-ui/react"
-import { ArrowUpIcon, SquareIcon, Sparkles, ArrowRight, AlertTriangle, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { MarkdownText } from "./markdown-text.js"
+import { AnimatePresence, motion } from "framer-motion"
+import { AlertTriangle, ArrowRight, ArrowUpIcon, Sparkles, SquareIcon, X } from "lucide-react"
 import type { FC } from "react"
-import { cn } from "../../lib/utils.js"
-import { SourcesList } from "../SourcesList.js"
-import { LinkComponent } from "../../types/components.js"
-import type { Source } from "../../adapters/ChatAdapter.js"
-import { createContext, useContext, useState, useEffect } from "react"
-import { useChat } from "../chat-context.js"
+import { createContext, useContext, useEffect, useState } from "react"
+import type { Source } from "../../adapters/ChatAdapter"
+import { cn } from "../../lib/utils"
+import { LinkComponent } from "../../types/components"
+import { useChat } from "../chat-context"
+import { SourcesList } from "../SourcesList"
+import { MarkdownText } from "./markdown-text"
 
 interface ThreadContextValue {
     generateHref: (props: { type: string; value: { id: number; slug?: string | null } }) => string
@@ -60,11 +60,11 @@ export const Thread: FC<ThreadProps> = ({
 
                     <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 pt-4">
                         <ThreadPrimitive.Empty>
-                            { welcomeTitle && welcomeSubtitle && <ThreadWelcome
+                            {welcomeTitle && welcomeSubtitle && <ThreadWelcome
                                 title={welcomeTitle}
                                 subtitle={welcomeSubtitle}
                                 suggestedQuestions={suggestedQuestions}
-                            /> }
+                            />}
                         </ThreadPrimitive.Empty>
 
                         <ThreadPrimitive.Messages
@@ -451,4 +451,5 @@ const AssistantMessage: FC = () => {
     )
 }
 
-export { ThreadWelcome, Composer, UserMessage, AssistantMessage, TypingIndicator }
+export { AssistantMessage, Composer, ThreadWelcome, TypingIndicator, UserMessage }
+

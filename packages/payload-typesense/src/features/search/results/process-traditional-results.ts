@@ -1,6 +1,10 @@
-import { SearchResponse } from "typesense/lib/Typesense/Documents.js";
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import type { CombinedSearchResult, CollectionSearchResult, SearchHit } from "../types.js";
+import { SearchResponse } from "typesense/lib/Typesense/Documents";
+import type {
+  CollectionSearchResult,
+  CombinedSearchResult,
+  SearchHit,
+} from "../types";
 
 /**
  * Processes traditional search results from a single collection
@@ -8,20 +12,23 @@ import type { CombinedSearchResult, CollectionSearchResult, SearchHit } from "..
 export const processSingleCollectionTraditionalResults = (
   results: SearchResponse<object>,
   collectionName: string,
-  config: TableConfig
+  config: TableConfig,
 ): CollectionSearchResult => {
   return {
     collection: collectionName,
     displayName: config?.displayName || collectionName,
     icon: "📄",
     found: results.found,
-    hits: results.hits?.map((hit): SearchHit => ({
-        ...hit,
-        collection: collectionName,
-        displayName: config?.displayName || collectionName,
-        icon: "📄",
-        document: (hit.document || {}) as Record<string, unknown>,
-      })) || [],
+    hits:
+      results.hits?.map(
+        (hit): SearchHit => ({
+          ...hit,
+          collection: collectionName,
+          displayName: config?.displayName || collectionName,
+          icon: "📄",
+          document: (hit.document || {}) as Record<string, unknown>,
+        }),
+      ) || [],
   };
 };
 
@@ -34,14 +41,14 @@ export const combineTraditionalResults = (
     page: number;
     per_page: number;
     query: string;
-  }
+  },
 ): CombinedSearchResult => {
   const { page, per_page, query } = options;
 
   const combinedHits = results.flatMap((result) => result.hits || []);
   const totalFound = results.reduce(
     (sum, result) => sum + (result.found || 0),
-    0
+    0,
   );
 
   // Sort by text match score
@@ -65,4 +72,3 @@ export const combineTraditionalResults = (
 
   return searchResult;
 };
-

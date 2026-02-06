@@ -2,4 +2,4 @@
  * Plugin utilities exports
  */
 
-export { getIndexCollectionName } from "./naming.js";
+export { getIndexCollectionName } from "./naming";

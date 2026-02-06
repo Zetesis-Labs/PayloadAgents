@@ -1,17 +1,28 @@
-'use client'
+"use client";
 
 // Client-side React components and context
-export { ChatProvider, useChat } from './components/chat-context.js'
-export { default as FloatingChatManager } from './components/FloatingChatManager.js'
+export { ChatProvider, useChat } from "./components/chat-context";
+export { default as FloatingChatManager } from "./components/FloatingChatManager";
 
 // assistant-ui components
-export { Thread, Composer, UserMessage, AssistantMessage, MarkdownText } from './components/assistant-ui/index.js'
+export {
+  AssistantMessage,
+  Composer,
+  MarkdownText,
+  Thread,
+  UserMessage,
+} from "./components/assistant-ui/index";
 
 // Runtime adapter
-export { useAssistantRuntime } from './hooks/useAssistantRuntime.js'
+export { useAssistantRuntime } from "./hooks/useAssistantRuntime";
 
 // Adapters
-export type { ChatAdapter, Message, Source, SessionSummary, StreamCallbacks } from './adapters/ChatAdapter.js'
-export { NexoPayloadChatAdapter } from './adapters/NexoPayloadChatAdapter.js'
-export { MockAdapter } from './adapters/MockAdapter.js'
-
+export type {
+  ChatAdapter,
+  Message,
+  SessionSummary,
+  Source,
+  StreamCallbacks,
+} from "./adapters/ChatAdapter";
+export { MockAdapter } from "./adapters/MockAdapter";
+export { NexoPayloadChatAdapter } from "./adapters/NexoPayloadChatAdapter";

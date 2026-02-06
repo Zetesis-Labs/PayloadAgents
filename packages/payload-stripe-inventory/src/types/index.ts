@@ -1,9 +1,9 @@
 // Permission Types
-export * from './permission.types.js';
+export * from "./permission.types";
 
 // User Inventory Types
-export * from './user-inventory.types.js';
-export * from './customer.types.js';
+export * from "./customer.types";
+export * from "./user-inventory.types";
 
 // Result Types
-export * from './result.types.js';
+export * from "./result.types";

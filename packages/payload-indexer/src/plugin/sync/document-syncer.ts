@@ -2,18 +2,15 @@
  * Document syncer - syncs Payload documents to the index using the adapter
  */
 
-import type { IndexDocument, IndexerAdapter } from "../../adapter/types.js";
-import { logger } from "../../core/logging/logger.js";
-import { formatChunkWithHeaders } from "../../core/utils/chunk-format-utils.js";
-import { buildHeaderHierarchy } from "../../core/utils/header-utils.js";
-import { mapPayloadDocumentToIndex } from "../../document/field-mapper.js";
-import type { PayloadDocument, TableConfig } from "../../document/types.js";
-import {
-  chunkMarkdown,
-  chunkText,
-} from "../../embedding/chunking/strategies/index.js";
-import type { EmbeddingService } from "../../embedding/types.js";
-import { getIndexCollectionName } from "../utils/naming.js";
+import type { IndexDocument, IndexerAdapter } from "../../adapter/types";
+import { logger } from "../../core/logging/logger";
+import { formatChunkWithHeaders } from "../../core/utils/chunk-format-utils";
+import { buildHeaderHierarchy } from "../../core/utils/header-utils";
+import { mapPayloadDocumentToIndex } from "../../document/field-mapper";
+import type { PayloadDocument, TableConfig } from "../../document/types";
+import { chunkMarkdown, chunkText } from "../../embedding/chunking/strategies";
+import type { EmbeddingService } from "../../embedding/types";
+import { getIndexCollectionName } from "../utils/naming";
 
 /**
  * Syncs a Payload document to the index

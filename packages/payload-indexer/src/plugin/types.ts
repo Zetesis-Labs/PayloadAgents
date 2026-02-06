@@ -3,9 +3,9 @@
  */
 
 import type { CollectionSlug } from "payload";
-import type { IndexerAdapter } from "../adapter/types.js";
-import type { EmbeddingProviderConfig } from "../embedding/types.js";
-import type { FieldMapping, TableConfig } from "../document/types.js";
+import type { IndexerAdapter } from "../adapter/types";
+import type { FieldMapping, TableConfig } from "../document/types";
+import type { EmbeddingProviderConfig } from "../embedding/types";
 
 /**
  * Sync feature configuration
@@ -47,14 +47,17 @@ export interface IndexerFeatureConfig {
   search?: SearchFeatureConfig;
 }
 
-export type IndexableCollectionConfig<TFieldMapping extends FieldMapping> = Record<CollectionSlug | string, TableConfig<TFieldMapping>[]>
+export type IndexableCollectionConfig<TFieldMapping extends FieldMapping> =
+  Record<CollectionSlug | string, TableConfig<TFieldMapping>[]>;
 
 /**
  * Main plugin configuration
  *
  * @typeParam TFieldMapping - The field mapping type for collection fields
  */
-export interface IndexerPluginConfig<TFieldMapping extends FieldMapping = FieldMapping> {
+export interface IndexerPluginConfig<
+  TFieldMapping extends FieldMapping = FieldMapping,
+> {
   /** The adapter to use for indexing operations */
   adapter: IndexerAdapter;
   /** Feature configuration */

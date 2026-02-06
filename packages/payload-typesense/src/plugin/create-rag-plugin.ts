@@ -39,15 +39,15 @@
  * ```
  */
 
-import type { CollectionSlug, Config } from "payload";
-import type { TypesenseRAGPluginConfig } from "./rag-types.js";
-import type { AgentConfig } from "../shared/types/plugin-types.js";
 import { Logger } from "@nexo-labs/payload-indexer";
-import { createTypesenseClient } from "../core/client/typesense-client.js";
-import { createRAGPayloadHandlers } from "../features/rag/endpoints.js";
-import { createSearchEndpoints } from "../features/search/endpoints.js";
-import { SchemaManager } from "../features/sync/services/schema-manager.js";
-import { AgentManager } from "../features/rag/services/agent-manager.js";
+import type { CollectionSlug, Config } from "payload";
+import { createTypesenseClient } from "../core/client/typesense-client";
+import { createRAGPayloadHandlers } from "../features/rag/endpoints";
+import { AgentManager } from "../features/rag/services/agent-manager";
+import { createSearchEndpoints } from "../features/search/endpoints";
+import { SchemaManager } from "../features/sync/services/schema-manager";
+import type { AgentConfig } from "../shared/types/plugin-types";
+import type { TypesenseRAGPluginConfig } from "./rag-types";
 
 /**
  * Creates a composable Typesense RAG plugin for Payload CMS
@@ -61,7 +61,10 @@ import { AgentManager } from "../features/rag/services/agent-manager.js";
  * @param config - Typesense RAG plugin configuration
  * @returns Payload config modifier function
  */
-export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends CollectionSlug>(config: TypesenseRAGPluginConfig<TSlug>) {
+export function createTypesenseRAGPlugin<
+  TConfig extends Config,
+  TSlug extends CollectionSlug,
+>(config: TypesenseRAGPluginConfig<TSlug>) {
   const logger = new Logger({ enabled: true, prefix: "[payload-typesense]" });
 
   return (payloadConfig: TConfig): TConfig => {
@@ -136,7 +139,7 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
 
         // B. Sync RAG agents
         let agents: AgentConfig[] = [];
-        if (typeof config.agents === 'function') {
+        if (typeof config.agents === "function") {
           agents = await config.agents(payload);
         } else if (Array.isArray(config.agents)) {
           agents = config.agents;
@@ -158,4 +161,3 @@ export function createTypesenseRAGPlugin<TConfig extends Config, TSlug extends C
     return payloadConfig;
   };
 }
-

@@ -1,4 +1,4 @@
-import type { Customer } from './customer.types.js';
+import type { Customer } from "./customer.types";
 
 export interface Subscription {
   status?: string;

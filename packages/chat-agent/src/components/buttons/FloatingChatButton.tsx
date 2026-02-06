@@ -1,8 +1,8 @@
 'use client'
 
+import { AnimatePresence, motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '../../lib/utils.js'
+import { cn } from '../../lib/utils'
 
 interface FloatingChatButtonProps {
   onOpen: () => void

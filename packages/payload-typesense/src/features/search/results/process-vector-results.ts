@@ -1,13 +1,10 @@
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import {
-  DEFAULT_PAGE,
-  DEFAULT_PER_PAGE,
-} from "../constants.js";
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from "../constants";
 import type {
+  CombinedSearchResult,
   ProcessVectorSearchResultsOptions,
   SearchHit,
-  CombinedSearchResult,
-} from "../types.js";
+} from "../types";
 
 /**
  * Typesense search result from a single collection
@@ -48,7 +45,7 @@ interface CollectionResult {
 export const processVectorSearchResults = (
   multiSearchResults: TypesenseMultiSearchResponse,
   enabledCollections: Array<[string, TableConfig]>,
-  options: ProcessVectorSearchResultsOptions
+  options: ProcessVectorSearchResultsOptions,
 ): CombinedSearchResult => {
   const {
     per_page = DEFAULT_PER_PAGE,
@@ -58,53 +55,58 @@ export const processVectorSearchResults = (
     vector,
   } = options;
 
-  const rawResults = multiSearchResults.results?.map((result: TypesenseCollectionResult, index: number): CollectionResult | null => {
-    if (!enabledCollections[index]) {
-      return null;
-    }
-    const [collectionName, config] = enabledCollections[index];
+  const rawResults =
+    multiSearchResults.results?.map(
+      (
+        result: TypesenseCollectionResult,
+        index: number,
+      ): CollectionResult | null => {
+        if (!enabledCollections[index]) {
+          return null;
+        }
+        const [collectionName, config] = enabledCollections[index];
 
-    return {
-      collection: collectionName,
-      displayName: config?.displayName || collectionName,
-      icon: "📄",
-      found: result.found || 0,
-      error: result.error || undefined,
-      hits:
-        result.hits?.map((hit): SearchHit => {
-          const doc = hit.document || {};
-          const hint = doc.chunk_text
-            ? String(doc.chunk_text).substring(0, 300) + '...'
-            : doc.description
-              ? String(doc.description).substring(0, 300) + '...'
-              : doc.hint;
+        return {
+          collection: collectionName,
+          displayName: config?.displayName || collectionName,
+          icon: "📄",
+          found: result.found || 0,
+          error: result.error || undefined,
+          hits:
+            result.hits?.map((hit): SearchHit => {
+              const doc = hit.document || {};
+              const hint = doc.chunk_text
+                ? String(doc.chunk_text).substring(0, 300) + "..."
+                : doc.description
+                  ? String(doc.description).substring(0, 300) + "..."
+                  : doc.hint;
 
-          return {
-            ...hit,
-            collection: collectionName,
-            displayName: config?.displayName || collectionName,
-            icon: "📄",
-            document: {
-              ...doc,
-              hint,
-              // Keep chunk_text as a separate field for chunks
-              ...(doc.chunk_text ? { chunk_text: doc.chunk_text } : {}),
-            },
-            vector_distance: hit.vector_distance,
-            text_match: hit.text_match,
-          };
-        }) || [],
-    };
-  }) || [];
+              return {
+                ...hit,
+                collection: collectionName,
+                displayName: config?.displayName || collectionName,
+                icon: "📄",
+                document: {
+                  ...doc,
+                  hint,
+                  // Keep chunk_text as a separate field for chunks
+                  ...(doc.chunk_text ? { chunk_text: doc.chunk_text } : {}),
+                },
+                vector_distance: hit.vector_distance,
+                text_match: hit.text_match,
+              };
+            }) || [],
+        };
+      },
+    ) || [];
 
-  const results: CollectionResult[] = rawResults.filter((r: CollectionResult | null): r is CollectionResult => r !== null);
+  const results: CollectionResult[] = rawResults.filter(
+    (r: CollectionResult | null): r is CollectionResult => r !== null,
+  );
 
   // Combine results
   const combinedHits = results.flatMap((result) => result.hits);
-  const totalFound = results.reduce(
-    (sum, result) => sum + result.found,
-    0
-  );
+  const totalFound = results.reduce((sum, result) => sum + result.found, 0);
 
   // Sort by vector distance (if available) or relevance
   combinedHits.sort((a, b) => {

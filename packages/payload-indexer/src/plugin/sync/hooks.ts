@@ -4,14 +4,14 @@
  */
 
 import type { CollectionConfig } from "payload";
-import type { IndexerAdapter } from "../../adapter/types.js";
-import { logger } from "../../core/logging/logger.js";
-import type { EmbeddingService } from "../../embedding/types.js";
-import type { IndexerPluginConfig } from "../types.js";
+import type { IndexerAdapter } from "../../adapter/types";
+import { logger } from "../../core/logging/logger";
+import type { EmbeddingService } from "../../embedding/types";
+import type { IndexerPluginConfig } from "../types";
 import {
   deleteDocumentFromIndex,
   syncDocumentToIndex,
-} from "./document-syncer.js";
+} from "./document-syncer";
 
 /**
  * Applies sync hooks to Payload collections

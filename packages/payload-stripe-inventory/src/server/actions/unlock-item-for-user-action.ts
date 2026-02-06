@@ -4,19 +4,18 @@ import {
   COLLECTION_SLUG_USER,
   countWeeklyUnlocksQuery,
   MAX_UNLOCKS_PER_WEEK,
-} from "../../model/index.js";
-import { generateUserInventory } from "../../model/builders.js";
-import type { BaseUser, UnlockItem, UserInventory, Result } from "../../types/index.js";
-import type { ResolveContentPermissions } from "../plugin/stripe-inventory-types.js";
-
+} from "../../model";
+import { generateUserInventory } from "../../model/builders";
+import type { BaseUser, Result, UnlockItem, UserInventory } from "../../types";
+import type { ResolveContentPermissions } from "../plugin/stripe-inventory-types";
 
 const addUniqueUnlock = (
   unlocks: UnlockItem[],
   collection: string,
-  contentId: number
+  contentId: number,
 ): UnlockItem[] => {
   const isDuplicate = unlocks.some(
-    unlock => unlock.collection === collection && unlock.id === contentId
+    (unlock) => unlock.collection === collection && unlock.id === contentId,
   );
 
   if (isDuplicate) {
@@ -49,7 +48,7 @@ const addUniqueUnlock = (
  * ```
  */
 export const createUnlockAction = <TContent = unknown>(
-  resolveContentPermissions: ResolveContentPermissions<TContent>
+  resolveContentPermissions: ResolveContentPermissions<TContent>,
 ) => {
   /**
    * Unlocks an item for a user, adding it to their inventory.
@@ -64,7 +63,7 @@ export const createUnlockAction = <TContent = unknown>(
     payload: Payload,
     user: BaseUser,
     collection: string,
-    contentId: number
+    contentId: number,
   ): Promise<Result<boolean>> => {
     if (!user || !user.id) {
       return { error: "Usuario no válido" };
@@ -78,7 +77,10 @@ export const createUnlockAction = <TContent = unknown>(
     if (!item) {
       return { error: "Elemento no encontrado" };
     }
-    const permissions = await resolveContentPermissions(item as TContent, payload);
+    const permissions = await resolveContentPermissions(
+      item as TContent,
+      payload,
+    );
 
     if (!checkIfUserCanUnlockQuery(user, permissions)) {
       return { error: "No tienes permisos para desbloquear este elemento" };
@@ -97,7 +99,7 @@ export const createUnlockAction = <TContent = unknown>(
     const updatedUnlocks = addUniqueUnlock(
       inventory.unlocks,
       collection,
-      contentId
+      contentId,
     );
 
     if (updatedUnlocks.length === inventory.unlocks.length) {

@@ -1,4 +1,4 @@
-import { BaseUser, UserInventory } from "../types/index.js";
+import { BaseUser, UserInventory } from "../types";
 /**
  * Cuenta cuántos elementos ha desbloqueado el usuario en los últimos 7 días
  * @param user Usuario base
@@ -6,7 +6,7 @@ import { BaseUser, UserInventory } from "../types/index.js";
  */
 
 export const countWeeklyUnlocksQuery = (
-  user: BaseUser<UserInventory>
+  user: BaseUser<UserInventory>,
 ): number => {
   const inventory = user.inventory;
   if (!inventory || !inventory.unlocks || inventory.unlocks.length === 0) {
@@ -19,6 +19,6 @@ export const countWeeklyUnlocksQuery = (
   const sevenDaysAgo = now - sevenDaysInMs;
 
   return inventory.unlocks.filter(
-    unlock => new Date(unlock.dateUnlocked).getTime() >= sevenDaysAgo
+    (unlock) => new Date(unlock.dateUnlocked).getTime() >= sevenDaysAgo,
   ).length;
 };

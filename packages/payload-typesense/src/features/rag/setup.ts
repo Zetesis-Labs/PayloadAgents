@@ -2,9 +2,9 @@
  * Setup utilities for Typesense Conversational RAG
  */
 
-import type { Client } from 'typesense'
-import { logger } from '../../core/logging/logger.js'
-import { RAGConfig } from '../../shared/index.js'
+import type { Client } from "typesense";
+import { logger } from "../../core/logging/logger";
+import { RAGConfig } from "../../shared/index";
 /**
  * Ensure conversation history collection exists
  *
@@ -14,17 +14,21 @@ import { RAGConfig } from '../../shared/index.js'
  */
 export async function ensureConversationCollection(
   client: Client,
-  collectionName: string = 'conversation_history'
+  collectionName: string = "conversation_history",
 ): Promise<boolean> {
   try {
     // Check if collection exists
-    await client.collections(collectionName).retrieve()
-    logger.info('Conversation collection already exists', { collection: collectionName })
-    return true
+    await client.collections(collectionName).retrieve();
+    logger.info("Conversation collection already exists", {
+      collection: collectionName,
+    });
+    return true;
   } catch (error: unknown) {
-    const typesenseError = error as { httpStatus?: number }
+    const typesenseError = error as { httpStatus?: number };
     if (typesenseError?.httpStatus === 404) {
-      logger.info('Creating conversation collection', { collection: collectionName })
+      logger.info("Creating conversation collection", {
+        collection: collectionName,
+      });
 
       try {
         // Create conversation collection
@@ -33,28 +37,34 @@ export async function ensureConversationCollection(
         await client.collections().create({
           name: collectionName,
           fields: [
-            { name: 'conversation_id', type: 'string' },
-            { name: 'model_id', type: 'string' },
-            { name: 'timestamp', type: 'int32' },
-            { name: 'role', type: 'string' },
-            { name: 'message', type: 'string' }
+            { name: "conversation_id", type: "string" },
+            { name: "model_id", type: "string" },
+            { name: "timestamp", type: "int32" },
+            { name: "role", type: "string" },
+            { name: "message", type: "string" },
           ],
-        })
+        });
 
-        logger.info('Conversation collection created successfully', { collection: collectionName })
-        return true
-      } catch (createError) {
-        logger.error('Failed to create conversation collection', createError as Error, {
+        logger.info("Conversation collection created successfully", {
           collection: collectionName,
-        })
-        return false
+        });
+        return true;
+      } catch (createError) {
+        logger.error(
+          "Failed to create conversation collection",
+          createError as Error,
+          {
+            collection: collectionName,
+          },
+        );
+        return false;
       }
     }
 
-    logger.error('Error checking conversation collection', error as Error, {
+    logger.error("Error checking conversation collection", error as Error, {
       collection: collectionName,
-    })
-    return false
+    });
+    return false;
   }
 }
 
@@ -63,19 +73,19 @@ export async function ensureConversationCollection(
  *
  * @returns Default RAG configuration
  */
-export function getDefaultRAGConfig(): Required<Omit<RAGConfig, 'agents'>> {
+export function getDefaultRAGConfig(): Required<Omit<RAGConfig, "agents">> {
   return {
     hybrid: {
       alpha: 0.9,
       rerankMatches: true,
-      queryFields: 'chunk_text,title',
+      queryFields: "chunk_text,title",
     },
     hnsw: {
       efConstruction: 200,
       M: 16,
       ef: 100,
       maxConnections: 64,
-      distanceMetric: 'cosine',
+      distanceMetric: "cosine",
     },
     advanced: {
       typoTokensThreshold: 1,
@@ -84,7 +94,7 @@ export function getDefaultRAGConfig(): Required<Omit<RAGConfig, 'agents'>> {
       dropTokensThreshold: 1,
       enableStemming: true,
     },
-  }
+  };
 }
 
 /**
@@ -94,15 +104,15 @@ export function getDefaultRAGConfig(): Required<Omit<RAGConfig, 'agents'>> {
  * @returns Merged configuration with defaults
  */
 export function mergeRAGConfigWithDefaults(userConfig?: RAGConfig): RAGConfig {
-  const defaults = getDefaultRAGConfig()
+  const defaults = getDefaultRAGConfig();
 
   if (!userConfig) {
-    return defaults
+    return defaults;
   }
 
   return {
     hybrid: { ...defaults.hybrid, ...userConfig.hybrid },
     hnsw: { ...defaults.hnsw, ...userConfig.hnsw },
     advanced: { ...defaults.advanced, ...userConfig.advanced },
-  }
+  };
 }

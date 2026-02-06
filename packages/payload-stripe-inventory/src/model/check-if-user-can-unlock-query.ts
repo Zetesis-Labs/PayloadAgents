@@ -1,5 +1,5 @@
-import { BaseUser } from "../types/index.js";
-import { permissionSlugs } from "./constants.js";
+import { BaseUser } from "../types";
+import { permissionSlugs } from "./constants";
 
 /**
  * Verifica si un usuario puede desbloquear un elemento basado en sus permisos y límites semanales
@@ -9,11 +9,11 @@ import { permissionSlugs } from "./constants.js";
  */
 export const checkIfUserCanUnlockQuery = (
   user: BaseUser,
-  permissions: string[]
+  permissions: string[],
 ): boolean => {
   return (
     permissions
-      .flatMap(item => item.split(" "))
+      .flatMap((item) => item.split(" "))
       .includes(permissionSlugs.freemium) &&
     !permissions.includes(permissionSlugs.free)
   );

@@ -1,6 +1,10 @@
-import type { CollectionSlug } from "payload";
-import type { EmbeddingProviderConfig, TypesenseConnectionConfig, RAGFeatureConfig } from "../../shared/types/plugin-types.js";
 import type { TableConfig } from "@nexo-labs/payload-indexer";
+import type { CollectionSlug } from "payload";
+import type {
+  EmbeddingProviderConfig,
+  RAGFeatureConfig,
+  TypesenseConnectionConfig,
+} from "../../shared/types/plugin-types";
 
 // --- Search Feature Config ---
 

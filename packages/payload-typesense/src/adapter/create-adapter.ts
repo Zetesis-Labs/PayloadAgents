@@ -3,8 +3,8 @@
  */
 
 import { Client } from "typesense";
-import { TypesenseAdapter } from "./typesense-adapter.js";
-import type { TypesenseConnectionConfig } from "../shared/types/plugin-types.js";
+import type { TypesenseConnectionConfig } from "../shared/types/plugin-types";
+import { TypesenseAdapter } from "./typesense-adapter";
 
 /**
  * Creates a TypesenseAdapter instance with the provided configuration
@@ -26,7 +26,9 @@ import type { TypesenseConnectionConfig } from "../shared/types/plugin-types.js"
  * });
  * ```
  */
-export function createTypesenseAdapter(config: TypesenseConnectionConfig): TypesenseAdapter {
+export function createTypesenseAdapter(
+  config: TypesenseConnectionConfig,
+): TypesenseAdapter {
   const client = new Client({
     apiKey: config.apiKey,
     nodes: config.nodes,
@@ -45,6 +47,8 @@ export function createTypesenseAdapter(config: TypesenseConnectionConfig): Types
  * @param client - Existing Typesense Client instance
  * @returns A TypesenseAdapter instance wrapping the provided client
  */
-export function createTypesenseAdapterFromClient(client: Client): TypesenseAdapter {
+export function createTypesenseAdapterFromClient(
+  client: Client,
+): TypesenseAdapter {
   return new TypesenseAdapter(client);
 }

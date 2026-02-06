@@ -1,5 +1,5 @@
 import type { PayloadRequest } from "payload";
-import type { BaseUser } from "../../types/index.js";
+import type { BaseUser } from "../../types";
 
 /**
  * Gets the current user from a PayloadRequest without depending on next/headers.

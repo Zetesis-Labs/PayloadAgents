@@ -2,21 +2,25 @@
  * Stream handler utilities for Typesense Conversational RAG SSE events
  */
 
-import { ChunkSource, TypesenseRAGChunkDocument, TypesenseRAGSearchResult } from '../../shared/index.js'
-import { logger } from '../../core/logging/logger.js'
+import { logger } from "../../core/logging/logger";
+import {
+  ChunkSource,
+  TypesenseRAGChunkDocument,
+  TypesenseRAGSearchResult,
+} from "../../shared/index";
 
 /**
  * Parsed conversation event from Typesense SSE stream
  */
 export interface ConversationEvent {
   /** Conversation ID */
-  conversationId?: string
+  conversationId?: string;
   /** Message token/chunk */
-  message?: string
+  message?: string;
   /** Search results (only in first event) */
-  results?: TypesenseRAGSearchResult[]
+  results?: TypesenseRAGSearchResult[];
   /** Raw parsed data */
-  raw?: unknown
+  raw?: unknown;
 }
 
 /**
@@ -24,13 +28,13 @@ export interface ConversationEvent {
  */
 export interface StreamProcessingResult {
   /** Full assistant message */
-  fullMessage: string
+  fullMessage: string;
   /** Conversation ID */
-  conversationId: string | null
+  conversationId: string | null;
   /** Extracted sources */
-  sources: ChunkSource[]
+  sources: ChunkSource[];
   /** Context text (for token estimation) */
-  contextText: string
+  contextText: string;
 }
 
 /**
@@ -40,43 +44,43 @@ export interface StreamProcessingResult {
  * @returns Parsed conversation event or null if not parseable
  */
 export function parseConversationEvent(line: string): ConversationEvent | null {
-  if (!line.startsWith('data: ')) {
-    return null
+  if (!line.startsWith("data: ")) {
+    return null;
   }
 
-  const data = line.slice(6)
+  const data = line.slice(6);
 
-  if (data === '[DONE]') {
-    return { raw: '[DONE]' }
+  if (data === "[DONE]") {
+    return { raw: "[DONE]" };
   }
 
   try {
-    const parsed = JSON.parse(data)
-    const event: ConversationEvent = { raw: parsed }
+    const parsed = JSON.parse(data);
+    const event: ConversationEvent = { raw: parsed };
 
     // Extract conversation ID
     if (parsed.conversation_id) {
-      event.conversationId = parsed.conversation_id
+      event.conversationId = parsed.conversation_id;
     } else if (parsed.conversation?.conversation_id) {
-      event.conversationId = parsed.conversation.conversation_id
+      event.conversationId = parsed.conversation.conversation_id;
     }
 
     // Extract message/token
     if (parsed.message !== undefined) {
-      event.message = parsed.message
+      event.message = parsed.message;
     } else if (parsed.conversation?.answer) {
-      event.message = parsed.conversation.answer
+      event.message = parsed.conversation.answer;
     }
 
     // Extract results (usually in first event)
     if (parsed.results) {
-      event.results = parsed.results
+      event.results = parsed.results;
     }
 
-    return event
+    return event;
   } catch (e) {
-    logger.error('Error parsing SSE data from conversation stream', e as Error)
-    return null
+    logger.error("Error parsing SSE data from conversation stream", e as Error);
+    return null;
   }
 }
 
@@ -89,40 +93,42 @@ export function parseConversationEvent(line: string): ConversationEvent | null {
  */
 export function extractSourcesFromResults(
   results: TypesenseRAGSearchResult[],
-  documentTypeResolver?: (collectionName: string) => string
+  documentTypeResolver?: (collectionName: string) => string,
 ): ChunkSource[] {
-  const allSources: ChunkSource[] = []
+  const allSources: ChunkSource[] = [];
 
   for (const result of results) {
     if (result.hits) {
       for (const hit of result.hits) {
-        const doc = hit.document as TypesenseRAGChunkDocument
-        const score = hit.vector_distance || hit.text_match || 0
-        const collectionName = result.request_params?.collection_name || ''
+        const doc = hit.document as TypesenseRAGChunkDocument;
+        const score = hit.vector_distance || hit.text_match || 0;
+        const collectionName = result.request_params?.collection_name || "";
 
         const type = documentTypeResolver
           ? documentTypeResolver(collectionName)
-          : getDefaultDocumentType(collectionName)
+          : getDefaultDocumentType(collectionName);
 
-        const fullContent = doc.chunk_text || ''
+        const fullContent = doc.chunk_text || "";
 
         const source: ChunkSource = {
-          id: doc.id || '',
-          title: doc.title || 'Sin título',
-          slug: doc.slug || '',
+          id: doc.id || "",
+          title: doc.title || "Sin título",
+          slug: doc.slug || "",
           type,
           chunkIndex: doc.chunk_index ?? 0,
           relevanceScore: score,
-          content: '', // Empty by default - can be loaded separately
-          excerpt: fullContent.substring(0, 200) + (fullContent.length > 200 ? '...' : ''),
-        }
+          content: "", // Empty by default - can be loaded separately
+          excerpt:
+            fullContent.substring(0, 200) +
+            (fullContent.length > 200 ? "..." : ""),
+        };
 
-        allSources.push(source)
+        allSources.push(source);
       }
     }
   }
 
-  return allSources
+  return allSources;
 }
 
 /**
@@ -132,18 +138,18 @@ export function extractSourcesFromResults(
  * @returns Combined context text from all chunks
  */
 export function buildContextText(results: TypesenseRAGSearchResult[]): string {
-  let contextText = ''
+  let contextText = "";
 
   for (const result of results) {
     if (result.hits) {
       for (const hit of result.hits) {
-        const doc = hit.document as TypesenseRAGChunkDocument
-        contextText += (doc.chunk_text || '') + '\n'
+        const doc = hit.document as TypesenseRAGChunkDocument;
+        contextText += (doc.chunk_text || "") + "\n";
       }
     }
   }
 
-  return contextText
+  return contextText;
 }
 
 /**
@@ -157,50 +163,53 @@ export function buildContextText(results: TypesenseRAGSearchResult[]): string {
 export async function processConversationStream(
   response: Response,
   onEvent?: (event: ConversationEvent) => void,
-  documentTypeResolver?: (collectionName: string) => string
+  documentTypeResolver?: (collectionName: string) => string,
 ): Promise<StreamProcessingResult> {
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
 
-  let buffer = ''
-  let sources: ChunkSource[] = []
-  let hasCollectedSources = false
-  let conversationId: string | null = null
-  let contextText = ''
-  let fullMessage = ''
+  let buffer = "";
+  let sources: ChunkSource[] = [];
+  let hasCollectedSources = false;
+  let conversationId: string | null = null;
+  let contextText = "";
+  let fullMessage = "";
 
   while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
+    const { done, value } = await reader.read();
+    if (done) break;
 
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() || ''
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
 
     for (const line of lines) {
-      const event = parseConversationEvent(line)
-      if (!event) continue
+      const event = parseConversationEvent(line);
+      if (!event) continue;
 
       // Notify callback
       if (onEvent) {
-        onEvent(event)
+        onEvent(event);
       }
 
       // Capture conversation ID
       if (!conversationId && event.conversationId) {
-        conversationId = event.conversationId
+        conversationId = event.conversationId;
       }
 
       // Extract sources from first results
       if (!hasCollectedSources && event.results) {
-        sources = extractSourcesFromResults(event.results, documentTypeResolver)
-        contextText = buildContextText(event.results)
-        hasCollectedSources = true
+        sources = extractSourcesFromResults(
+          event.results,
+          documentTypeResolver,
+        );
+        contextText = buildContextText(event.results);
+        hasCollectedSources = true;
       }
 
       // Accumulate message
       if (event.message) {
-        fullMessage += event.message
+        fullMessage += event.message;
       }
     }
   }
@@ -210,7 +219,7 @@ export async function processConversationStream(
     conversationId,
     sources,
     contextText,
-  }
+  };
 }
 
 /**
@@ -222,45 +231,45 @@ export async function processConversationStream(
  */
 export function createSSEForwardStream(
   response: Response,
-  onData?: (event: ConversationEvent) => void
+  onData?: (event: ConversationEvent) => void,
 ): ReadableStream<Uint8Array> {
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  const encoder = new TextEncoder()
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
 
-  let buffer = ''
+  let buffer = "";
 
   return new ReadableStream({
     async start(controller) {
       while (true) {
-        const { done, value } = await reader.read()
+        const { done, value } = await reader.read();
         if (done) {
-          controller.close()
-          break
+          controller.close();
+          break;
         }
 
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          const event = parseConversationEvent(line)
+          const event = parseConversationEvent(line);
 
           if (event && onData) {
-            onData(event)
+            onData(event);
           }
 
           // Forward original line
           if (line) {
-            controller.enqueue(encoder.encode(line + '\n'))
+            controller.enqueue(encoder.encode(line + "\n"));
           }
         }
       }
     },
     cancel() {
-      reader.cancel()
-    }
-  })
+      reader.cancel();
+    },
+  });
 }
 
 /**
@@ -270,17 +279,17 @@ export function createSSEForwardStream(
  * @returns Document type string
  */
 function getDefaultDocumentType(collectionName: string): string {
-  if (collectionName.includes('article')) {
-    return 'article'
+  if (collectionName.includes("article")) {
+    return "article";
   }
-  if (collectionName.includes('book')) {
-    return 'book'
+  if (collectionName.includes("book")) {
+    return "book";
   }
-  if (collectionName.includes('post')) {
-    return 'post'
+  if (collectionName.includes("post")) {
+    return "post";
   }
-  if (collectionName.includes('page')) {
-    return 'page'
+  if (collectionName.includes("page")) {
+    return "page";
   }
-  return 'document'
+  return "document";
 }

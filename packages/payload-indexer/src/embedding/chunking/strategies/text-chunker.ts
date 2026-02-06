@@ -3,8 +3,11 @@
  */
 
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import type { ChunkOptions, TextChunk } from "../types.js";
-import { DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP } from "../../../core/config/constants.js";
+import {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_OVERLAP,
+} from "../../../core/config/constants";
+import type { ChunkOptions, TextChunk } from "../types";
 
 /**
  * Splits text into chunks using LangChain's RecursiveCharacterTextSplitter
@@ -12,12 +15,10 @@ import { DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP } from "../../../core/config/consta
  */
 export const chunkText = async (
   text: string,
-  options: ChunkOptions = {}
+  options: ChunkOptions = {},
 ): Promise<TextChunk[]> => {
-  const {
-    maxChunkSize = DEFAULT_CHUNK_SIZE,
-    overlap = DEFAULT_OVERLAP,
-  } = options;
+  const { maxChunkSize = DEFAULT_CHUNK_SIZE, overlap = DEFAULT_OVERLAP } =
+    options;
 
   if (!text || text.trim().length === 0) {
     return [];
@@ -57,7 +58,7 @@ export const chunkText = async (
  */
 export const shouldChunk = (
   text: string,
-  threshold: number = DEFAULT_CHUNK_SIZE
+  threshold: number = DEFAULT_CHUNK_SIZE,
 ): boolean => {
   return Boolean(text && text.length > threshold);
 };

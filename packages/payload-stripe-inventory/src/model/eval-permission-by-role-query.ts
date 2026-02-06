@@ -1,7 +1,7 @@
-import type { BaseUser } from "../types/index.js";
-import { permissionSlugs } from "./constants.js";
-import { getUserPermissions } from "./get-user-permissions.js";
-import { isContentUnlocked } from "./is-content-unlocked.js";
+import type { BaseUser } from "../types";
+import { permissionSlugs } from "./constants";
+import { getUserPermissions } from "./get-user-permissions";
+import { isContentUnlocked } from "./is-content-unlocked";
 /**
  * Evalúa si un usuario tiene los permisos necesarios basados en las semillas de permisos
  */
@@ -29,6 +29,6 @@ export const evalPermissionByRoleQuery = <T extends BaseUser>({
       : false;
   if (isUnlocked) return true;
   return permissions.some(
-    permission => permission && userPermissions.includes(permission)
+    (permission) => permission && userPermissions.includes(permission),
   );
 };

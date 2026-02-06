@@ -3,8 +3,8 @@ import {
   DEFAULT_SEARCH_FIELDS,
   DEFAULT_SNIPPET_THRESHOLD,
   DEFAULT_TYPO_TOKENS_THRESHOLD,
-} from "../constants.js";
-import type { TraditionalSearchParams } from "../types.js";
+} from "../constants";
+import type { TraditionalSearchParams } from "../types";
 
 /**
  * Builds traditional search parameters for a single collection
@@ -17,7 +17,7 @@ export const buildTraditionalSearchParams = (
     searchFields?: string[];
     sort_by?: string;
     exclude_fields?: string;
-  }
+  },
 ): TraditionalSearchParams => {
   const {
     page,

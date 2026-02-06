@@ -1,14 +1,14 @@
 import type { PayloadHandler, PayloadRequest } from "payload";
 import type Stripe from "stripe";
-import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types.js";
-import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user.js";
-import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create.js";
-import { stripeBuilder } from "../../utils/stripe/stripe-builder.js";
+import type { StripeEndpointConfig } from "../../plugin/stripe-inventory-types";
+import { upsertCustomerInventoryAndSyncWithUser } from "../../utils/payload/upsert-customer-inventory-and-sync-with-user";
+import { getCustomerFromStripeOrCreate } from "../../utils/stripe/get-customer-from-stripe-or-create";
+import { stripeBuilder } from "../../utils/stripe/stripe-builder";
 import {
   errorResponse,
   redirectResponse,
   validateAuthenticatedRequest,
-} from "../validators/request-validator.js";
+} from "../validators/request-validator";
 
 /**
  * Creates a handler for Stripe Billing Portal access
@@ -16,7 +16,9 @@ import {
  * @param config - Endpoint configuration
  * @returns PayloadHandler for portal endpoint
  */
-export function createPortalHandler(config: StripeEndpointConfig): PayloadHandler {
+export function createPortalHandler(
+  config: StripeEndpointConfig,
+): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
       // Validate authenticated user
@@ -46,7 +48,9 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
       }
 
       // Build flow data if subscription action is requested
-      let flowData: Stripe.BillingPortal.SessionCreateParams.FlowData | undefined;
+      let flowData:
+        | Stripe.BillingPortal.SessionCreateParams.FlowData
+        | undefined;
 
       if (cancelSubscriptionId) {
         flowData = {
@@ -65,7 +69,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
       // Get or create Stripe customer
       const customerId = await getCustomerFromStripeOrCreate(
         user.email,
-        user.name
+        user.name,
       );
 
       // Sync customer inventory
@@ -73,7 +77,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
         payload,
         user.customer?.inventory,
         user.email,
-        customerId
+        customerId,
       );
 
       // Create billing portal session
@@ -88,7 +92,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
       console.error("[Stripe Portal Error]", error);
       return errorResponse(
         error instanceof Error ? error.message : "Unknown error occurred",
-        500
+        500,
       );
     }
   };

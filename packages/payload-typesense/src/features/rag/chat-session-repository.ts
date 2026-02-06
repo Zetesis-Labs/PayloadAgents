@@ -3,37 +3,37 @@
  * Functions for managing chat sessions in PayloadCMS
  */
 
-import type { CollectionSlug, Payload } from 'payload'
-import { logger } from '../../core/logging/logger.js'
-import { ChunkSource, SpendingEntry } from '../../shared/index.js'
+import type { CollectionSlug, Payload } from "payload";
+import { logger } from "../../core/logging/logger";
+import { ChunkSource, SpendingEntry } from "../../shared/index";
 /**
  * Chat message format with optional sources
  */
 export interface ChatMessageWithSources {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
   sources?: Array<{
-    id: string
-    title: string
-    type: string
-    chunk_index: number
-    slug?: string
-  }>
+    id: string;
+    title: string;
+    type: string;
+    chunk_index: number;
+    slug?: string;
+  }>;
 }
 
 /**
  * Chat session document structure
  */
 interface ChatSessionDocument {
-  id: string | number
-  messages?: unknown
-  spending?: unknown
-  total_tokens?: number
-  total_cost?: number
-  conversation_id?: string
-  status?: string
-  last_activity?: Date | string
+  id: string | number;
+  messages?: unknown;
+  spending?: unknown;
+  total_tokens?: number;
+  total_cost?: number;
+  conversation_id?: string;
+  status?: string;
+  last_activity?: Date | string;
 }
 
 /**
@@ -58,7 +58,7 @@ export async function saveChatSession(
   sources: ChunkSource[],
   spending: SpendingEntry[],
   collectionName: CollectionSlug,
-  agentSlug?: string
+  agentSlug?: string,
 ): Promise<void> {
   try {
     // Check if session already exists
@@ -70,16 +70,16 @@ export async function saveChatSession(
         },
       },
       limit: 1,
-    })
+    });
 
     const newUserMessage: ChatMessageWithSources = {
-      role: 'user',
+      role: "user",
       content: userMessage,
       timestamp: new Date().toISOString(),
-    }
+    };
 
     const newAssistantMessage: ChatMessageWithSources = {
-      role: 'assistant',
+      role: "assistant",
       content: assistantMessage,
       timestamp: new Date().toISOString(),
       sources: sources.map((s) => ({
@@ -89,7 +89,7 @@ export async function saveChatSession(
         chunk_index: s.chunkIndex,
         slug: s.slug,
       })),
-    }
+    };
 
     if (existing.docs.length > 0 && existing.docs[0]) {
       // Update existing session
@@ -101,7 +101,7 @@ export async function saveChatSession(
         spending,
         collectionName,
         agentSlug,
-      )
+      );
     } else {
       // Create new session
       await createNewSession(
@@ -113,13 +113,13 @@ export async function saveChatSession(
         spending,
         collectionName,
         agentSlug,
-      )
+      );
     }
   } catch (error) {
-    logger.error('Error saving chat session', error as Error, {
+    logger.error("Error saving chat session", error as Error, {
       conversationId,
       userId,
-    })
+    });
     // Don't fail the request if saving fails
   }
 }
@@ -136,15 +136,17 @@ async function updateExistingSession<TSlug extends CollectionSlug>(
   collectionName: TSlug,
   agentSlug?: string,
 ): Promise<void> {
-  const existingMessages = (session.messages as ChatMessageWithSources[]) || []
-  const existingSpending = (session.spending as SpendingEntry[]) || []
+  const existingMessages = (session.messages as ChatMessageWithSources[]) || [];
+  const existingSpending = (session.spending as SpendingEntry[]) || [];
 
-  const messages = [...existingMessages, newUserMessage, newAssistantMessage]
-  const allSpending = [...existingSpending, ...spending]
+  const messages = [...existingMessages, newUserMessage, newAssistantMessage];
+  const allSpending = [...existingSpending, ...spending];
   const totalTokens =
-    (session.total_tokens || 0) + spending.reduce((sum, e) => sum + e.tokens.total, 0)
+    (session.total_tokens || 0) +
+    spending.reduce((sum, e) => sum + e.tokens.total, 0);
   const totalCost =
-    (session.total_cost || 0) + spending.reduce((sum, e) => sum + (e.cost_usd || 0), 0)
+    (session.total_cost || 0) +
+    spending.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
 
   await payload.update({
     collection: collectionName,
@@ -155,18 +157,18 @@ async function updateExistingSession<TSlug extends CollectionSlug>(
       total_tokens: totalTokens,
       total_cost: totalCost,
       last_activity: new Date().toISOString(),
-      status: 'active',
+      status: "active",
       // Only update agentSlug if provided and session doesn't have one yet
       ...(agentSlug && !(session as any).agentSlug ? { agentSlug } : {}),
     } as any,
-  })
+  });
 
-  logger.info('Chat session updated successfully', {
+  logger.info("Chat session updated successfully", {
     sessionId: session.id,
     conversationId: session.conversation_id,
     totalTokens,
     totalCost,
-  })
+  });
 }
 
 /**
@@ -182,15 +184,15 @@ async function createNewSession(
   collectionName: CollectionSlug,
   agentSlug?: string,
 ): Promise<void> {
-  const totalTokens = spending.reduce((sum, e) => sum + e.tokens.total, 0)
-  const totalCost = spending.reduce((sum, e) => sum + (e.cost_usd || 0), 0)
+  const totalTokens = spending.reduce((sum, e) => sum + e.tokens.total, 0);
+  const totalCost = spending.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
 
   await payload.create({
     collection: collectionName,
     data: {
       user: userId as string,
       conversation_id: conversationId,
-      status: 'active',
+      status: "active",
       agentSlug,
       messages: [newUserMessage, newAssistantMessage],
       spending,
@@ -198,14 +200,14 @@ async function createNewSession(
       total_cost: totalCost,
       last_activity: new Date().toISOString(),
     },
-  })
+  });
 
-  logger.info('New chat session created successfully', {
+  logger.info("New chat session created successfully", {
     conversationId,
     userId,
     totalTokens,
     totalCost,
-  })
+  });
 }
 
 /**
@@ -227,31 +229,31 @@ export async function markChatSessionAsExpired(
       collection: collectionName,
       where: { conversation_id: { equals: conversationId } },
       limit: 1,
-    })
+    });
 
     if (existing.docs.length > 0 && existing.docs[0]) {
       await payload.update({
         collection: collectionName,
         id: existing.docs[0].id,
         data: {
-          status: 'closed',
+          status: "closed",
           closed_at: new Date().toISOString(),
         } as any,
-      })
+      });
 
-      logger.info('Chat session marked as expired', {
+      logger.info("Chat session marked as expired", {
         conversationId,
         sessionId: existing.docs[0].id,
-      })
+      });
 
-      return true
+      return true;
     }
 
-    return false
+    return false;
   } catch (error) {
-    logger.error('Error marking chat session as expired', error as Error, {
+    logger.error("Error marking chat session as expired", error as Error, {
       conversationId,
-    })
-    return false
+    });
+    return false;
   }
 }

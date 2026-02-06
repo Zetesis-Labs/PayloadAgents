@@ -1,8 +1,8 @@
 "use server";
 
-import { updatePrices } from "./price.js";
-import { updateProducts } from "./product.js";
 import { Payload } from "payload";
+import { updatePrices } from "./price";
+import { updateProducts } from "./product";
 
 export async function updateProductsAndPrices(payload: Payload) {
   await updateProducts(payload);

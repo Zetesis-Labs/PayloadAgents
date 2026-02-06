@@ -1,14 +1,17 @@
-import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from "../../../model/index.js";
-import type { CustomerInventory } from "../../../types/index.js";
-import { syncCustomerByEmail } from "./sync-customer-by-email.js";
-import { payloadUpsert } from "./upsert.js";
 import { Payload } from "payload";
+import {
+  COLLECTION_SLUG_CUSTOMERS,
+  generateCustomerInventory,
+} from "../../../model";
+import type { CustomerInventory } from "../../../types";
+import { syncCustomerByEmail } from "./sync-customer-by-email";
+import { payloadUpsert } from "./upsert";
 
 export async function upsertCustomerInventoryAndSyncWithUser(
   payload: Payload,
   inventory: CustomerInventory | null | undefined,
   email: string,
-  stripeCustomerId?: string | null
+  stripeCustomerId?: string | null,
 ) {
   await payloadUpsert({
     payload,

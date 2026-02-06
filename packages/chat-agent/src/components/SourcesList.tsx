@@ -1,13 +1,13 @@
 "use client";
 
-import { BookOpen, FileText, ChevronDown, X, List, Loader2 } from "lucide-react";
-import { useChunkLoader } from "../hooks/useChunkLoader.js";
 import { AnimatePresence, motion } from "framer-motion";
+import { BookOpen, ChevronDown, FileText, List, Loader2, X } from "lucide-react";
 import React, { useState } from "react";
-import { MarkdownText } from "./assistant-ui/markdown-text.js";
-import { ViewMoreLink } from "./buttons/ViewMoreLink.js";
-import { LinkComponent } from "../types/components.js";
-import { cn } from "../lib/utils.js";
+import { useChunkLoader } from "../hooks/useChunkLoader";
+import { cn } from "../lib/utils";
+import { LinkComponent } from "../types/components";
+import { MarkdownText } from "./assistant-ui/markdown-text";
+import { ViewMoreLink } from "./buttons/ViewMoreLink";
 
 interface Source {
   id: string;

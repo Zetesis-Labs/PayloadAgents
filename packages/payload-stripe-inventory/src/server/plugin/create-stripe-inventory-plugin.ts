@@ -30,27 +30,32 @@
  * ```
  */
 
-import type { Config, Plugin } from "payload";
 import { stripePlugin } from "@payloadcms/plugin-stripe";
+import type { Config, Plugin } from "payload";
 import {
-  priceDeleted,
-  subscriptionUpsert,
-  subscriptionDeleted,
-  productDeleted,
-  paymentSucceeded,
-  invoiceSucceeded,
   customerDeleted,
-} from "../actions/index.js";
-import { createStripeEndpoints } from "../endpoints/index.js";
+  invoiceSucceeded,
+  paymentSucceeded,
+  priceDeleted,
+  productDeleted,
+  subscriptionDeleted,
+  subscriptionUpsert,
+} from "../actions";
+import { createStripeEndpoints } from "../endpoints";
 import type {
+  ResolveContentPermissions,
+  ResolveSubscriptionPermissions,
   StripeEndpointConfig,
   StripeInventoryPluginConfig,
-  ResolveSubscriptionPermissions,
-  ResolveContentPermissions,
-} from "./stripe-inventory-types.js";
+} from "./stripe-inventory-types";
 
-export type { StripeInventoryPluginConfig, StripeEndpointConfig, ResolveSubscriptionPermissions, ResolveContentPermissions };
 export { createStripeEndpoints };
+export type {
+  ResolveContentPermissions,
+  ResolveSubscriptionPermissions,
+  StripeEndpointConfig,
+  StripeInventoryPluginConfig,
+};
 
 /**
  * Creates the Stripe Inventory plugin for Payload CMS
@@ -71,10 +76,8 @@ export { createStripeEndpoints };
  */
 export function createStripeInventoryPlugin<
   TProduct = unknown,
-  TContent = unknown
->(
-  config: StripeInventoryPluginConfig<TProduct, TContent>
-): Plugin {
+  TContent = unknown,
+>(config: StripeInventoryPluginConfig<TProduct, TContent>): Plugin {
   const basePath = config.basePath || "/stripe";
 
   // Build endpoint configuration
@@ -116,27 +119,27 @@ export function createStripeInventoryPlugin<
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
           ),
         "customer.subscription.paused": async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
           ),
         "customer.subscription.updated": async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
           ),
         "customer.subscription.deleted": async ({ event, payload }) =>
           await subscriptionDeleted(
             event.data.object,
             payload,
-            onSubscriptionUpdate
+            onSubscriptionUpdate,
           ),
         "customer.deleted": async ({ event, payload }) =>
           await customerDeleted(event.data.object, payload),

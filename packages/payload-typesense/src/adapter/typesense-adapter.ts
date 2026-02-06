@@ -1,20 +1,19 @@
-import type { Client } from "typesense";
-import type { CollectionFieldSchema } from "typesense/lib/Typesense/Collection.js";
-import type { CollectionCreateSchema } from "typesense/lib/Typesense/Collections.js";
 import type {
-  IndexerAdapter,
-  IndexDocument,
-  VectorSearchOptions,
   AdapterSearchResult,
+  IndexDocument,
+  IndexerAdapter,
+  VectorSearchOptions,
 } from "@nexo-labs/payload-indexer";
-import { logger } from "../core/logging/logger.js";
+import type { Client } from "typesense";
+import type { CollectionFieldSchema } from "typesense/lib/Typesense/Collection";
+import type { CollectionCreateSchema } from "typesense/lib/Typesense/Collections";
+import { logger } from "../core/logging/logger";
 import type {
-  TypesenseFieldMapping,
+  TypesenseCollectionInfo,
   TypesenseCollectionSchema,
   TypesenseFieldSchema,
   TypesenseSearchResult,
-  TypesenseCollectionInfo,
-} from "./types.js";
+} from "./types";
 
 /**
  * Typesense implementation of the IndexerAdapter interface

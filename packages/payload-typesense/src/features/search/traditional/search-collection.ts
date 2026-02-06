@@ -1,8 +1,8 @@
-import type { Client } from "typesense";
 import type { TableConfig } from "@nexo-labs/payload-indexer";
-import { processSingleCollectionTraditionalResults } from "../results/process-traditional-results.js";
-import type { CollectionSearchResult } from "../types.js";
-import { buildTraditionalSearchParams } from "./build-params.js";
+import type { Client } from "typesense";
+import { processSingleCollectionTraditionalResults } from "../results/process-traditional-results";
+import type { CollectionSearchResult } from "../types";
+import { buildTraditionalSearchParams } from "./build-params";
 
 /**
  * Performs a traditional search on a single collection
@@ -19,7 +19,7 @@ export const searchTraditionalCollection = async (
     sort_by?: string;
     exclude_fields?: string;
     skipChunkFilter?: boolean; // Skip the !is_chunk filter for simple searches
-  }
+  },
 ): Promise<CollectionSearchResult> => {
   try {
     const buildOptions: {
@@ -37,19 +37,19 @@ export const searchTraditionalCollection = async (
     if (options.searchFields) {
       buildOptions.searchFields = options.searchFields;
     } else if (config) {
-        let fields: { name: string; index?: boolean; type?: string }[] = [];
-        fields = config.fields;
-        // Filter for indexed fields that are searchable (string or string[] types only)
-        // Typesense only accepts string/string[] fields in query_by parameter
-        const searchFields = fields
-            .filter(f =>
-                f.index !== false &&
-                (f.type === 'string' || f.type === 'string[]')
-            )
-            .map(f => f.name);
-        if (searchFields.length > 0) {
-            buildOptions.searchFields = searchFields;
-        }
+      let fields: { name: string; index?: boolean; type?: string }[] = [];
+      fields = config.fields;
+      // Filter for indexed fields that are searchable (string or string[] types only)
+      // Typesense only accepts string/string[] fields in query_by parameter
+      const searchFields = fields
+        .filter(
+          (f) =>
+            f.index !== false && (f.type === "string" || f.type === "string[]"),
+        )
+        .map((f) => f.name);
+      if (searchFields.length > 0) {
+        buildOptions.searchFields = searchFields;
+      }
     }
 
     if (options.sort_by) {
@@ -62,7 +62,7 @@ export const searchTraditionalCollection = async (
 
     const searchParameters = buildTraditionalSearchParams(
       options.query,
-      buildOptions
+      buildOptions,
     );
 
     // Try to add chunk filter, but handle gracefully if schema doesn't support it
@@ -74,7 +74,7 @@ export const searchTraditionalCollection = async (
           .collections(collectionName)
           .retrieve();
 
-        const fieldNames = collectionSchema.fields?.map(f => f.name) || [];
+        const fieldNames = collectionSchema.fields?.map((f) => f.name) || [];
         if (fieldNames.includes("is_chunk")) {
           // Schema supports chunking, add filter
           searchParameters.filter_by = "!is_chunk:true";
@@ -93,7 +93,7 @@ export const searchTraditionalCollection = async (
     return processSingleCollectionTraditionalResults(
       results,
       collectionName,
-      config
+      config,
     );
   } catch (error) {
     return {

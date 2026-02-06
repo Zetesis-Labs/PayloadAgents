@@ -1,8 +1,7 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
-import { DefaultLink, LinkComponent } from '../../types/components.js'
-import { cn } from '../../lib/utils.js'
+import { DefaultLink, LinkComponent } from '../../types/components'
 
 interface ViewMoreLinkProps {
   type: 'article' | 'book'

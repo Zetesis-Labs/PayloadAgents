@@ -4,15 +4,15 @@
  */
 
 import type { Config } from "payload";
-import type { IndexerAdapter } from "../adapter/types.js";
-import type { FieldMapping } from "../document/types.js";
-import type { IndexerPluginConfig } from "./types.js";
-import type { EmbeddingService } from "../embedding/types.js";
-import { Logger } from "../core/logging/logger.js";
-import { OpenAIEmbeddingProvider } from "../embedding/providers/openai-provider.js";
-import { GeminiEmbeddingProvider } from "../embedding/providers/gemini-provider.js";
-import { EmbeddingServiceImpl } from "../embedding/service.js";
-import { applySyncHooks } from "./sync/hooks.js";
+import type { IndexerAdapter } from "../adapter/types";
+import { Logger } from "../core/logging/logger";
+import type { FieldMapping } from "../document/types";
+import { GeminiEmbeddingProvider } from "../embedding/providers/gemini-provider";
+import { OpenAIEmbeddingProvider } from "../embedding/providers/openai-provider";
+import { EmbeddingServiceImpl } from "../embedding/service";
+import type { EmbeddingService } from "../embedding/types";
+import { applySyncHooks } from "./sync/hooks";
+import type { IndexerPluginConfig } from "./types";
 
 /**
  * Result of plugin creation containing the plugin function and internal services
@@ -71,9 +71,10 @@ export interface IndexerPluginResult<TConfig extends Config> {
  * });
  * ```
  */
-export function createIndexerPlugin<TFieldMapping extends FieldMapping, TConfig extends Config>(
-  config: IndexerPluginConfig<TFieldMapping>
-): IndexerPluginResult<TConfig> {
+export function createIndexerPlugin<
+  TFieldMapping extends FieldMapping,
+  TConfig extends Config,
+>(config: IndexerPluginConfig<TFieldMapping>): IndexerPluginResult<TConfig> {
   const { adapter, features, collections } = config;
   const logger = new Logger({ enabled: true, prefix: "[payload-indexer]" });
 
@@ -87,9 +88,15 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping, TConfig 
         ? new GeminiEmbeddingProvider(embeddingConfig, logger)
         : new OpenAIEmbeddingProvider(embeddingConfig, logger);
 
-    embeddingService = new EmbeddingServiceImpl(provider, logger, embeddingConfig);
+    embeddingService = new EmbeddingServiceImpl(
+      provider,
+      logger,
+      embeddingConfig,
+    );
 
-    logger.debug("Embedding service initialized", { provider: embeddingConfig.type });
+    logger.debug("Embedding service initialized", {
+      provider: embeddingConfig.type,
+    });
   }
 
   // 2. Create the plugin function
@@ -100,7 +107,7 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping, TConfig 
         payloadConfig.collections,
         config,
         adapter,
-        embeddingService
+        embeddingService,
       );
 
       logger.debug("Sync hooks applied to collections", {

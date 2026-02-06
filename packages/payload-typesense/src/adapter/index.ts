@@ -1,6 +1,6 @@
-export { TypesenseAdapter } from './typesense-adapter.js';
-export { createTypesenseAdapter, createTypesenseAdapterFromClient } from './create-adapter.js';
-export type {
-  TypesenseFieldType,
-  TypesenseFieldMapping,
-} from './types.js';
+export {
+  createTypesenseAdapter,
+  createTypesenseAdapterFromClient,
+} from "./create-adapter";
+export type { TypesenseFieldMapping, TypesenseFieldType } from "./types";
+export { TypesenseAdapter } from "./typesense-adapter";
