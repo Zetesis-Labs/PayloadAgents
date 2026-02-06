@@ -1,5 +1,11 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.9.2
+
+### Patch Changes
+
+- 2106b0e: Fixed issue recovering chunks at react agent
+
 ## 1.9.1
 
 ### Patch Changes

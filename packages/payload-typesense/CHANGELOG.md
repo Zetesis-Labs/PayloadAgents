@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.9.2
+
+### Patch Changes
+
+- 2106b0e: Fixed issue recovering chunks at react agent
+- Updated dependencies [2106b0e]
+  - @nexo-labs/payload-indexer@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes
