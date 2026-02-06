@@ -4,10 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+    paths:
+      - 'apps/server/**'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/payload-agents-web
+  IMAGE_NAME: Zetesis-Labs/payload-agents-portal
 
 jobs:
   build:
