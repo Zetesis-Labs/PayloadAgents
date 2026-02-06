@@ -31,8 +31,8 @@
     "openai": "^4.68.0"
   },
   "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.72.0",
-    "payload": "^3.72.0"
+    "@payloadcms/richtext-lexical": "^3.75.0",
+    "payload": "^3.75.0"
   },
   "peerDependenciesMeta": {
     "@payloadcms/richtext-lexical": {
