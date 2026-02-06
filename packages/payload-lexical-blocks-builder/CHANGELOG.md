@@ -1,5 +1,11 @@
 # @nexo-labs/payload-lexical-blocks-builder
 
+## 1.9.1
+
+### Patch Changes
+
+- c553a9a: Updated to turbopack
+
 ## 1.9.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @nexo-labs/payload-typesense
 
+## 1.9.1
+
+### Patch Changes
+
+- c553a9a: Updated to turbopack
+- Updated dependencies [c553a9a]
+  - @nexo-labs/payload-indexer@1.9.1
+
 ## 1.9.0
 
 ### Minor Changes
