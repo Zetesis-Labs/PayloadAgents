@@ -9,6 +9,11 @@ const nextConfig = {
     }
     return config
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '20mb',
+    },
+  },
   serverExternalPackages: [
     'payload',
     'sharp',

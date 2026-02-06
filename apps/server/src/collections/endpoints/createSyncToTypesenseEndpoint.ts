@@ -86,9 +86,7 @@ export const createSyncToTypesenseEndpoint = (collectionSlug: CollectionSlug): E
             tableConfig
           );
           results.synced.push(String(doc.id));
-          console.log(
-            `[Typesense Sync] Synced ${collectionName.slice(0, -1)} ${doc.id}: ${doc.title}`
-          );
+          console.log(`[Typesense Sync] Synced ${collectionName.slice(0, -1)} ${doc.id}}`);
         } catch (error) {
           const errorMsg = `${doc.id}: ${error instanceof Error ? error.message : "Unknown error"}`;
           results.errors.push(errorMsg);

@@ -1,28 +1,174 @@
 'use server'
 
 import { getPayload } from '@/modules/get-payload'
-import { Post } from '@/payload-types'
+import { Post, Book } from '@/payload-types'
 import { seedPost } from '@/seed/post.seed'
+import { seedBook } from '@/seed/book.seed'
+import type { PayloadDocument } from '@nexo-labs/payload-indexer'
+import { syncDocumentToIndex, createEmbeddingService, createLogger } from '@nexo-labs/payload-indexer'
+import { createTypesenseAdapter } from '@nexo-labs/payload-typesense'
+import { typesenseConnection, embeddingConfig } from '@/payload/plugins/typesense/config'
+import { collections } from '@/payload/plugins/typesense/collections'
+import type { Payload } from 'payload'
 import fs from 'fs'
 import path from 'path'
+import type { ImportMode, CollectionTarget, ImportResult, SyncResults } from './admin-types'
 
-interface ImportResult {
-  success: boolean
-  message: string
-  agentSlug?: string
-  dataFile?: string
-  totalEntries?: number
-  results?: {
-    imported: number
-    skipped: number
-    errors: string[]
+// Re-export types for consumers
+export type { CollectionTarget } from './admin-types'
+
+// Process entries in batches to avoid memory issues
+const BATCH_SIZE = 50
+
+/**
+ * Convert Payload document to indexable format
+ */
+const toIndexableDocument = (doc: any): PayloadDocument => ({
+  ...doc,
+  id: String(doc.id),
+  slug: doc.slug ?? undefined,
+  createdAt: doc.createdAt,
+  updatedAt: doc.updatedAt,
+})
+
+/**
+ * Sync all documents of a collection to Typesense (all table configs: chunked + full)
+ */
+async function syncCollectionToTypesense(payload: Payload, collectionSlug: CollectionTarget): Promise<SyncResults> {
+  const adapter = createTypesenseAdapter(typesenseConnection)
+  const tableConfigs = collections[collectionSlug]
+
+  if (!tableConfigs || tableConfigs.length === 0) {
+    throw new Error(`${collectionSlug} collection is not configured for indexing`)
+  }
+
+  const enabledConfigs = tableConfigs.filter((tc) => tc.enabled)
+  if (enabledConfigs.length === 0) {
+    throw new Error(`No enabled table configs for ${collectionSlug}`)
+  }
+
+  const logger = createLogger({ prefix: '[Agent Data Sync]' })
+  const embeddingService = createEmbeddingService(embeddingConfig, logger)
+
+  const response = await payload.find({
+    collection: collectionSlug,
+    limit: 0,
+    depth: 1,
+  })
+
+  const results: SyncResults = { synced: 0, errors: [] }
+
+  payload.logger.info(`[Agent Data Sync] Starting sync of ${response.totalDocs} ${collectionSlug} to Typesense (${enabledConfigs.length} tables)...`)
+
+  for (const doc of response.docs) {
+    try {
+      const indexableDoc = toIndexableDocument(doc)
+      for (const tableConfig of enabledConfigs) {
+        await syncDocumentToIndex(
+          adapter,
+          collectionSlug,
+          indexableDoc,
+          'update',
+          tableConfig,
+          tableConfig.embedding ? embeddingService : undefined,
+        )
+      }
+      results.synced++
+    } catch (error: any) {
+      const errorMsg = `${doc.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      results.errors.push(errorMsg)
+      payload.logger.error(`[Agent Data Sync] Error syncing ${collectionSlug} ${doc.id}:`, error)
+    }
+  }
+
+  payload.logger.info(
+    `[Agent Data Sync] Completed: ${results.synced} synced, ${results.errors.length} errors`,
+  )
+
+  return results
+}
+
+/**
+ * Core import logic: batch-process entries through the appropriate seeder,
+ * then optionally sync to Typesense.
+ */
+async function processImportEntries(
+  payload: Payload,
+  entries: (Post | Book)[],
+  collection: CollectionTarget,
+  mode: ImportMode,
+  logPrefix: string,
+  overrideAttributes?: { tenantId?: number },
+): Promise<Pick<ImportResult, 'results' | 'syncResults' | 'needsSync'>> {
+  payload.logger.info(`${logPrefix} Found ${entries.length} entries to process as ${collection} (index sync disabled for speed)`)
+
+  const results = {
+    imported: 0,
+    skipped: 0,
+    errors: [] as string[],
+  }
+
+  const seeder = collection === 'books'
+    ? seedBook(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
+    : seedPost(payload, 'upsert', { skipIndexSync: true, overrideAttributes })
+
+  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+    const batch = entries.slice(i, i + BATCH_SIZE)
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1
+    const totalBatches = Math.ceil(entries.length / BATCH_SIZE)
+
+    payload.logger.info(`${logPrefix} Processing batch ${batchNum}/${totalBatches}`)
+
+    for (const entry of batch) {
+      try {
+        await seeder(entry as any)
+        results.imported++
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        results.errors.push(`Entry ${entry.id}: ${errorMsg}`)
+        payload.logger.error(`${logPrefix} Error processing entry ${entry.id}: ${errorMsg}`)
+      }
+    }
+  }
+
+  let syncResults: SyncResults | undefined
+  if (mode === 'import-sync') {
+    payload.logger.info(`${logPrefix} Import done. Starting Typesense sync for ${collection}...`)
+    syncResults = await syncCollectionToTypesense(payload, collection)
+  }
+
+  payload.logger.info(
+    `${logPrefix} Completed: ${results.imported} imported, ${results.errors.length} errors.`,
+  )
+
+  return { results, syncResults, needsSync: mode === 'import' }
+}
+
+/**
+ * Handle sync-only mode (shared by both public functions)
+ */
+async function handleSyncOnly(payload: Payload, collection: CollectionTarget, logPrefix: string): Promise<ImportResult> {
+  payload.logger.info(`${logPrefix} Starting sync-only mode for ${collection}`)
+  const syncResults = await syncCollectionToTypesense(payload, collection)
+  return {
+    success: true,
+    message: `Sync completed: ${syncResults.synced} synced, ${syncResults.errors.length} errors`,
+    syncResults,
   }
 }
 
-export async function importAgentData({ agentId }: { agentId: string | number }): Promise<ImportResult> {
+/**
+ * Import data for a specific agent (from uploaded JSON or data file on disk)
+ */
+export async function importAgentData({ agentId, mode = 'import', jsonContent, collection = 'posts', overrideAttributes }: { agentId: string | number; mode?: ImportMode; jsonContent?: string; collection?: CollectionTarget; overrideAttributes?: { tenantId?: number } }): Promise<ImportResult> {
   const payload = await getPayload()
+  const logPrefix = '[Agent Data Import]'
 
   try {
+    if (mode === 'sync') {
+      return await handleSyncOnly(payload, collection, logPrefix)
+    }
+
     const agent = await payload.findByID({
       collection: 'agents',
       id: agentId,
@@ -34,75 +180,98 @@ export async function importAgentData({ agentId }: { agentId: string | number })
 
     const slug = agent.slug as string
     const name = (agent.name as string || '').toLowerCase().replace(/\s+/g, '_')
-    payload.logger.info(`[Agent Data Import] Starting import for agent: ${slug}`)
+    payload.logger.info(`${logPrefix} Starting ${collection} import for agent: ${slug}`)
 
-    // Look for data file
-    const possiblePaths = [
-      path.join(process.cwd(), 'data', `${slug}_data.json`),
-      path.join(process.cwd(), 'data', `${name}_data.json`),
-    ]
+    let entries: (Post | Book)[]
+    let dataFileName: string
 
-    let dataFilePath: string | null = null
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        dataFilePath = p
-        break
+    if (jsonContent) {
+      payload.logger.info(`${logPrefix} Using uploaded JSON content`)
+      const parsed = JSON.parse(jsonContent)
+      entries = Array.isArray(parsed) ? parsed : [parsed]
+      dataFileName = 'uploaded'
+    } else {
+      const possiblePaths = [
+        path.join(process.cwd(), 'data', `${slug}_data.json`),
+        path.join(process.cwd(), 'data', `${name}_data.json`),
+      ]
+
+      let dataFilePath: string | null = null
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          dataFilePath = p
+          break
+        }
       }
-    }
 
-    if (!dataFilePath) {
-      return {
-        success: false,
-        message: `Data file not found. Expected: ${slug}_data.json in /data folder`,
+      if (!dataFilePath) {
+        return {
+          success: false,
+          message: `Data file not found. Expected: ${slug}_data.json in /data folder`,
+        }
       }
+
+      payload.logger.info(`${logPrefix} Found data file: ${dataFilePath}`)
+
+      const fileContent = fs.readFileSync(dataFilePath, 'utf-8')
+      const parsed = JSON.parse(fileContent)
+      entries = Array.isArray(parsed) ? parsed : [parsed]
+      dataFileName = path.basename(dataFilePath)
     }
 
-    payload.logger.info(`[Agent Data Import] Found data file: ${dataFilePath}`)
-
-    // Parse JSON
-    const fileContent = fs.readFileSync(dataFilePath, 'utf-8')
-    const parsed = JSON.parse(fileContent)
-    const entries: Post[] = Array.isArray(parsed) ? parsed : [parsed]
-
-    payload.logger.info(`[Agent Data Import] Found ${entries.length} entries to process`)
-
-    const results = {
-      imported: 0,
-      skipped: 0,
-      errors: [] as string[],
-    }
-
-    // Use seedPost for each entry
-    const seeder = seedPost(payload, 'upsert')
-
-    for (const entry of entries) {
-      try {
-        await seeder(entry)
-        results.imported++
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        results.errors.push(`Entry ${entry.id}: ${errorMsg}`)
-        payload.logger.error(`[Agent Data Import] Error processing entry ${entry.id}: ${errorMsg}`)
-      }
-    }
-
-    payload.logger.info(
-      `[Agent Data Import] Completed: ${results.imported} imported, ${results.errors.length} errors`,
-    )
+    const importResult = await processImportEntries(payload, entries, collection, mode, logPrefix, overrideAttributes)
 
     return {
       success: true,
-      message: 'Import completed',
+      message: mode === 'import-sync'
+        ? 'Import and sync completed.'
+        : 'Import completed. Use sync endpoint to index documents.',
       agentSlug: slug,
-      dataFile: path.basename(dataFilePath),
+      dataFile: dataFileName,
       totalEntries: entries.length,
-      results,
+      ...importResult,
     }
   } catch (error) {
-    payload.logger.error(`[Agent Data Import] Fatal error: ${error}`)
+    payload.logger.error(`${logPrefix} Fatal error: ${error}`)
     return {
       success: false,
-      message: `Failed to import data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    }
+  }
+}
+
+/**
+ * Import data for a collection (from uploaded JSON, no agent context)
+ */
+export async function importCollectionData({ jsonContent, collection = 'posts', mode = 'import', overrideAttributes }: { jsonContent?: string; collection?: CollectionTarget; mode?: ImportMode; overrideAttributes?: { tenantId?: number } }): Promise<ImportResult> {
+  const payload = await getPayload()
+  const logPrefix = '[Collection Import]'
+
+  try {
+    if (mode === 'sync') {
+      return await handleSyncOnly(payload, collection, logPrefix)
+    }
+
+    if (!jsonContent) {
+      return { success: false, message: 'Se requiere un archivo JSON para importar' }
+    }
+
+    const parsed = JSON.parse(jsonContent)
+    const entries: (Post | Book)[] = Array.isArray(parsed) ? parsed : [parsed]
+
+    const importResult = await processImportEntries(payload, entries, collection, mode, logPrefix, overrideAttributes)
+
+    return {
+      success: true,
+      message: mode === 'import-sync' ? 'Import and sync completed.' : 'Import completed.',
+      totalEntries: entries.length,
+      ...importResult,
+    }
+  } catch (error) {
+    payload.logger.error(`${logPrefix} Fatal error: ${error}`)
+    return {
+      success: false,
+      message: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
   }
 }

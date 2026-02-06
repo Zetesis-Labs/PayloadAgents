@@ -51,7 +51,8 @@ export const applySyncHooks = (
           ...collection.hooks,
           afterChange: [
             ...(collection.hooks?.afterChange || []),
-            async ({ doc, operation, req: _req }) => {
+            async ({ doc, operation, req }) => {
+              if (req.context?.skipIndexSync) return;
               if (!tableConfigs) return;
 
               for (const tableConfig of tableConfigs) {
