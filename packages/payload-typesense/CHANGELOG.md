@@ -1,5 +1,14 @@
 # @nexo-labs/payload-typesense
 
+## 1.9.3
+
+### Patch Changes
+
+- [`552ff89`](https://github.com/Zetesis-Labs/PayloadAgents/commit/552ff892609989984e8a22e4a1b69bcc9c241b4a) Thanks [@Fiser12](https://github.com/Fiser12)! - Updated deploy workflow
+
+- Updated dependencies [[`552ff89`](https://github.com/Zetesis-Labs/PayloadAgents/commit/552ff892609989984e8a22e4a1b69bcc9c241b4a)]:
+  - @nexo-labs/payload-indexer@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes
