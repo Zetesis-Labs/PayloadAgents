@@ -1,7 +1,7 @@
 {
   "name": "payload-agents-portal",
   "private": true,
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "An example of a multi tenant application with Payload",
   "license": "MIT",
   "type": "module",
