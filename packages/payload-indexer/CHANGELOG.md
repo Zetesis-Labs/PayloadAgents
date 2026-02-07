@@ -1,5 +1,11 @@
 # @nexo-labs/payload-indexer
 
+## 1.9.4
+
+### Patch Changes
+
+- [`decfb88`](https://github.com/Zetesis-Labs/PayloadAgents/commit/decfb884b2bbf6e9fd49c410abe3b8623c0a758c) Thanks [@Fiser12](https://github.com/Fiser12)! - fix issue at autodeploy of docker image
+
 ## 1.9.3
 
 ### Patch Changes
