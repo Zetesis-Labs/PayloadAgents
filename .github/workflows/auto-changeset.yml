@@ -90,6 +90,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
 
             const pr = context.payload.pull_request;
             const prTitle = pr.title;
@@ -115,13 +116,28 @@ jobs:
             const frontmatter = packages;
             const changesetContent = `---\n${frontmatter}\n---\n\n${description}\n`;
 
-            const timestamp = Date.now();
-            const filename = `auto-${prNumber}-${timestamp}.md`;
-            const changesetPath = `.changeset/${filename}`;
+            // Check for existing auto-generated changesets for this PR
+            const changesetDir = '.changeset';
+            const existingFiles = fs.readdirSync(changesetDir)
+              .filter(f => f.startsWith(`auto-${prNumber}-`) && f.endsWith('.md'));
+
+            let filename;
+            let changesetPath;
+
+            if (existingFiles.length > 0) {
+              // Update existing changeset
+              filename = existingFiles[0];
+              changesetPath = path.join(changesetDir, filename);
+              console.log(`Updating existing changeset: ${changesetPath}`);
+            } else {
+              // Create new changeset with PR number only
+              filename = `auto-${prNumber}.md`;
+              changesetPath = path.join(changesetDir, filename);
+              console.log(`Creating new changeset: ${changesetPath}`);
+            }
 
             fs.writeFileSync(changesetPath, changesetContent);
 
-            console.log(`Created changeset: ${changesetPath}`);
             console.log('Content:');
             console.log(changesetContent);
 
@@ -151,7 +167,15 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: add auto-generated changeset"
+          # Check if changeset already exists
+          PR_NUM="${{ github.event.pull_request.number }}"
+          if git log --all --oneline --grep="auto-generated changeset" | grep -q "PR #${PR_NUM}"; then
+            COMMIT_MSG="chore: update auto-generated changeset for PR #${PR_NUM}"
+          else
+            COMMIT_MSG="chore: add auto-generated changeset for PR #${PR_NUM}"
+          fi
+
+          git commit -m "$COMMIT_MSG"
           git push origin ${{ github.event.pull_request.head.ref }}
 
       - name: Comment on PR
