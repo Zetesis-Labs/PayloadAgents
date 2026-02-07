@@ -1,0 +1,170 @@
+name: Auto Generate Changeset
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+    branches:
+      - main
+
+jobs:
+  generate-changeset:
+    # Skip if PR is in draft mode
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get PR diff
+        id: pr-diff
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          echo "$DIFF" > /tmp/pr-diff.txt
+          echo "diff-file=/tmp/pr-diff.txt" >> $GITHUB_OUTPUT
+
+      - name: Get changed packages
+        id: changed-packages
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
+          CHANGED_FILES=$(git diff --name-only ${BASE_REF}...HEAD)
+
+          PACKAGES=""
+
+          # Check if apps/server changed
+          if echo "$CHANGED_FILES" | grep -q "^apps/server/"; then
+            PACKAGES="$PACKAGES \"apps/server\": patch,"
+          fi
+
+          # Check each package
+          for pkg in packages/*/; do
+            pkg_name=$(basename "$pkg")
+            pattern="^packages/$pkg_name/"
+            if echo "$CHANGED_FILES" | grep -q "$pattern"; then
+              PKG_JSON="packages/$pkg_name/package.json"
+              if [ -f "$PKG_JSON" ]; then
+                FULL_NAME=$(node -p "require('./$PKG_JSON').name" 2>/dev/null || echo "")
+                if [ -n "$FULL_NAME" ]; then
+                  PACKAGES="$PACKAGES \"$FULL_NAME\": patch,"
+                fi
+              fi
+            fi
+          done
+
+          # Remove trailing comma if exists
+          PACKAGES=$(echo "$PACKAGES" | sed 's/,$//')
+
+          if [ -z "$PACKAGES" ]; then
+            PACKAGES="\"apps/server\": patch"
+          fi
+
+          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+
+      - name: Generate changeset with AI
+        id: generate-changeset
+        uses: actions/github-script@v7
+        env:
+          PACKAGES: ${{ steps.changed-packages.outputs.packages }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            const pr = context.payload.pull_request;
+            const prTitle = pr.title;
+            const prBody = pr.body || 'No description provided';
+            const prNumber = pr.number;
+
+            const packages = process.env.PACKAGES;
+
+            // Generate a meaningful description
+            let description = `${prTitle}`;
+            if (prBody && prBody !== 'No description provided' && prBody.length > 0) {
+              const bodyLines = prBody.split('\n').filter(line =>
+                line.trim().length > 0 &&
+                !line.trim().startsWith('#') &&
+                !line.trim().startsWith('-') &&
+                !line.trim().startsWith('*')
+              );
+              if (bodyLines.length > 0 && bodyLines[0].length < 200) {
+                description = bodyLines[0].trim();
+              }
+            }
+
+            const frontmatter = packages;
+            const changesetContent = `---\n${frontmatter}\n---\n\n${description}\n`;
+
+            const timestamp = Date.now();
+            const filename = `auto-${prNumber}-${timestamp}.md`;
+            const changesetPath = `.changeset/${filename}`;
+
+            fs.writeFileSync(changesetPath, changesetContent);
+
+            console.log(`Created changeset: ${changesetPath}`);
+            console.log('Content:');
+            console.log(changesetContent);
+
+            return { filename, content: changesetContent };
+
+      - name: Check if changeset exists
+        id: check-changeset
+        run: |
+          COUNT=$(find .changeset -type f -name "*.md" ! -name "README.md" | wc -l)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No changeset generated"
+            exit 1
+          fi
+
+      - name: Commit and push changeset
+        if: steps.check-changeset.outputs.count > 0
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .changeset/*.md
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: add auto-generated changeset"
+          git push origin ${{ github.event.pull_request.head.ref }}
+
+      - name: Comment on PR
+        if: steps.check-changeset.outputs.count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = '🤖 **Auto-generated changeset created!**\n\n' +
+              'A changeset file has been automatically generated for this PR. ' +
+              'Please review and update if needed.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: message
+            });
