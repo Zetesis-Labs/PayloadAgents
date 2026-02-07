@@ -1,5 +1,14 @@
 # @nexo-labs/payload-typesense
 
+## 1.9.5
+
+### Patch Changes
+
+- [`a14bb8a`](https://github.com/Zetesis-Labs/PayloadAgents/commit/a14bb8a47681f78560f9d64d910e2024f72e8fb7) Thanks [@Fiser12](https://github.com/Fiser12)! - fix: issue deploying docker
+
+- Updated dependencies [[`a14bb8a`](https://github.com/Zetesis-Labs/PayloadAgents/commit/a14bb8a47681f78560f9d64d910e2024f72e8fb7)]:
+  - @nexo-labs/payload-indexer@1.9.5
+
 ## 1.9.4
 
 ### Patch Changes
