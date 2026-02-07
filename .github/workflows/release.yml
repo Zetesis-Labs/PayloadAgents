@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -52,11 +54,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
-      - name: Tag Docker release from apps/server version
-        if: steps.changesets.outputs.published == 'true'
+      - name: Detect apps/server version change
+        id: server_version
         run: |
-          VERSION=$(node -p "require('./apps/server/package.json').version")
+          set -euo pipefail
+          CURRENT_VERSION=$(node -p "require('./apps/server/package.json').version")
+          PREV_VERSION=$(git show HEAD^:apps/server/package.json 2>/dev/null | node -e "const fs=require('fs'); const data=fs.readFileSync(0,'utf8'); console.log(JSON.parse(data).version)" || true)
+
+          if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "previous=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Tag Docker release from apps/server version
+        if: steps.server_version.outputs.changed == 'true'
+        run: |
+          VERSION="${{ steps.server_version.outputs.version }}"
           TAG="v${VERSION}"
+
+          git fetch --tags --force
 
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists, skipping."
