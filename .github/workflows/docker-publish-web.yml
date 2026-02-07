@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    paths:
-      - 'apps/server/**'
 
 env:
   REGISTRY: ghcr.io
