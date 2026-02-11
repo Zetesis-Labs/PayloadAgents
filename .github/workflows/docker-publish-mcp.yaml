@@ -1,0 +1,137 @@
+name: Build & Publish MCP Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '@nexo-labs/mcp-typesense@*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.0.0)"
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: Zetesis-Labs/mcp-typesense
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+            # Remove package name prefix if present
+            VERSION="${VERSION#@nexo-labs/mcp-typesense@}"
+            # Remove v prefix if present (fallback)
+            VERSION="${VERSION#v}"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Install the cosign tool except on PR
+      # https://github.com/sigstore/cosign-installer
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 #v3.5.0
+        with:
+          cosign-release: 'v2.2.4'
+
+      # Set up BuildKit Docker container builder to be able to build
+      # multi-platform images and export cache
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=v${{ steps.version.outputs.version }}
+            type=raw,value=latest
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        if: ${{ github.event_name != 'pull_request' && steps.meta.outputs.tags != '' }}
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        with:
+          file: ./apps/mcp/Dockerfile
+          context: ./apps/mcp
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Sign the resulting Docker image digest except on PRs.
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' && steps.meta.outputs.tags != '' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+      - name: Create GitHub Release
+        if: ${{ github.event_name != 'pull_request' && steps.build-and-push.outputs.digest != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          CHANGELOG_PATH="apps/mcp/CHANGELOG.md"
+          # Use root changelog as fallback if app-specific one doesn't exist
+          if [ ! -f "$CHANGELOG_PATH" ]; then
+             CHANGELOG_PATH="CHANGELOG.md"
+          fi
+          
+          if [ ! -f "$CHANGELOG_PATH" ]; then
+             echo "CHANGELOG not found at $CHANGELOG_PATH"
+             exit 0 # Don't fail the build, just skip release notes
+          fi
+
+          # Attempt to extract release notes (simplified for now to avoid complex awk failure if format differs)
+          # Assuming standard Keep A Changelog format matching "## 1.0.0"
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          awk -v ver="$VERSION" '
+            $0 ~ "^## "ver"$" {found=1; next}
+            found && $0 ~ "^## " {exit}
+            found {print}
+          ' "$CHANGELOG_PATH" > /tmp/release-notes.txt
+          
+          NOTES_File=""
+          if [ -s /tmp/release-notes.txt ]; then
+            NOTES_FILE="--notes-file /tmp/release-notes.txt"
+          fi
+
+          gh release create "@nexo-labs/mcp-typesense@${{ steps.version.outputs.version }}" \
+            --title "@nexo-labs/mcp-typesense@${{ steps.version.outputs.version }}" \
+            $NOTES_FILE \
+            --verify-tag
