@@ -53,7 +53,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
-      - name: Tag Docker release from apps/server version
+      - name: Tag apps/server release
         if: steps.changesets.outputs.published == 'true'
         run: |
           VERSION=$(node -p "require('./apps/server/package.json').version")
@@ -61,13 +61,32 @@ jobs:
 
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists, skipping."
-            exit 0
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "$TAG"
+            git push origin "$TAG"
+            # Trigger web publish workflow
+            gh workflow run docker-publish-web.yml --ref "$TAG" -f version="$VERSION"
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "$TAG"
-          git push origin "$TAG"
-          gh workflow run docker-publish-web.yml --ref "$TAG" -f version="$VERSION"
+      - name: Tag apps/mcp release
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          VERSION=$(node -p "require('./apps/mcp/package.json').version")
+          TAG="@nexo-labs/mcp-typesense@${VERSION}"
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "$TAG"
+            git push origin "$TAG"
+            # Trigger MCP publish workflow (optional, push trigger usually handles this)
+            # gh workflow run docker-publish-mcp.yaml --ref "$TAG" -f version="$VERSION"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
