@@ -1,0 +1,20 @@
+{
+  "name": "@nexo-labs/mcp-typesense",
+  "version": "1.0.0",
+  "description": "MCP server for querying Typesense collections",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "start": "bun src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "openai": "^4.68.0",
+    "typesense": "^2.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0"
+  }
+}
