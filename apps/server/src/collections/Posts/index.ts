@@ -1,7 +1,6 @@
 import { buildTaxonomyRelationship } from '@nexo-labs/payload-taxonomies'
 import { type CollectionConfig, slugField } from 'payload'
 import { superAdminOrTenantAdminAccess } from '@/collections/access/superAdminOrTenantAdmin'
-import { syncToTypesense } from './endpoints/syncToTypesense'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -21,7 +20,6 @@ export const Posts: CollectionConfig = {
       }
     }
   },
-  endpoints: [syncToTypesense],
   fields: [
     {
       name: 'title',

@@ -56,7 +56,8 @@ async function syncCollectionToTypesense(payload: Payload, collectionSlug: Colle
   const response = await payload.find({
     collection: collectionSlug,
     limit: 0,
-    depth: 1
+    depth: 1,
+    overrideAccess: true // Bypass tenant filtering to sync all documents across all tenants
   })
 
   const results: SyncResults = { synced: 0, errors: [] }
