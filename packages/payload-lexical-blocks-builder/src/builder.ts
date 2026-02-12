@@ -3,9 +3,8 @@ import type { Block, Config } from 'payload'
 
 export type LexicalBuilder = (blocks: () => Block[]) => Config['editor']
 
-export function buildLexicalByFeatures(
-  features: () => FeatureProviderServer<any, any, any>[]
-): LexicalBuilder {
+// biome-ignore lint/suspicious/noExplicitAny: FeatureProviderServer generics are not exported by payload
+export function buildLexicalByFeatures(features: () => FeatureProviderServer<any, any, any>[]): LexicalBuilder {
   return (blocks: () => Block[]) =>
     lexicalEditor({
       features: () => {

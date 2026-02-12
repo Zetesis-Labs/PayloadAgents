@@ -1,5 +1,5 @@
-import type { SerializedEditorState, SerializedLexicalNode } from '@payloadcms/richtext-lexical/lexical'
 import type { SerializedBlockNode } from '@payloadcms/richtext-lexical'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import type { JSXConverter } from '@payloadcms/richtext-lexical/react'
 import type { ArgTypes } from '@storybook/react'
 
