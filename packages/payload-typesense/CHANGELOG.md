@@ -1,5 +1,16 @@
 # @nexo-labs/payload-typesense
 
+## 1.9.9
+
+### Patch Changes
+
+- [`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4) Thanks [@Fiser12](https://github.com/Fiser12)! - fix: typing issues in the payload-lexical-blocks-builder
+
+- [`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4) Thanks [@Fiser12](https://github.com/Fiser12)! - fix: typing issues in the payload-stripe-inventory
+
+- Updated dependencies [[`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4), [`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4)]:
+  - @nexo-labs/payload-indexer@1.9.9
+
 ## 1.9.8
 
 ### Patch Changes
