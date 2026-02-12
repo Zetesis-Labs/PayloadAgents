@@ -1,5 +1,13 @@
 # @nexo-labs/mcp-typesense
 
+## 1.9.9
+
+### Patch Changes
+
+- [`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4) Thanks [@Fiser12](https://github.com/Fiser12)! - fix: typing issues in the payload-lexical-blocks-builder
+
+- [`ea4e5ac`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ea4e5ac131a283f409cb381258b5c9a9d02158d4) Thanks [@Fiser12](https://github.com/Fiser12)! - fix: typing issues in the payload-stripe-inventory
+
 ## 1.0.2
 
 ### Patch Changes
