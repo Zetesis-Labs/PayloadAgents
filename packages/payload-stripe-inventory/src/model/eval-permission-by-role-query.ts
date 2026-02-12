@@ -1,4 +1,5 @@
 import type { BaseUser } from '../types'
+import { UserInventory } from '../types/user-inventory.types'
 import { permissionSlugs } from './constants'
 import { getUserPermissions } from './get-user-permissions'
 import { isContentUnlocked } from './is-content-unlocked'
@@ -20,7 +21,7 @@ export const evalPermissionByRoleQuery = <T extends BaseUser>({ user, permission
 
   if (!permissions || permissions.length === 0) return true
   if (permissions.includes(permissionSlugs.free)) return true
-  const isUnlocked = user && content?.id ? isContentUnlocked(user, content.id, content.collection) : false
+  const isUnlocked = user && content?.id ? isContentUnlocked(user as BaseUser<UserInventory>, content.id, content.collection) : false
   if (isUnlocked) return true
   return permissions.some(permission => permission && userPermissions.includes(permission))
 }

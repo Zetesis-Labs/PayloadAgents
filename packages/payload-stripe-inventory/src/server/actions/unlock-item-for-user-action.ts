@@ -72,7 +72,7 @@ export const createUnlockAction = <TContent = unknown>(
       return { error: 'No tienes permisos para desbloquear este elemento' }
     }
 
-    const weeklyUnlocks = countWeeklyUnlocksQuery(user)
+    const weeklyUnlocks = countWeeklyUnlocksQuery(user as BaseUser<UserInventory>)
     if (weeklyUnlocks >= MAX_UNLOCKS_PER_WEEK) {
       return {
         error: `Has alcanzado el límite de ${MAX_UNLOCKS_PER_WEEK} desbloqueos para esta semana`

@@ -31,7 +31,7 @@ export const payloadUpsert = async ({
         data
       })
 
-      return (updatedDoc as Record<string, unknown>) || null
+      return (updatedDoc as unknown as Record<string, unknown>) || null
     }
 
     const created = await payload.create({
@@ -39,7 +39,7 @@ export const payloadUpsert = async ({
       data
     })
 
-    return created as Record<string, unknown>
+    return created as unknown as Record<string, unknown>
   } catch (error) {
     console.error(`Error in payloadUpsert: ${error}`)
     throw new Error(`Failed to upsert document in collection ${collection} ${error}`)

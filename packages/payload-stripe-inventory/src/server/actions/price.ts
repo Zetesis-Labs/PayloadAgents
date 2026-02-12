@@ -70,7 +70,7 @@ export async function priceUpsert(price: Stripe.Price, payload: Payload): Promis
       stripeID: { equals: price.id }
     }
   })
-  if (!priceUpserted) return null
+  if (!priceUpserted || typeof priceUpserted.id !== 'number') return null
   return { productId: stripeProductID, priceId: priceUpserted.id }
 }
 
