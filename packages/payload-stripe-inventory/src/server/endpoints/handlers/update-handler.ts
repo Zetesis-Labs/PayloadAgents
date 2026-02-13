@@ -1,5 +1,5 @@
 import type { PayloadHandler, PayloadRequest } from 'payload'
-import type { Customer, CustomerInventory } from '../../../types'
+import type { CustomerInventory } from '../../../types'
 import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
 import { upsertCustomerInventoryAndSyncWithUser } from '../../utils/payload/upsert-customer-inventory-and-sync-with-user'
 import { stripeBuilder } from '../../utils/stripe/stripe-builder'
@@ -47,27 +47,26 @@ export function createUpdateHandler(config: StripeEndpointConfig): PayloadHandle
         cancel_at_period_end: cancelAtPeriodEnd
       })
 
-      // Update local inventory
-      const customer = user.customer as Customer | undefined
-      const inventory = customer?.inventory as CustomerInventory | null
+      // Update local inventory (user.customer is a Payload relationship populated at runtime)
+      const customer = user.customer as Record<string, unknown> | undefined
+      const email = typeof customer?.email === 'string' ? customer.email : undefined
+      const stripeId = typeof customer?.stripeId === 'string' ? customer.stripeId : undefined
+      const inventory = (customer?.inventory ?? null) as CustomerInventory | null
 
       if (inventory?.subscriptions?.[subscriptionId]) {
         inventory.subscriptions[subscriptionId].cancel_at_period_end = cancelAtPeriodEnd
       }
 
       // Sync inventory with rollback on failure
-      if (customer?.email) {
+      if (email && stripeId) {
         try {
-          await upsertCustomerInventoryAndSyncWithUser(
-            payload,
-            inventory,
-            customer.email,
-            customer.stripeId,
-            config.userSlug
-          )
+          await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId, config.userSlug)
         } catch (syncError) {
           // Rollback Stripe change if local sync fails
-          console.error('[Stripe Update] Local sync failed, rolling back Stripe change', syncError)
+          request.payload.logger.error({
+            err: syncError,
+            msg: '[Stripe Update] Local sync failed, rolling back Stripe change'
+          })
           await stripe.subscriptions.update(subscriptionId, {
             cancel_at_period_end: originalCancelAtPeriodEnd
           })
@@ -78,7 +77,7 @@ export function createUpdateHandler(config: StripeEndpointConfig): PayloadHandle
       // Redirect back to subscription page
       return redirectResponse(`${config.domain}${config.routes.subscriptionPageHref}?refresh=${Date.now()}`, 303)
     } catch (error) {
-      console.error('[Stripe Update Error]', error)
+      request.payload.logger.error({ err: error, msg: '[Stripe Update Error]' })
       return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
   }

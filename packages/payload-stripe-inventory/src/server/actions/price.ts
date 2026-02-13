@@ -7,9 +7,9 @@ import { payloadUpsert } from '../utils/payload/upsert'
 import { stripeBuilder } from '../utils/stripe/stripe-builder'
 
 export const updatePrices = async (payload: Payload) => {
-  const stripe = await stripeBuilder()
-  const prices = await stripe.prices.list({ limit: 100, active: true })
-  const promises = prices.data.map(price => priceUpsert(price, payload))
+  const stripe = stripeBuilder()
+  const prices = await stripe.prices.list({ limit: 100, active: true }).autoPagingToArray({ limit: 10000 })
+  const promises = prices.map(price => priceUpsert(price, payload))
   const pricesUpserted = await Promise.all(promises)
 
   const pricesByProductId = pricesUpserted

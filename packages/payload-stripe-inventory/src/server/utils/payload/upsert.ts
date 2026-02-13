@@ -41,7 +41,7 @@ export const payloadUpsert = async <T extends Record<string, unknown> = Record<s
 
     return created as unknown as T
   } catch (error) {
-    console.error(`Error in payloadUpsert: ${error}`)
+    payload.logger.error(`Error in payloadUpsert for collection ${collection}: ${error}`)
     throw new Error(`Failed to upsert document in collection ${collection} ${error}`)
   }
 }

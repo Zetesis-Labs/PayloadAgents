@@ -60,7 +60,7 @@ export function createCheckoutHandler(config: StripeEndpointConfig): PayloadHand
 
       return errorResponse('Failed to create checkout URL', 406)
     } catch (error) {
-      console.error('[Stripe Checkout Error]', error)
+      request.payload.logger.error({ err: error, msg: '[Stripe Checkout Error]' })
       return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
   }

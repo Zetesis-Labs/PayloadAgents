@@ -34,7 +34,7 @@ export async function findOrCreateCustomer({
       }
     })
 
-    const existingCustomer = toCustomer(userQuery.docs?.[0] as Record<string, unknown>)
+    const existingCustomer = toCustomer(userQuery.docs?.at(0) as Record<string, unknown>)
     if (existingCustomer) {
       existingCustomer.inventory = existingCustomer.inventory ?? generateCustomerInventory()
       return existingCustomer

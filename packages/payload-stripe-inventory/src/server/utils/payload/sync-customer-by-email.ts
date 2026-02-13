@@ -14,7 +14,7 @@ export async function syncCustomerByEmail({
     collection: COLLECTION_SLUG_CUSTOMERS,
     where: { email: { equals: email } }
   })
-  const customerId = customers.docs?.[0]?.id
+  const customerId = customers.docs?.at(0)?.id
 
   await payload.update({
     collection: userSlug,

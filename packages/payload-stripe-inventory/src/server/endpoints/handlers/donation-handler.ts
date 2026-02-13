@@ -77,7 +77,7 @@ export function createDonationHandler(config: StripeEndpointConfig): PayloadHand
 
       return jsonResponse({ url: session.url })
     } catch (error) {
-      console.error('[Stripe Donation Error]', error)
+      request.payload.logger.error({ err: error, msg: '[Stripe Donation Error]' })
       return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
   }

@@ -125,7 +125,7 @@ export const createUnlockAction = <TContent = unknown>(config: UnlockActionConfi
 
       return { data: true }
     } catch (error) {
-      console.error('Error updating user inventory:', error)
+      payload.logger.error({ err: error, msg: 'Error updating user inventory' })
       return { error: 'Error updating user inventory' }
     }
   }

@@ -7,9 +7,9 @@ import { payloadUpsert } from '../utils/payload/upsert'
 import { stripeBuilder } from '../utils/stripe/stripe-builder'
 
 export const updateProducts = async (payload: Payload) => {
-  const stripe = await stripeBuilder()
-  const products = await stripe.products.list({ limit: 100, active: true })
-  await Promise.all(products.data.map(product => productSync(product, payload)))
+  const stripe = stripeBuilder()
+  const products = await stripe.products.list({ limit: 100, active: true }).autoPagingToArray({ limit: 10000 })
+  await Promise.all(products.map(product => productSync(product, payload)))
 }
 
 export const productSync = async (object: Stripe.Product, payload: Payload) => {
@@ -50,7 +50,7 @@ export const productDeleted = async (object: Stripe.Product, payload: Payload) =
       }
     })
 
-    const payloadProductID = productQuery.docs?.[0]?.id
+    const payloadProductID = productQuery.docs?.at(0)?.id
 
     if (payloadProductID) {
       await payload.delete({

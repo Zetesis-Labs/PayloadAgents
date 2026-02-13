@@ -63,7 +63,7 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
 
       return redirectResponse(session.url, 303)
     } catch (error) {
-      console.error('[Stripe Portal Error]', error)
+      request.payload.logger.error({ err: error, msg: '[Stripe Portal Error]' })
       return errorResponse(error instanceof Error ? error.message : 'Unknown error occurred', 500)
     }
   }

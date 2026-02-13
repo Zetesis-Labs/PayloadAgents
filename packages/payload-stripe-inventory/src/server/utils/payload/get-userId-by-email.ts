@@ -19,6 +19,6 @@ export async function getUserIdByEmail({ email, payload, userSlug }: Props): Pro
     }
   })
 
-  const user = userQuery.docs?.[0]
+  const user = userQuery.docs?.at(0)
   return user?.id as string | null
 }

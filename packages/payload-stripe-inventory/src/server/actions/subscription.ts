@@ -54,19 +54,25 @@ export const subscriptionUpsert = async <TProduct = unknown>(
       where: { stripeID: { equals: item.price.product } }
     })
     const product = products.at(0)
-    if (!product) return
+    if (!product) {
+      error(`No product found for subscription item price product: ${item.price.product}`)
+      return
+    }
 
     const inventory = customer.inventory
     inventory.subscriptions[stripeID] = {
       ...subscription,
       permissions: await resolveSubscriptionPermissions(subscription, product as TProduct, payload)
     }
-    info(`INVENTORY OF THE SUBSCRIPTION ${inventory}`)
+    info(`Updated inventory for subscription ${stripeID}`)
     await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId, userSlug)
 
     if (['active', 'trialing'].includes(status)) {
       const userId = await getUserIdByEmail({ email, payload, userSlug })
-      if (!userId) return
+      if (!userId) {
+        error(`No user found for email ${email} to notify subscription update`)
+        return
+      }
       await onSubscriptionUpdate('create', userId)
     }
     info(`✅ Successfully updated subscription with ID: ${stripeID} for user: ${email}`)
