@@ -1,20 +1,22 @@
 import Stripe from 'stripe'
 
-let stripeInstance: Stripe | null = null
+const instances = new Map<string, Stripe>()
 
-export const stripeBuilder = (): Stripe => {
-  if (stripeInstance) {
-    return stripeInstance
-  }
-
-  const secretKey = process.env.STRIPE_SECRET_KEY
-  if (!secretKey) {
+export const stripeBuilder = (secretKey?: string): Stripe => {
+  const key = secretKey || process.env.STRIPE_SECRET_KEY
+  if (!key) {
     throw new Error('STRIPE_SECRET_KEY environment variable is not set')
   }
 
-  stripeInstance = new Stripe(secretKey, {
+  const existing = instances.get(key)
+  if (existing) {
+    return existing
+  }
+
+  const instance = new Stripe(key, {
     apiVersion: '2024-09-30.acacia'
   })
+  instances.set(key, instance)
 
-  return stripeInstance
+  return instance
 }

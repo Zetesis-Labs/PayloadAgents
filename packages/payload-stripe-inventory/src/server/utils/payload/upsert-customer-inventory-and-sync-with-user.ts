@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { CollectionSlug, Payload } from 'payload'
 import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from '../../../model'
 import type { CustomerInventory } from '../../../types'
 import { syncCustomerByEmail } from './sync-customer-by-email'
@@ -8,7 +8,8 @@ export async function upsertCustomerInventoryAndSyncWithUser(
   payload: Payload,
   inventory: CustomerInventory | null | undefined,
   email: string,
-  stripeCustomerId?: string | null
+  stripeCustomerId: string | null | undefined,
+  userSlug: CollectionSlug
 ) {
   await payloadUpsert({
     payload,
@@ -20,5 +21,5 @@ export async function upsertCustomerInventoryAndSyncWithUser(
     },
     where: { email: { equals: email } }
   })
-  await syncCustomerByEmail({ email, payload })
+  await syncCustomerByEmail({ email, payload, userSlug })
 }

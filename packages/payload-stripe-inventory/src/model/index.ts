@@ -1,5 +1,4 @@
 export * from './builders'
-export * from './check-if-user-can-unlock-query'
 export * from './constants'
 export * from './eval-advance-permissionQuery'
 export * from './eval-permission-by-role-query'

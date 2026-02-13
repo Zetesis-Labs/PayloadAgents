@@ -1,12 +1,11 @@
-import type { BaseUser, UserInventory } from '../types'
-/**
- * Cuenta cuántos elementos ha desbloqueado el usuario en los últimos 7 días
- * @param user Usuario base
- * @returns Número de elementos desbloqueados en los últimos 7 días
- */
+import type { TypedUser } from 'payload'
+import type { UserInventory } from '../types'
 
-export const countWeeklyUnlocksQuery = (user: BaseUser<UserInventory>): number => {
-  const inventory = user.inventory
+/**
+ * Counts how many items the user has unlocked in the last 7 days
+ */
+export const countWeeklyUnlocksQuery = (user: TypedUser): number => {
+  const inventory = user.inventory as UserInventory | undefined
   if (!inventory || !inventory.unlocks || inventory.unlocks.length === 0) {
     return 0
   }

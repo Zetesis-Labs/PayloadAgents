@@ -1,5 +1,4 @@
-import type { Payload, PayloadRequest } from 'payload'
-import type { BaseUser } from '../../../types'
+import type { Payload, PayloadRequest, TypedUser } from 'payload'
 import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
 
 /**
@@ -38,7 +37,7 @@ export type AuthenticatedRequestResult =
   | { success: false; error: Response }
   | {
       success: true
-      user: BaseUser
+      user: TypedUser
       payload: Payload
     }
 
@@ -62,12 +61,12 @@ export async function validateAuthenticatedRequest(
   }
 
   // Resolve user
-  let user: BaseUser | null = null
+  let user: TypedUser | null = null
 
   if (config.resolveUser) {
     user = await config.resolveUser(request)
   } else {
-    user = request.user as BaseUser | null
+    user = request.user ?? null
   }
 
   if (!user) {

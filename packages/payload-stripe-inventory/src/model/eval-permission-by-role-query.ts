@@ -1,14 +1,16 @@
-import type { BaseUser } from '../types'
-import type { UserInventory } from '../types/user-inventory.types'
-import { permissionSlugs } from './constants'
+import type { TypedUser } from 'payload'
 import { getUserPermissions } from './get-user-permissions'
 import { isContentUnlocked } from './is-content-unlocked'
 
 /**
- * Evalúa si un usuario tiene los permisos necesarios basados en las semillas de permisos
+ * Evaluates whether a user has the required permissions based on subscription roles.
+ * Returns true if:
+ * - No permissions are required
+ * - Content is unlocked in the user's inventory
+ * - User has at least one of the required permissions
  */
-interface Props<T extends BaseUser> {
-  user: T | null | undefined
+interface Props {
+  user: TypedUser | null | undefined
   permissions?: string[] | null
   content?: {
     collection: string
@@ -16,13 +18,11 @@ interface Props<T extends BaseUser> {
   }
 }
 
-export const evalPermissionByRoleQuery = <T extends BaseUser>({ user, permissions, content }: Props<T>): boolean => {
+export const evalPermissionByRoleQuery = ({ user, permissions, content }: Props): boolean => {
   const userPermissions = getUserPermissions(user)
 
   if (!permissions || permissions.length === 0) return true
-  if (permissions.includes(permissionSlugs.free)) return true
-  const isUnlocked =
-    user && content?.id ? isContentUnlocked(user as BaseUser<UserInventory>, content.id, content.collection) : false
+  const isUnlocked = user && content?.id ? isContentUnlocked(user, content.id, content.collection) : false
   if (isUnlocked) return true
   return permissions.some(permission => permission && userPermissions.includes(permission))
 }
