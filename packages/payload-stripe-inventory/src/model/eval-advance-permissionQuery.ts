@@ -1,14 +1,15 @@
 import type { TypedUser } from 'payload'
+import type { QueryPermissionType } from './constants'
 import { QUERY_PERMISSION_TYPES } from './constants'
 import { evalPermissionByRoleQuery } from './eval-permission-by-role-query'
 import { getUserPermissions } from './get-user-permissions'
 
 /**
- * Evalúa permisos avanzados basados en el tipo de permiso y usuario
+ * Evaluates advanced permissions based on the permission type and user.
  */
 interface Props {
   user: TypedUser | null
-  typeOfPermission: keyof typeof QUERY_PERMISSION_TYPES | string
+  typeOfPermission: QueryPermissionType
   permissions?: string[] | undefined
 }
 

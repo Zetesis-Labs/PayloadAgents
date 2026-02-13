@@ -4,7 +4,7 @@
 export * from './access'
 // Actions (webhook handlers)
 export * from './actions'
-// Collections
+// Collections (factory functions — pass adminPermissionSlug)
 export * from './collections/customers'
 export * from './collections/prices'
 export * from './collections/products'

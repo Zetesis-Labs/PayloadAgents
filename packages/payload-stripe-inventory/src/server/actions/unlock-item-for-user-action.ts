@@ -1,5 +1,5 @@
 import type { Payload, TypedUser } from 'payload'
-import { checkIfUserCanUnlockQuery, countWeeklyUnlocksQuery } from '../../model'
+import { countWeeklyUnlocksQuery } from '../../model'
 import { generateUserInventory } from '../../model/builders'
 import type { Result, UnlockItem, UserInventory } from '../../types'
 import type { UnlockActionConfig } from '../plugin/stripe-inventory-types'
@@ -23,19 +23,15 @@ const addUniqueUnlock = (unlocks: UnlockItem[], collection: string, contentId: n
 }
 
 /**
- * Returns the default unlock validation using the built-in permission check
- * and weekly unlock limit.
+ * Default unlock validation: only checks the weekly unlock limit.
+ * For permission-based validation, provide a custom `validateUnlock` callback.
  */
 function defaultValidateUnlock(maxUnlocksPerWeek: number) {
   return async (
     user: TypedUser,
-    permissions: string[],
+    _permissions: string[],
     _payload: Payload
   ): Promise<{ allowed: boolean; reason?: string }> => {
-    if (!checkIfUserCanUnlockQuery(user, permissions)) {
-      return { allowed: false, reason: 'You do not have permission to unlock this item' }
-    }
-
     const weeklyUnlocks = countWeeklyUnlocksQuery(user)
     if (weeklyUnlocks >= maxUnlocksPerWeek) {
       return {
