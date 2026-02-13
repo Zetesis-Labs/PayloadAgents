@@ -12,13 +12,13 @@ import { Taxonomies } from './collections/Taxonomies'
 import { Tenants } from './collections/Tenants'
 import Users from './collections/Users'
 import { migrations } from './migrations'
-import authJs from './modules/authjs'
+import { betterAuthPlugin } from 'payload-auth/better-auth'
+import { betterAuthPluginOptions } from '@/lib/auth/options'
 import { importExportPlugin } from './payload/plugins/import-export'
 import { mcpPlugin } from './payload/plugins/mcp'
 import { multiTenantPlugin } from './payload/plugins/multi-tenant'
 import { nestedDocsPlugin } from './payload/plugins/nested-docs'
 import { typesensePlugin } from './payload/plugins/typesense'
-import { seed } from './seed'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -44,7 +44,7 @@ export default buildConfig({
   }),
   onInit: async args => {
     if (process.env.SEED_DB) {
-      await seed(args)
+      //SEEDING
     }
   },
   editor: lexicalEditor({}),
@@ -55,5 +55,5 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts')
   },
-  plugins: [importExportPlugin, nestedDocsPlugin, mcpPlugin, multiTenantPlugin, typesensePlugin, authJs]
+  plugins: [importExportPlugin, nestedDocsPlugin, mcpPlugin, multiTenantPlugin, typesensePlugin, betterAuthPlugin(betterAuthPluginOptions)]
 })

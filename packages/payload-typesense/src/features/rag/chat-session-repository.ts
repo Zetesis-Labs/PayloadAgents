@@ -186,7 +186,7 @@ async function createNewSession(
   await payload.create({
     collection: collectionName,
     data: {
-      user: userId as string,
+      user: typeof userId === 'string' ? Number(userId) : userId,
       conversation_id: conversationId,
       status: 'active',
       agentSlug,

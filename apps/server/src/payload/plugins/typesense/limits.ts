@@ -59,8 +59,8 @@ async function getUserDailyLimitImpl(payload: Payload, userId: string | number):
     if (!user) return DEFAULT_LIMITS.free
 
     // Check if user has superadmin role
-    const roles = (user as { roles?: string[] }).roles || []
-    if (roles.includes('superadmin')) {
+    const role = (user as { role?: string[] }).role || []
+    if (role.includes('superadmin')) {
       return DEFAULT_LIMITS.enterprise
     }
 

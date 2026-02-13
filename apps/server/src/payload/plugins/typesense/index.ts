@@ -2,7 +2,6 @@ import { createIndexerPlugin } from '@nexo-labs/payload-indexer'
 import { createTypesenseAdapter, createTypesenseRAGPlugin } from '@nexo-labs/payload-typesense'
 import type { Config } from 'payload'
 import { loadAgentsFromPayload } from './agents/agent-loader'
-import { importHardcodedAgents } from './agents/importer'
 import { callbacks } from './callbacks'
 import { collections } from './collections'
 import { embeddingConfig, typesenseConnection } from './config'
@@ -90,19 +89,11 @@ export const typesensePlugin = (config: Config): Config => {
   config = indexerPlugin(config)
   config = typesenseRAGPlugin(config)
 
-  // Add hook to auto-import agents on initialization if DB is empty
+  // Add hook to call existing onInit handlers
   const existingOnInit = config.onInit
   config.onInit = async payload => {
-    // Call existing onInit handlers first
     if (existingOnInit) {
       await existingOnInit(payload)
-    }
-
-    // Check if we need to seed the database
-    const currentAgents = await loadAgentsFromPayload(payload)
-    if (currentAgents.length === 0) {
-      console.log('[typesense] No agents found in PayloadCMS, auto-importing hardcoded agents...')
-      await importHardcodedAgents(payload)
     }
   }
 
