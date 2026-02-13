@@ -14,6 +14,16 @@ export const SEARCH_COLLECTIONS = Object.entries(collections).flatMap(([slug, ta
   (tableConfigs || []).filter(t => t.enabled && !t.tableName?.endsWith('_chunk')).map(t => t.tableName ?? slug)
 )
 
+// Derive enabled chunk table names from collections config (chunks with embeddings are for RAG context)
+export const RAG_COLLECTIONS = Object.entries(collections).flatMap(([slug, tableConfigs]) =>
+  (tableConfigs || [])
+    .filter(t => t.enabled && t.embedding?.chunking)
+    .map(t => ({
+      label: t.displayName ?? t.tableName ?? slug,
+      value: t.tableName ?? `${slug}_chunk`
+    }))
+)
+
 // ============================================================================
 // PLUGIN COMPOSITION
 // ============================================================================

@@ -9,12 +9,12 @@ interface UpsertOptions {
   where: Where
 }
 
-export const payloadUpsert = async ({
+export const payloadUpsert = async <T extends Record<string, unknown> = Record<string, unknown>>({
   payload,
   collection,
   data,
   where
-}: UpsertOptions): Promise<Record<string, unknown> | null> => {
+}: UpsertOptions): Promise<T | null> => {
   try {
     const existingDocs = await payload.find({
       collection,
@@ -31,7 +31,7 @@ export const payloadUpsert = async ({
         data
       })
 
-      return (updatedDoc as unknown as Record<string, unknown>) || null
+      return (updatedDoc as unknown as T) || null
     }
 
     const created = await payload.create({
@@ -39,7 +39,7 @@ export const payloadUpsert = async ({
       data
     })
 
-    return created as unknown as Record<string, unknown>
+    return created as unknown as T
   } catch (error) {
     console.error(`Error in payloadUpsert: ${error}`)
     throw new Error(`Failed to upsert document in collection ${collection} ${error}`)

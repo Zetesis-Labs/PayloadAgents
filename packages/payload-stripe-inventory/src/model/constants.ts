@@ -1,6 +1,5 @@
 export const COLLECTION_SLUG_PRODUCTS = 'products' as const
 export const COLLECTION_SLUG_PRICES = 'prices' as const
-export const COLLECTION_SLUG_USER = 'users' as const
 export const COLLECTION_SLUG_CUSTOMERS = 'customers' as const
 
 export const QUERY_PERMISSION_TYPES = {
@@ -34,8 +33,6 @@ export const PERMISSIONS = [
   { id: 1, slug: BASIC_PERMISSION, title: 'Basic' },
   { id: 4, slug: ADMIN_PERMISSION, title: 'Admin' }
 ]
-export const MAX_UNLOCKS_PER_WEEK = 3 as const
-
 export const PricingType = {
   one_time: 'One Time',
   recurring: 'Recurring'

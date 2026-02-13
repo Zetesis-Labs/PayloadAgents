@@ -1,6 +1,7 @@
 import { COLLECTION_SLUG_TAXONOMY } from '@nexo-labs/payload-taxonomies'
 import type { CollectionConfig } from 'payload'
 import { slugField } from 'payload'
+import { RAG_COLLECTIONS } from '@/payload/plugins/typesense'
 import { superAdminOrTenantAdminAccess } from '../access/superAdminOrTenantAdmin'
 import { importAgents } from './endpoints/importAgents'
 import { afterChangeHook, afterDeleteHook } from './hooks'
@@ -109,11 +110,8 @@ export const Agents: CollectionConfig = {
                   name: 'searchCollections',
                   type: 'select',
                   hasMany: true,
-                  defaultValue: ['posts_chunk', 'books_chunk'],
-                  options: [
-                    { label: 'Posts', value: 'posts_chunk' },
-                    { label: 'Libros', value: 'books_chunk' }
-                  ],
+                  defaultValue: RAG_COLLECTIONS.map(c => c.value),
+                  options: RAG_COLLECTIONS,
                   admin: {
                     description: 'Colecciones donde buscar contexto para RAG'
                   }

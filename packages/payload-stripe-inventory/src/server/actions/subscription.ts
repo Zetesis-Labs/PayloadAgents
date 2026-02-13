@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { CollectionSlug, Payload } from 'payload'
 import type Stripe from 'stripe'
 import { COLLECTION_SLUG_PRODUCTS, generateCustomerInventory } from '../../model'
 import type { CustomerInventory } from '../../types'
@@ -13,7 +13,8 @@ export const subscriptionUpsert = async <TProduct = unknown>(
   subscription: Stripe.Subscription,
   payload: Payload,
   onSubscriptionUpdate: (type: 'create' | 'delete', userId: string) => Promise<void>,
-  resolveSubscriptionPermissions: ResolveSubscriptionPermissions<TProduct>
+  resolveSubscriptionPermissions: ResolveSubscriptionPermissions<TProduct>,
+  userSlug: CollectionSlug
 ) => {
   const { id: stripeID, status, customer: stripeCustomer } = subscription
   const customer = await resolveStripeCustomer({ customer: stripeCustomer })
@@ -61,10 +62,10 @@ export const subscriptionUpsert = async <TProduct = unknown>(
       permissions: await resolveSubscriptionPermissions(subscription, product as TProduct, payload)
     }
     info(`INVENTORY OF THE SUBSCRIPTION ${inventory}`)
-    await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId)
+    await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId, userSlug)
 
     if (['active', 'trialing'].includes(status)) {
-      const userId = await getUserIdByEmail({ email, payload })
+      const userId = await getUserIdByEmail({ email, payload, userSlug })
       if (!userId) return
       await onSubscriptionUpdate('create', userId)
     }
@@ -78,7 +79,8 @@ export const subscriptionUpsert = async <TProduct = unknown>(
 export const subscriptionDeleted = async (
   subscription: Stripe.Subscription,
   payload: Payload,
-  onSubscriptionUpdate: (type: 'create' | 'delete', userId: string) => Promise<void>
+  onSubscriptionUpdate: (type: 'create' | 'delete', userId: string) => Promise<void>,
+  userSlug: CollectionSlug
 ) => {
   const { id, customer: customerId } = subscription
   const customer = await resolveStripeCustomer({ customer: customerId })
@@ -110,8 +112,8 @@ export const subscriptionDeleted = async (
     const inventory: CustomerInventory = customer.inventory ?? generateCustomerInventory()
     delete inventory.subscriptions[id]
 
-    await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId)
-    const userId = await getUserIdByEmail({ email, payload })
+    await upsertCustomerInventoryAndSyncWithUser(payload, inventory, email, stripeId, userSlug)
+    const userId = await getUserIdByEmail({ email, payload, userSlug })
     if (!userId) {
       payload.logger.error('No user found for subscription')
       return

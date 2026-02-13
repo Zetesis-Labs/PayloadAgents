@@ -1,13 +1,10 @@
-import type { Payload } from 'payload'
-import {
-  COLLECTION_SLUG_USER,
-  checkIfUserCanUnlockQuery,
-  countWeeklyUnlocksQuery,
-  MAX_UNLOCKS_PER_WEEK
-} from '../../model'
+import type { Payload, TypedUser } from 'payload'
+import { checkIfUserCanUnlockQuery, countWeeklyUnlocksQuery } from '../../model'
 import { generateUserInventory } from '../../model/builders'
-import type { BaseUser, Result, UnlockItem, UserInventory } from '../../types'
-import type { ResolveContentPermissions } from '../plugin/stripe-inventory-types'
+import type { Result, UnlockItem, UserInventory } from '../../types'
+import type { UnlockActionConfig } from '../plugin/stripe-inventory-types'
+
+const DEFAULT_MAX_UNLOCKS_PER_WEEK = 3
 
 const addUniqueUnlock = (unlocks: UnlockItem[], collection: string, contentId: number): UnlockItem[] => {
   const isDuplicate = unlocks.some(unlock => unlock.collection === collection && unlock.id === contentId)
@@ -26,24 +23,59 @@ const addUniqueUnlock = (unlocks: UnlockItem[], collection: string, contentId: n
 }
 
 /**
- * Creates an unlock action with the specified content permissions resolver.
+ * Returns the default unlock validation using the built-in permission check
+ * and weekly unlock limit.
+ */
+function defaultValidateUnlock(maxUnlocksPerWeek: number) {
+  return async (
+    user: TypedUser,
+    permissions: string[],
+    _payload: Payload
+  ): Promise<{ allowed: boolean; reason?: string }> => {
+    if (!checkIfUserCanUnlockQuery(user, permissions)) {
+      return { allowed: false, reason: 'You do not have permission to unlock this item' }
+    }
+
+    const weeklyUnlocks = countWeeklyUnlocksQuery(user)
+    if (weeklyUnlocks >= maxUnlocksPerWeek) {
+      return {
+        allowed: false,
+        reason: `You have reached the limit of ${maxUnlocksPerWeek} unlocks for this week`
+      }
+    }
+
+    return { allowed: true }
+  }
+}
+
+/**
+ * Creates an unlock action with the specified configuration.
  *
- * @param resolveContentPermissions - Callback to resolve permissions required by content
+ * @param config - Unlock action configuration
  * @returns A function that unlocks items for users
  *
  * @example
  * ```typescript
- * const unlockItem = createUnlockAction(async (content, payload) => {
- *   return content.requiredPermissions || [];
+ * const unlockItem = createUnlockAction({
+ *   resolveContentPermissions: async (content, payload) => {
+ *     return content.requiredPermissions || [];
+ *   },
+ *   userSlug: 'users',
+ *   maxUnlocksPerWeek: 5,
+ *   onUnlockSuccess: async (user, collection, contentId, payload) => {
+ *     console.log(`User ${user.id} unlocked ${collection}/${contentId}`);
+ *   },
  * });
  *
  * // Use in server actions
  * await unlockItem(payload, user, 'posts', 123);
  * ```
  */
-export const createUnlockAction = <TContent = unknown>(
-  resolveContentPermissions: ResolveContentPermissions<TContent>
-) => {
+export const createUnlockAction = <TContent = unknown>(config: UnlockActionConfig<TContent>) => {
+  const { resolveContentPermissions, userSlug } = config
+  const validate =
+    config.validateUnlock ?? defaultValidateUnlock(config.maxUnlocksPerWeek ?? DEFAULT_MAX_UNLOCKS_PER_WEEK)
+
   /**
    * Unlocks an item for a user, adding it to their inventory.
    *
@@ -53,9 +85,9 @@ export const createUnlockAction = <TContent = unknown>(
    * @param contentId - The ID of the item to unlock
    * @returns Result indicating success or error message
    */
-  return async (payload: Payload, user: BaseUser, collection: string, contentId: number): Promise<Result<boolean>> => {
+  return async (payload: Payload, user: TypedUser, collection: string, contentId: number): Promise<Result<boolean>> => {
     if (!user || !user.id) {
-      return { error: 'Usuario no válido' }
+      return { error: 'Invalid user' }
     }
     // Collection slug is validated by the consumer - cast required for generic plugin
     const item = await payload.findByID({
@@ -64,22 +96,16 @@ export const createUnlockAction = <TContent = unknown>(
     })
 
     if (!item) {
-      return { error: 'Elemento no encontrado' }
+      return { error: 'Item not found' }
     }
     const permissions = await resolveContentPermissions(item as TContent, payload)
 
-    if (!checkIfUserCanUnlockQuery(user, permissions)) {
-      return { error: 'No tienes permisos para desbloquear este elemento' }
+    const validation = await validate(user, permissions, payload)
+    if (!validation.allowed) {
+      return { error: validation.reason ?? 'Unlock not allowed' }
     }
 
-    const weeklyUnlocks = countWeeklyUnlocksQuery(user as BaseUser<UserInventory>)
-    if (weeklyUnlocks >= MAX_UNLOCKS_PER_WEEK) {
-      return {
-        error: `Has alcanzado el límite de ${MAX_UNLOCKS_PER_WEEK} desbloqueos para esta semana`
-      }
-    }
-
-    const inventory: UserInventory = (user.inventory as UserInventory | undefined) ?? generateUserInventory()
+    const inventory: UserInventory = user.inventory ?? generateUserInventory()
 
     const updatedUnlocks = addUniqueUnlock(inventory.unlocks, collection, contentId)
 
@@ -89,7 +115,7 @@ export const createUnlockAction = <TContent = unknown>(
 
     try {
       await payload.update({
-        collection: COLLECTION_SLUG_USER,
+        collection: userSlug,
         id: user.id.toString(),
         data: {
           inventory: {
@@ -99,10 +125,12 @@ export const createUnlockAction = <TContent = unknown>(
         }
       })
 
+      await config.onUnlockSuccess?.(user, collection, contentId, payload)
+
       return { data: true }
     } catch (error) {
-      console.error('Error al actualizar el inventario del usuario:', error)
-      return { error: 'Error al actualizar el inventario del usuario' }
+      console.error('Error updating user inventory:', error)
+      return { error: 'Error updating user inventory' }
     }
   }
 }

@@ -39,7 +39,7 @@ export const paymentSucceeded = async (paymentIntent: Stripe.PaymentIntent, payl
 
     await payload.update({
       collection: COLLECTION_SLUG_CUSTOMERS,
-      data: { inventory: inventory as unknown as Record<string, Record<string, unknown>> },
+      data: { inventory },
       where: { email: { equals: stripeCustomer.email } }
     })
 

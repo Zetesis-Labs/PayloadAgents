@@ -12,6 +12,7 @@ export * from './collections/products'
 export * from './endpoints'
 export * from './plugin/create-stripe-inventory-plugin'
 export * from './plugin/stripe-inventory-types'
+export * from './plugin/user-fields'
 // Utilities
 export * from './utils/payload/sync-customer-by-email'
 export * from './utils/payload/upsert'

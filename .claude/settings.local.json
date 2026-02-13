@@ -4,7 +4,8 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(echo:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(cat:*)"
     ]
   }
 }

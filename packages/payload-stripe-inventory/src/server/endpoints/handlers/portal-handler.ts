@@ -1,10 +1,8 @@
 import type { PayloadHandler, PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 import type { StripeEndpointConfig } from '../../plugin/stripe-inventory-types'
-import { upsertCustomerInventoryAndSyncWithUser } from '../../utils/payload/upsert-customer-inventory-and-sync-with-user'
-import { getCustomerFromStripeOrCreate } from '../../utils/stripe/get-customer-from-stripe-or-create'
-import { stripeBuilder } from '../../utils/stripe/stripe-builder'
 import { errorResponse, redirectResponse, validateAuthenticatedRequest } from '../validators/request-validator'
+import { ensureStripeCustomer } from './ensure-stripe-customer'
 
 /**
  * Creates a handler for Stripe Billing Portal access
@@ -15,7 +13,6 @@ import { errorResponse, redirectResponse, validateAuthenticatedRequest } from '.
 export function createPortalHandler(config: StripeEndpointConfig): PayloadHandler {
   return async (request: PayloadRequest): Promise<Response> => {
     try {
-      // Validate authenticated user
       const validated = await validateAuthenticatedRequest(request, config)
       if (!validated.success) {
         return validated.error
@@ -23,7 +20,6 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
 
       const { user, payload } = validated
 
-      // Validate user email
       if (!user.email) {
         return errorResponse('User email is required', 400)
       }
@@ -56,19 +52,13 @@ export function createPortalHandler(config: StripeEndpointConfig): PayloadHandle
         }
       }
 
-      const stripe = stripeBuilder()
-
-      // Get or create Stripe customer
-      const customerId = await getCustomerFromStripeOrCreate(user.email, user.name)
-
-      // Sync customer inventory
-      await upsertCustomerInventoryAndSyncWithUser(payload, user.customer?.inventory, user.email, customerId)
+      const { stripe, customerId } = await ensureStripeCustomer(user, user.email, payload, config)
 
       // Create billing portal session
       const session = await stripe.billingPortal.sessions.create({
         flow_data: flowData,
         customer: customerId,
-        return_url: `${process.env.DOMAIN}${config.routes.subscriptionPageHref}`
+        return_url: `${config.domain}${config.routes.subscriptionPageHref}`
       })
 
       return redirectResponse(session.url, 303)

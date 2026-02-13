@@ -12,6 +12,7 @@
  * export default buildConfig({
  *   plugins: [
  *     createStripeInventoryPlugin({
+ *       domain: process.env.DOMAIN!,
  *       routes: { subscriptionPageHref: '/account/subscription' },
  *       onSubscriptionUpdate: async (type, userId) => {
  *         console.log(`Subscription ${type} for user ${userId}`);
@@ -31,7 +32,7 @@
  */
 
 import { stripePlugin } from '@payloadcms/plugin-stripe'
-import type { Config, Plugin } from 'payload'
+import type { CollectionSlug, Config, Plugin } from 'payload'
 import {
   customerDeleted,
   invoiceSucceeded,
@@ -46,15 +47,18 @@ import type {
   ResolveContentPermissions,
   ResolveSubscriptionPermissions,
   StripeEndpointConfig,
-  StripeInventoryPluginConfig
+  StripeInventoryPluginConfig,
+  UnlockActionConfig
 } from './stripe-inventory-types'
+import { stripeInventoryUserFields } from './user-fields'
 
 export { createStripeEndpoints }
 export type {
   ResolveContentPermissions,
   ResolveSubscriptionPermissions,
   StripeEndpointConfig,
-  StripeInventoryPluginConfig
+  StripeInventoryPluginConfig,
+  UnlockActionConfig
 }
 
 /**
@@ -79,13 +83,6 @@ export function createStripeInventoryPlugin<TProduct = unknown, TContent = unkno
 ): Plugin {
   const basePath = config.basePath || '/stripe'
 
-  // Build endpoint configuration
-  const endpointConfig: StripeEndpointConfig = {
-    routes: config.routes,
-    checkPermissions: config.checkPermissions,
-    resolveUser: config.resolveUser
-  }
-
   // Callback for subscription updates (defaults to no-op)
   const onSubscriptionUpdate =
     config.onSubscriptionUpdate ||
@@ -97,7 +94,20 @@ export function createStripeInventoryPlugin<TProduct = unknown, TContent = unkno
   const { resolveSubscriptionPermissions } = config
 
   return (incomingConfig: Config): Config => {
-    // 1. Create and register Stripe endpoints
+    // 1. Resolve the user collection slug from Payload config
+    const userSlug: CollectionSlug = incomingConfig.admin?.user || 'users'
+
+    // 2. Build endpoint configuration (needs userSlug from above)
+    const endpointConfig: StripeEndpointConfig = {
+      domain: config.domain,
+      routes: config.routes,
+      userSlug,
+      donationConfig: config.donationConfig,
+      checkPermissions: config.checkPermissions,
+      resolveUser: config.resolveUser
+    }
+
+    // 3. Create and register Stripe endpoints
     const stripeEndpoints = createStripeEndpoints(endpointConfig, basePath)
 
     const configWithEndpoints: Config = {
@@ -105,7 +115,21 @@ export function createStripeInventoryPlugin<TProduct = unknown, TContent = unkno
       endpoints: [...(incomingConfig.endpoints || []), ...stripeEndpoints]
     }
 
-    // 2. Apply the base Stripe plugin with webhook handlers
+    // 4. Extend users collection with inventory + customer fields
+    const configWithUserFields: Config = {
+      ...configWithEndpoints,
+      collections: (configWithEndpoints.collections || []).map(collection => {
+        if (collection.slug === userSlug) {
+          return {
+            ...collection,
+            fields: [...(collection.fields || []), ...stripeInventoryUserFields]
+          }
+        }
+        return collection
+      })
+    }
+
+    // 5. Apply the base Stripe plugin with webhook handlers
     const stripePluginInstance = stripePlugin({
       isTestKey: process.env.STRIPE_SECRET_KEY?.includes('sk_test'),
       stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
@@ -117,36 +141,41 @@ export function createStripeInventoryPlugin<TProduct = unknown, TContent = unkno
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
+            userSlug
           ),
         'customer.subscription.paused': async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
+            userSlug
           ),
         'customer.subscription.updated': async ({ event, payload }) =>
           await subscriptionUpsert<TProduct>(
             event.data.object,
             payload,
             onSubscriptionUpdate,
-            resolveSubscriptionPermissions
+            resolveSubscriptionPermissions,
+            userSlug
           ),
         'customer.subscription.deleted': async ({ event, payload }) =>
-          await subscriptionDeleted(event.data.object, payload, onSubscriptionUpdate),
+          await subscriptionDeleted(event.data.object, payload, onSubscriptionUpdate, userSlug),
         'customer.deleted': async ({ event, payload }) => await customerDeleted(event.data.object, payload),
         'product.deleted': async ({ event, payload }) => await productDeleted(event.data.object, payload),
         'payment_intent.succeeded': async ({ event, payload }) => {
           await paymentSucceeded(event.data.object, payload)
+          await config.onPaymentSucceeded?.(event.data.object, payload)
         },
         'invoice.paid': async ({ event, payload }) => {
           await invoiceSucceeded(event.data.object, payload)
+          await config.onInvoicePaid?.(event.data.object, payload)
         }
       }
     })
 
-    // 3. Apply the Stripe plugin to the config with endpoints
-    return stripePluginInstance(configWithEndpoints)
+    // 6. Apply the Stripe plugin to the config with user fields + endpoints
+    return stripePluginInstance(configWithUserFields)
   }
 }

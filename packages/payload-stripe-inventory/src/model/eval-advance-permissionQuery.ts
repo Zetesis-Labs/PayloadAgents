@@ -1,4 +1,4 @@
-import type { BaseUser } from '../types'
+import type { TypedUser } from 'payload'
 import { QUERY_PERMISSION_TYPES } from './constants'
 import { evalPermissionByRoleQuery } from './eval-permission-by-role-query'
 import { getUserPermissions } from './get-user-permissions'
@@ -6,17 +6,13 @@ import { getUserPermissions } from './get-user-permissions'
 /**
  * Evalúa permisos avanzados basados en el tipo de permiso y usuario
  */
-interface Props<T extends BaseUser> {
-  user: T | null
+interface Props {
+  user: TypedUser | null
   typeOfPermission: keyof typeof QUERY_PERMISSION_TYPES | string
   permissions?: string[] | undefined
 }
 
-export const evalAdvancePermissionQuery = <T extends BaseUser>({
-  user,
-  typeOfPermission,
-  permissions
-}: Props<T>): boolean => {
+export const evalAdvancePermissionQuery = ({ user, typeOfPermission, permissions }: Props): boolean => {
   if (typeOfPermission === QUERY_PERMISSION_TYPES.ALL) {
     return true
   } else if (typeOfPermission === QUERY_PERMISSION_TYPES.ROLES) {
