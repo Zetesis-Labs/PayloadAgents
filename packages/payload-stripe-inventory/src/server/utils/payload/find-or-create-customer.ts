@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 import { COLLECTION_SLUG_CUSTOMERS, generateCustomerInventory } from '../../../model'
-import type { Customer, CustomerInventory } from '../../../types'
+import type { Customer } from '../../../types'
+import { toCustomer } from './customer-mapper'
 
 interface FindOrCreateCustomerProps {
   email: string
@@ -33,11 +34,9 @@ export async function findOrCreateCustomer({
       }
     })
 
-    const existingCustomer: Customer | null = userQuery.docs?.[0] as unknown as Customer | null
+    const existingCustomer = toCustomer(userQuery.docs?.at(0) as unknown as Record<string, unknown>)
     if (existingCustomer) {
-      existingCustomer.inventory = existingCustomer?.inventory
-        ? (existingCustomer.inventory as unknown as CustomerInventory)
-        : generateCustomerInventory()
+      existingCustomer.inventory = existingCustomer.inventory ?? generateCustomerInventory()
       return existingCustomer
     }
 
@@ -48,12 +47,12 @@ export async function findOrCreateCustomer({
       data: {
         email,
         stripeId: stripeId || '',
-        inventory: generateCustomerInventory() as unknown as [k: string]
+        inventory: generateCustomerInventory() as unknown as Record<string, unknown>
       }
     })
 
-    payload.logger.info(`✅ Successfully created customer for email: ${email}`)
-    return newCustomer as unknown as Customer
+    payload.logger.info(`Successfully created customer for email: ${email}`)
+    return toCustomer(newCustomer as unknown as Record<string, unknown>)
   } catch (error) {
     payload.logger.error(`Error finding or creating customer for email ${email}: ${error}`)
     throw error

@@ -6,12 +6,10 @@ import { COLLECTION_SLUG_PRODUCTS } from '../../model'
 import { payloadUpsert } from '../utils/payload/upsert'
 import { stripeBuilder } from '../utils/stripe/stripe-builder'
 
-const logs = false
-
 export const updateProducts = async (payload: Payload) => {
-  const stripe = await stripeBuilder()
-  const products = await stripe.products.list({ limit: 100, active: true })
-  await Promise.all(products.data.map(product => productSync(product, payload)))
+  const stripe = stripeBuilder()
+  const products = await stripe.products.list({ limit: 100, active: true }).autoPagingToArray({ limit: 10000 })
+  await Promise.all(products.map(product => productSync(product, payload)))
 }
 
 export const productSync = async (object: Stripe.Product, payload: Payload) => {
@@ -36,7 +34,7 @@ export const productSync = async (object: Stripe.Product, payload: Payload) => {
       }
     })
   } catch (error) {
-    console.error(error)
+    payload.logger.error(`- Error upserting product: ${error}`)
     throw error
   }
 }
@@ -52,7 +50,7 @@ export const productDeleted = async (object: Stripe.Product, payload: Payload) =
       }
     })
 
-    const payloadProductID = productQuery.docs?.[0]?.id
+    const payloadProductID = productQuery.docs?.at(0)?.id
 
     if (payloadProductID) {
       await payload.delete({
@@ -60,7 +58,7 @@ export const productDeleted = async (object: Stripe.Product, payload: Payload) =
         id: payloadProductID
       })
 
-      if (logs) payload.logger.info(`✅ Successfully deleted product with Stripe ID: ${stripeProductID}`)
+      payload.logger.info(`✅ Successfully deleted product with Stripe ID: ${stripeProductID}`)
     }
   } catch (error) {
     payload.logger.error(`- Error deleting product: ${error}`)

@@ -14,7 +14,7 @@ export async function getCustomer({
   const customers = await stripe.customers.search({
     query: `email:'${sanitizedEmail}'`
   })
-  return customers.data.length ? (customers.data[0] as Stripe.Customer) : null
+  return (customers.data.at(0) as Stripe.Customer) ?? null
 }
 
 export async function resolveStripeCustomer({

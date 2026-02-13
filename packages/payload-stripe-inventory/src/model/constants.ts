@@ -1,6 +1,5 @@
 export const COLLECTION_SLUG_PRODUCTS = 'products' as const
 export const COLLECTION_SLUG_PRICES = 'prices' as const
-export const COLLECTION_SLUG_USER = 'users' as const
 export const COLLECTION_SLUG_CUSTOMERS = 'customers' as const
 
 export const QUERY_PERMISSION_TYPES = {
@@ -10,31 +9,7 @@ export const QUERY_PERMISSION_TYPES = {
   ONLY_GUESS: 'only_guess'
 } as const
 
-const FREEMIUM_PERMISSION = 'freemium'
-const FREE_PERMISSION = 'free'
-const TESTER_PERMISSION = 'tester'
-const DEV_PERMISSION = 'dev'
-const BASIC_PERMISSION = 'basic'
-const ADMIN_PERMISSION = 'web_admin'
-
-export const permissionSlugs = {
-  webAdmin: ADMIN_PERMISSION,
-  dev: DEV_PERMISSION,
-  tester: TESTER_PERMISSION,
-  free: FREE_PERMISSION,
-  freemium: FREEMIUM_PERMISSION,
-  basic: BASIC_PERMISSION
-}
-
-export const PERMISSIONS = [
-  { id: 5, slug: FREE_PERMISSION, title: 'Free' },
-  { id: 6, slug: FREEMIUM_PERMISSION, title: 'Freemium' },
-  { id: 3, slug: TESTER_PERMISSION, title: 'Tester' },
-  { id: 2, slug: DEV_PERMISSION, title: 'Developer' },
-  { id: 1, slug: BASIC_PERMISSION, title: 'Basic' },
-  { id: 4, slug: ADMIN_PERMISSION, title: 'Admin' }
-]
-export const MAX_UNLOCKS_PER_WEEK = 3 as const
+export type QueryPermissionType = (typeof QUERY_PERMISSION_TYPES)[keyof typeof QUERY_PERMISSION_TYPES]
 
 export const PricingType = {
   one_time: 'One Time',

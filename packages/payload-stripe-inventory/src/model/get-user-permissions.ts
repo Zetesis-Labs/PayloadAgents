@@ -1,12 +1,14 @@
-import type { BaseUser, Customer } from '../types'
+import type { TypedUser } from 'payload'
+import type { Customer } from '../types'
 
 /**
  * Obtiene los permisos de un usuario basados en su inventario y suscripciones activas
  */
-export const getUserPermissions = (user?: BaseUser | null): string[] => {
+export const getUserPermissions = (user?: TypedUser | null): string[] => {
   if (!user) return []
 
-  const customer = user?.customer as Customer
+  const customer = (typeof user?.customer === 'object' ? user.customer : null) as Customer | null
+  if (!customer) return []
   const inventory = customer?.inventory
   if (!inventory) return []
 

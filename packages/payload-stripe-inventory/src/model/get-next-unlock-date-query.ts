@@ -1,7 +1,8 @@
-import type { BaseUser, UserInventory } from '../types'
+import type { TypedUser } from 'payload'
+import type { UserInventory } from '../types'
 
-export const getNextUnlockDateQuery = (user: BaseUser<UserInventory>): Date => {
-  const inventory = user.inventory
+export const getNextUnlockDateQuery = (user: TypedUser): Date => {
+  const inventory = user.inventory as UserInventory | undefined
   if (!inventory || !inventory.unlocks || inventory.unlocks.length === 0) {
     return new Date()
   }
