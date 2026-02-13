@@ -1,18 +1,21 @@
+import { headers } from 'next/headers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { signInAction } from '@/modules/authjs/actions'
-import { auth } from '@/modules/authjs/plugins'
+import { signInWithKeycloak } from '@/lib/auth/actions'
+import { getPayload } from '@/modules/get-payload'
 import { AuthStatus } from '../components/AuthStatus'
 
 export default async function HomePage() {
-  const session = await auth()
-  const user = session?.user
-    ? {
-        id: session.user.id ?? '',
-        email: session.user.email,
-        name: session.user.name
-      }
-    : null
+  const payload = await getPayload()
+  const { user } = await payload.auth({ headers: await headers() })
+  const userData =
+    user && 'email' in user
+      ? {
+          id: String(user.id),
+          email: user.email,
+          name: user.name,
+        }
+      : null
 
   return (
     <div className="container mx-auto py-10 max-w-3xl">
@@ -24,7 +27,7 @@ export default async function HomePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <AuthStatus user={user} signIn={signInAction} />
+          <AuthStatus user={userData} signIn={signInWithKeycloak} />
 
           <Separator />
 
