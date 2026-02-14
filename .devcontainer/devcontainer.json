@@ -32,7 +32,8 @@
         "github.vscode-github-actions",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "unifiedjs.vscode-mdx"
+        "unifiedjs.vscode-mdx",
+        "Graphite.gti-vscode"
       ],
       "settings": {
         "editor.formatOnSave": true,
