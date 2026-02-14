@@ -1,5 +1,45 @@
 # payload-agents-portal
 
+## 1.9.10
+
+### Patch Changes
+
+- [#47](https://github.com/Zetesis-Labs/PayloadAgents/pull/47) [`62c8720`](https://github.com/Zetesis-Labs/PayloadAgents/commit/62c87207de7bed350860dd09f673f047e192585f) Thanks [@Fiser12](https://github.com/Fiser12)! - feat: migrate authentication from next-auth to better-auth
+
+  - Replace next-auth (authjs) with better-auth + payload-auth plugin
+  - Add better-auth client with username and genericOAuth plugins
+  - Keycloak OAuth integration via better-auth genericOAuth provider
+  - Refactor Keycloak hooks into dedicated module (role mapping, tenant sync)
+  - Custom logout endpoint with Keycloak id_token_hint support
+  - New database migration for better-auth schema (accounts, sessions, verifications)
+  - Update .env.example with better-auth configuration variables
+
+- [#48](https://github.com/Zetesis-Labs/PayloadAgents/pull/48) [`ddff955`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ddff955f155108e5ebafb052640d5f8c4f5a33a3) Thanks [@Fiser12](https://github.com/Fiser12)! - updated payload-stripe-inventory improving typing
+
+- [#50](https://github.com/Zetesis-Labs/PayloadAgents/pull/50) [`b7cd827`](https://github.com/Zetesis-Labs/PayloadAgents/commit/b7cd8271330a8e454f444fd6a8154749eb5a9366) Thanks [@Fiser12](https://github.com/Fiser12)! - feat: add LaTeX formula editor with PDF compilation and AI assistance
+
+  - New Formulas (Paper) collection with CodeMirror-based LaTeX editor
+  - Server-side PDF compilation via pdflatex with iframe preview
+  - AI-powered LaTeX editing via OpenAI integration
+  - Dockerfile updated with texlive packages for LaTeX support
+  - Draggable editor/preview panel divider
+
+- [#51](https://github.com/Zetesis-Labs/PayloadAgents/pull/51) [`765f7c6`](https://github.com/Zetesis-Labs/PayloadAgents/commit/765f7c6aebed4f7bcfe6771b6ecb509fb9cf7a62) Thanks [@Fiser12](https://github.com/Fiser12)! - chore: add Graphite CI optimization to GitHub workflows
+
+  - Added Graphite CI action to all workflows for optimized CI runs
+  - Updated devcontainer with Graphite VSCode extension
+  - Added Claude Code permissions for TypeScript checking and web search
+
+- [#52](https://github.com/Zetesis-Labs/PayloadAgents/pull/52) [`637320e`](https://github.com/Zetesis-Labs/PayloadAgents/commit/637320e1f0546405053e98225133e7730dcd4e12) Thanks [@Fiser12](https://github.com/Fiser12)! - feat: reemplazar katex-field por nuevo editor LaTeX con vista previa PDF
+
+  - Nuevo módulo `latex-field` con arquitectura modular (componentes + hooks)
+  - Editor CodeMirror con resaltado de sintaxis LaTeX (stex)
+  - Vista previa PDF en tiempo real usando react-pdf
+  - Barra de asistente IA para modificar LaTeX con instrucciones en lenguaje natural
+  - Panel divisor redimensionable entre editor y vista previa
+  - Log de compilación desplegable
+  - Auto-sync opcional para compilación automática al escribir
+
 ## 1.9.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @nexo-labs/payload-stripe-inventory
 
+## 1.9.10
+
+### Patch Changes
+
+- [#48](https://github.com/Zetesis-Labs/PayloadAgents/pull/48) [`ddff955`](https://github.com/Zetesis-Labs/PayloadAgents/commit/ddff955f155108e5ebafb052640d5f8c4f5a33a3) Thanks [@Fiser12](https://github.com/Fiser12)! - updated payload-stripe-inventory improving typing
+
 ## 1.9.9
 
 ### Patch Changes
