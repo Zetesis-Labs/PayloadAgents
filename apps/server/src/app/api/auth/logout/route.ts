@@ -30,7 +30,14 @@ export async function POST(_request: NextRequest) {
 
     // Revoke better-auth session
     try {
-      await (payload as Record<string, any>).betterAuth.api.signOut({
+      const payloadWithAuth = payload as unknown as {
+        betterAuth: {
+          api: {
+            signOut: (opts: { headers: Awaited<ReturnType<typeof headers>> }) => Promise<void>
+          }
+        }
+      }
+      await payloadWithAuth.betterAuth.api.signOut({
         headers: headersList
       })
       console.log('[Logout] Session revoked')

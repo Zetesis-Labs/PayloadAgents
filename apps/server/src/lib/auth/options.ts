@@ -51,8 +51,8 @@ export const betterAuthPluginOptions: PayloadAuthOptions = {
         config: [
           {
             providerId: 'keycloak',
-            clientId: process.env.AUTH_KEYCLOAK_ID!,
-            clientSecret: process.env.AUTH_KEYCLOAK_SECRET!,
+            clientId: process.env.AUTH_KEYCLOAK_ID ?? '',
+            clientSecret: process.env.AUTH_KEYCLOAK_SECRET ?? '',
             authorizationUrl: `${KEYCLOAK_PUBLIC_URL}/realms/${REALM}/protocol/openid-connect/auth`,
             tokenUrl: `${KEYCLOAK_INTERNAL_URL}/realms/${REALM}/protocol/openid-connect/token`,
             userInfoUrl: KEYCLOAK_USERINFO_URL,
