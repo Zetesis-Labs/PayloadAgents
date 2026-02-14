@@ -1,5 +1,5 @@
 ---
-"payload-agents-portal": minor
+"payload-agents-portal": patch
 ---
 
 feat: add LaTeX formula editor with PDF compilation and AI assistance

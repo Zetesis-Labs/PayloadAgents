@@ -22,41 +22,51 @@
   gap: 8px;
 }
 
-.katex-field-compile {
+/* Shared button base */
+.katex-field-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 500;
-  color: white;
-  background-color: var(--theme-elevation-800, #333);
-  border: none;
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  line-height: 1.4;
 }
 
-.katex-field-compile:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.katex-field-compile:disabled {
+.katex-field-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.katex-field-toggle {
-  background: none;
-  border: 1px solid var(--theme-elevation-150);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 12px;
+/* Outline variant (toggle, auto-sync) */
+.katex-field-btn--outline {
   color: var(--theme-text);
-  cursor: pointer;
-  transition: background-color 0.15s;
+  background: transparent;
+  border: 1px solid var(--theme-elevation-250, #c0c0c0);
 }
 
-.katex-field-toggle:hover {
+.katex-field-btn--outline:hover {
   background-color: var(--theme-elevation-100);
+  border-color: var(--theme-elevation-400);
+}
+
+/* Active state for auto-sync ON */
+.katex-field-btn--active {
+  color: var(--theme-success-500, #27ae60);
+  border-color: var(--theme-success-500, #27ae60);
+  background-color: var(--theme-success-100, rgba(39, 174, 96, 0.08));
+}
+
+.katex-field-btn--active:hover {
+  background-color: var(--theme-success-100, rgba(39, 174, 96, 0.15));
+  border-color: var(--theme-success-600, #1e8c4c);
 }
 
 .katex-field-body {
@@ -107,6 +117,41 @@
   flex-direction: column;
 }
 
+/* Floating compile button — fixed to viewport */
+.katex-field-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-elevation-0, #fff);
+  background-color: var(--theme-success-500, #27ae60);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
+  white-space: nowrap;
+}
+
+.katex-field-fab:hover:not(:disabled) {
+  background-color: var(--theme-success-600, #1e8c4c);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.katex-field-fab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .katex-field-editor .cm-editor {
   border: 1px solid var(--theme-elevation-150);
   border-radius: 4px;
@@ -125,7 +170,8 @@
   background-color: var(--theme-elevation-50);
   border: 1px solid var(--theme-elevation-100);
   border-radius: 4px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -141,11 +187,24 @@
   width: 100%;
 }
 
-.katex-field-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
+/* react-pdf canvas pages */
+.katex-field-preview .react-pdf__Document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.katex-field-preview .react-pdf__Page {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   background: white;
+}
+
+.katex-field-preview .react-pdf__Page canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .katex-field-error {
@@ -224,17 +283,20 @@
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
-  color: white;
+  color: var(--theme-elevation-0, #fff);
   background-color: var(--theme-elevation-800, #333);
-  border: none;
+  border: 1px solid var(--theme-elevation-800, #333);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
 .katex-field-ai-button:hover:not(:disabled) {
-  opacity: 0.85;
+  background-color: var(--theme-elevation-700, #444);
+  border-color: var(--theme-elevation-700, #444);
 }
 
 .katex-field-ai-button:disabled {
