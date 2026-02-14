@@ -5,7 +5,6 @@ import { createAccess } from './access/create'
 import { readAccess } from './access/read'
 import { updateAndDeleteAccess } from './access/updateAndDelete'
 import { externalUsersLogin } from './endpoints/externalUsersLogin'
-import { ensureUniqueUsername } from './hooks/ensureUniqueUsername'
 import { setCookieBasedOnDomain } from './hooks/setCookieBasedOnDomain'
 
 const defaultTenantArrayField = tenantsArrayField({
@@ -75,37 +74,8 @@ const Users: CollectionConfig = {
         }
       }
     },
-    {
-      admin: {
-        position: 'sidebar'
-      },
-      name: 'roles',
-      type: 'select',
-      defaultValue: ['user'],
-      hasMany: true,
-      options: ['superadmin', 'user'],
-      access: {
-        update: ({ req }) => {
-          return isSuperAdmin(req.user)
-        }
-      }
-    },
-    {
-      name: 'id_token',
-      type: 'text',
-      admin: {
-        description: 'OpenID Connect ID Token (usado para logout con Keycloak)',
-        readOnly: true
-      }
-    },
-    {
-      name: 'username',
-      type: 'text',
-      hooks: {
-        beforeValidate: [ensureUniqueUsername]
-      },
-      index: true
-    },
+    // username field is managed by the better-auth username() plugin
+    // idToken is stored in sessions collection for Keycloak logout
     {
       ...defaultTenantArrayField,
       admin: {

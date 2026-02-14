@@ -43,7 +43,7 @@ export const ensureUniqueUsername: FieldHook = async ({ originalDoc, req, value 
 
   if (findDuplicateUsers.docs.length > 0 && req.user) {
     const tenantIDs = getUserTenantIDs(req.user)
-    if (selectedTenant && (req.user.roles?.includes('superadmin') || tenantIDs.length > 1)) {
+    if (selectedTenant && (req.user.role?.includes('superadmin') || tenantIDs.length > 1)) {
       const attemptedTenantChange = await req.payload.findByID({
         id: selectedTenant,
         collection: 'tenants'
