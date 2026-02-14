@@ -1,13 +1,13 @@
 'use client'
 
-import { useField } from '@payloadcms/ui'
-import type { TextareaFieldClientComponent } from 'payload'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import CodeMirror from '@uiw/react-codemirror'
-import { vscodeDark } from '@uiw/codemirror-theme-vscode'
 import { StreamLanguage } from '@codemirror/language'
 import { stex } from '@codemirror/legacy-modes/mode/stex'
+import { useField } from '@payloadcms/ui'
+import { vscodeDark } from '@uiw/codemirror-theme-vscode'
+import CodeMirror from '@uiw/react-codemirror'
 import { GripVertical } from 'lucide-react'
+import type { TextareaFieldClientComponent } from 'payload'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { compileLatex } from './compile-latex-actions'
 import { askLatexAI } from './latex-ai-actions'
 import './katex-field.css'
@@ -53,7 +53,7 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
       setCompileLog(result.log || null)
 
       if (result.success && result.pdf) {
-        const bytes = Uint8Array.from(atob(result.pdf), (c) => c.charCodeAt(0))
+        const bytes = Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))
         const blob = new Blob([bytes], { type: 'application/pdf' })
         revokePdfUrl()
         const url = URL.createObjectURL(blob)
@@ -82,7 +82,7 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
       const result = await askLatexAI({
         instruction: aiPrompt.trim(),
         currentLatex: value ?? '',
-        compilationErrors: compilationErrors || null,
+        compilationErrors: compilationErrors || null
       })
 
       if (result.success && result.latex) {
@@ -99,52 +99,38 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
     }
   }
 
-  const handleDragStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      const body = bodyRef.current
-      if (!body) return
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const body = bodyRef.current
+    if (!body) return
 
-      body.classList.add('katex-field-body--resizing')
+    body.classList.add('katex-field-body--resizing')
 
-      const onMouseMove = (ev: MouseEvent) => {
-        const rect = body.getBoundingClientRect()
-        const pct = ((ev.clientX - rect.left) / rect.width) * 100
-        setEditorWidth(Math.min(80, Math.max(20, pct)))
-      }
+    const onMouseMove = (ev: MouseEvent) => {
+      const rect = body.getBoundingClientRect()
+      const pct = ((ev.clientX - rect.left) / rect.width) * 100
+      setEditorWidth(Math.min(80, Math.max(20, pct)))
+    }
 
-      const onMouseUp = () => {
-        body.classList.remove('katex-field-body--resizing')
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
-      }
+    const onMouseUp = () => {
+      body.classList.remove('katex-field-body--resizing')
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
 
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
-    },
-    [],
-  )
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [])
 
   return (
     <div className="katex-field-container">
       <div className="katex-field-header">
-        <label className="katex-field-label">
-          {typeof field.label === 'string' ? field.label : field.name}
-        </label>
+        <span className="katex-field-label">{typeof field.label === 'string' ? field.label : field.name}</span>
         <div className="katex-field-actions">
-          <button
-            type="button"
-            className="katex-field-compile"
-            onClick={handleCompile}
-            disabled={compiling || !value}
-          >
+          <button type="button" className="katex-field-compile" onClick={handleCompile} disabled={compiling || !value}>
             {compiling ? 'Compilando...' : 'Compilar PDF'}
           </button>
-          <button
-            type="button"
-            className="katex-field-toggle"
-            onClick={() => setShowPreview((prev) => !prev)}
-          >
+          <button type="button" className="katex-field-toggle" onClick={() => setShowPreview(prev => !prev)}>
             {showPreview ? 'Ocultar preview' : 'Mostrar preview'}
           </button>
         </div>
@@ -156,8 +142,8 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
           type="text"
           className="katex-field-ai-input"
           value={aiPrompt}
-          onChange={(e) => setAiPrompt(e.target.value)}
-          onKeyDown={(e) => {
+          onChange={e => setAiPrompt(e.target.value)}
+          onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
               handleAISubmit()
@@ -183,17 +169,11 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
         </div>
       )}
 
-      <div
-        ref={bodyRef}
-        className={`katex-field-body${!showPreview ? ' katex-field-body--stacked' : ''}`}
-      >
-        <div
-          className="katex-field-editor"
-          style={showPreview ? { flex: `0 0 ${editorWidth}%` } : undefined}
-        >
+      <div ref={bodyRef} className={`katex-field-body${!showPreview ? ' katex-field-body--stacked' : ''}`}>
+        <div className="katex-field-editor" style={showPreview ? { flex: `0 0 ${editorWidth}%` } : undefined}>
           <CodeMirror
             value={value ?? ''}
-            onChange={(val) => setValue(val)}
+            onChange={val => setValue(val)}
             theme={vscodeDark}
             extensions={extensions}
             height="100%"
@@ -203,13 +183,13 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
               bracketMatching: true,
               foldGutter: true,
               highlightActiveLine: true,
-              autocompletion: false,
+              autocompletion: false
             }}
           />
         </div>
 
         {showPreview && (
-          <div className="katex-field-divider" onMouseDown={handleDragStart}>
+          <div role="button" tabIndex={0} className="katex-field-divider" onMouseDown={handleDragStart}>
             <GripVertical size={14} />
           </div>
         )}
@@ -227,13 +207,7 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
                 <pre>{error}</pre>
               </div>
             )}
-            {pdfUrl && (
-              <iframe
-                src={pdfUrl}
-                className="katex-field-iframe"
-                title="Vista previa PDF"
-              />
-            )}
+            {pdfUrl && <iframe src={pdfUrl} className="katex-field-iframe" title="Vista previa PDF" />}
           </div>
         )}
       </div>

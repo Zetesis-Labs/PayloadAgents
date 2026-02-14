@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 export const Paper: CollectionConfig = {
   slug: 'paper',
   admin: {
-    useAsTitle: 'title',
+    useAsTitle: 'title'
   },
   fields: [
     {
@@ -11,16 +11,16 @@ export const Paper: CollectionConfig = {
       type: 'text',
       required: true,
       admin: {
-        description: 'Nombre identificativo de la fórmula',
-      },
+        description: 'Nombre identificativo de la fórmula'
+      }
     },
     {
       name: 'description',
       type: 'textarea',
       required: false,
       admin: {
-        description: 'Descripción opcional de la fórmula',
-      },
+        description: 'Descripción opcional de la fórmula'
+      }
     },
     {
       name: 'latex',
@@ -29,9 +29,9 @@ export const Paper: CollectionConfig = {
       admin: {
         description: 'Contenido LaTeX de la fórmula',
         components: {
-          Field: '@/modules/payload-admin/katex-field',
-        },
-      },
-    },
-  ],
+          Field: '@/modules/payload-admin/katex-field'
+        }
+      }
+    }
+  ]
 }

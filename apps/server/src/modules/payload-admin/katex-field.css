@@ -73,7 +73,9 @@
   justify-content: center;
   cursor: col-resize;
   color: var(--theme-elevation-300, #999);
-  transition: color 0.15s, background-color 0.15s;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
   user-select: none;
   border-radius: 2px;
 }

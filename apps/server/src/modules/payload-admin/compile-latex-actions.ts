@@ -83,7 +83,7 @@ const STY_TO_APK: Record<string, string> = {
   'pgfplots.sty': 'texmf-dist-pictures',
 
   // texmf-dist-langeuropean
-  'babel-french.sty': 'texmf-dist-langeuropean',
+  'babel-french.sty': 'texmf-dist-langeuropean'
 }
 
 // Fallback: when missing file is not in the map, try these in order
@@ -95,7 +95,7 @@ const FALLBACK_PACKAGES = [
   'texmf-dist-langspanish',
   'texmf-dist-humanities',
   'texmf-dist-mathscience',
-  'texmf-dist-pictures',
+  'texmf-dist-pictures'
 ]
 
 /** Parse missing .sty/.cls files from a pdflatex log */
@@ -105,9 +105,7 @@ function parseMissingFiles(log: string): string[] {
     if (m[1]) results.push(m[1])
   }
   // Also catch babel language errors like "Unknown option `spanish'"
-  for (const m of log.matchAll(
-    /Package babel Error.*Unknown option `([^']+)'/g,
-  )) {
+  for (const m of log.matchAll(/Package babel Error.*Unknown option `([^']+)'/g)) {
     if (m[1]) results.push(`${m[1]}.ldf`)
   }
   return [...new Set(results)]
@@ -115,13 +113,8 @@ function parseMissingFiles(log: string): string[] {
 
 /** Try to install an Alpine package. Returns true on success. */
 async function tryApkInstall(pkg: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    execFile(
-      'apk',
-      ['add', '--no-cache', pkg],
-      { timeout: 60_000 },
-      (error) => resolve(!error),
-    )
+  return new Promise(resolve => {
+    execFile('apk', ['add', '--no-cache', pkg], { timeout: 60_000 }, error => resolve(!error))
   })
 }
 
@@ -132,22 +125,17 @@ async function runPdflatex(tmpDir: string): Promise<{ pdf: boolean; log: string 
     '-halt-on-error',
     '-no-shell-escape',
     `-output-directory=${tmpDir}`,
-    'main.tex',
+    'main.tex'
   ]
 
   await new Promise<void>((resolve, reject) => {
-    execFile(
-      'pdflatex',
-      args,
-      { cwd: tmpDir, timeout: COMPILE_TIMEOUT_MS },
-      (error) => {
-        if (error && !('code' in error && typeof error.code === 'number')) {
-          reject(error)
-        } else {
-          resolve()
-        }
-      },
-    )
+    execFile('pdflatex', args, { cwd: tmpDir, timeout: COMPILE_TIMEOUT_MS }, error => {
+      if (error && !('code' in error && typeof error.code === 'number')) {
+        reject(error)
+      } else {
+        resolve()
+      }
+    })
   })
 
   let log = ''
@@ -168,6 +156,7 @@ async function runPdflatex(tmpDir: string): Promise<{ pdf: boolean; log: string 
   return { pdf, log }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: LaTeX compilation requires sequential steps with error handling
 export async function compileLatex(latex: string): Promise<CompileResult> {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'latex-'))
 
@@ -197,7 +186,7 @@ export async function compileLatex(latex: string): Promise<CompileResult> {
 
       // If all missing files are unknown, try fallback packages
       if (toInstall.size === 0 && hasUnknown) {
-        const fallback = FALLBACK_PACKAGES.find((p) => !installedPackages.has(p))
+        const fallback = FALLBACK_PACKAGES.find(p => !installedPackages.has(p))
         if (fallback) toInstall.add(fallback)
       }
 
@@ -226,15 +215,13 @@ export async function compileLatex(latex: string): Promise<CompileResult> {
       success: !!pdf,
       pdf,
       log: result.log,
-      error: pdf
-        ? undefined
-        : 'pdflatex no generó el PDF. Revisa el log de compilación.',
+      error: pdf ? undefined : 'pdflatex no generó el PDF. Revisa el log de compilación.'
     }
   } catch (err) {
     return {
       success: false,
       log: '',
-      error: err instanceof Error ? err.message : 'Error al ejecutar pdflatex.',
+      error: err instanceof Error ? err.message : 'Error al ejecutar pdflatex.'
     }
   } finally {
     await rm(tmpDir, { recursive: true, force: true })

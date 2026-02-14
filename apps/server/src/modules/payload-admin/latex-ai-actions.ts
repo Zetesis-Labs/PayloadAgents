@@ -42,7 +42,7 @@ export async function askLatexAI(request: LatexAIRequest): Promise<LatexAIRespon
     const response = await client.responses.create({
       model: 'o4-mini',
       instructions: SYSTEM_PROMPT,
-      input: userMessage,
+      input: userMessage
     })
 
     const latex = response.output_text?.trim()
