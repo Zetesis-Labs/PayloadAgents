@@ -76,6 +76,7 @@ export interface Config {
     agents: Agent;
     media: Media;
     taxonomy: Taxonomy;
+    paper: Paper;
     exports: Export;
     imports: Import;
     'payload-mcp-api-keys': PayloadMcpApiKey;
@@ -95,6 +96,7 @@ export interface Config {
     agents: AgentsSelect<false> | AgentsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     taxonomy: TaxonomySelect<false> | TaxonomySelect<true>;
+    paper: PaperSelect<false> | PaperSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
@@ -584,6 +586,27 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "paper".
+ */
+export interface Paper {
+  id: number;
+  /**
+   * Nombre identificativo de la fórmula
+   */
+  title: string;
+  /**
+   * Descripción opcional de la fórmula
+   */
+  description?: string | null;
+  /**
+   * Contenido LaTeX de la fórmula
+   */
+  latex: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -884,6 +907,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'taxonomy';
         value: number | Taxonomy;
+      } | null)
+    | ({
+        relationTo: 'paper';
+        value: number | Paper;
       } | null)
     | ({
         relationTo: 'payload-mcp-api-keys';
@@ -1188,6 +1215,17 @@ export interface TaxonomySelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "paper_select".
+ */
+export interface PaperSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  latex?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
@@ -1399,6 +1437,7 @@ export interface TaskCreateCollectionImport {
       | 'agents'
       | 'media'
       | 'taxonomy'
+      | 'paper'
       | 'exports'
       | 'imports';
     importMode?: ('create' | 'update' | 'upsert') | null;

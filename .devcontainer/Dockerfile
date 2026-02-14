@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     curl \
     maven \
     wget \
-    bash
+    bash \
+    texlive texmf-dist-latexrecommended texmf-dist-langspanish
 
 RUN npm install -g @anthropic-ai/claude-code
 

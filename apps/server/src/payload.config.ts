@@ -6,6 +6,7 @@ import { buildConfig } from 'payload'
 import { Agents } from './collections/Agents'
 import { Books } from './collections/Books'
 import { ChatSessions } from './collections/ChatSessions'
+import { Paper } from './collections/Formulas'
 import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
 import { Taxonomies } from './collections/Taxonomies'
@@ -34,7 +35,7 @@ export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
   csrf: ['http://localhost:3000'],
   cors: ['http://localhost:3000'],
-  collections: [Posts, Books, Users, Tenants, ChatSessions, Agents, Media, Taxonomies],
+  collections: [Posts, Books, Users, Tenants, ChatSessions, Agents, Media, Taxonomies, Paper],
   db: postgresAdapter({
     push: false,
     prodMigrations: migrations,
