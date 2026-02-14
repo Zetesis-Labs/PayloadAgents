@@ -1,0 +1,336 @@
+\documentclass[12pt,a4paper]{article}
+
+% Paquetes
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage{enumitem}
+
+% Configuración de hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    urlcolor=blue!70!black,
+    citecolor=blue!70!black
+}
+
+% Configuración de encabezados
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Miguel Anxo Bastos}
+\lhead{Justicia Sin Estado}
+\cfoot{\thepage}
+
+% Formato de secciones
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection.}{0.5em}{}
+
+% Espaciado
+\onehalfspacing
+
+% Comando para citas textuales
+\newcommand{\cita}[1]{\begin{quote}\textit{``#1''}\end{quote}}
+
+\begin{document}
+
+% Portada
+\begin{titlepage}
+    \centering
+    \vspace*{3cm}
+
+    {\Huge\bfseries La Justicia Sin Estado}\\[0.5cm]
+    {\Large\bfseries Según el Pensamiento de Miguel Anxo Bastos}\\[2cm]
+
+    {\large Informe de Investigación}\\[1cm]
+
+    \vfill
+
+    {\large Fuente: Colección documental \texttt{bastos}}\\[0.5cm]
+    {\large Búsqueda realizada mediante MCP Typesense}\\[2cm]
+
+    {\large Febrero 2026}
+\end{titlepage}
+
+% Índice
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introducción}
+% ============================================================================
+
+El presente informe analiza la posición del economista y politólogo Miguel Anxo Bastos sobre la posibilidad y conveniencia de un sistema de justicia independiente del Estado. Bastos, profesor de la Universidad de Santiago de Compostela y destacado representante del pensamiento libertario en el ámbito hispanohablante, desarrolla una crítica sistemática al monopolio estatal de la justicia y propone alternativas basadas en el derecho natural, la descentralización y los mecanismos de mercado.
+
+El análisis se estructura en torno a cinco ejes temáticos:
+\begin{enumerate}
+    \item La crítica al juez estatal como funcionario
+    \item Los precedentes históricos de justicia policéntrica
+    \item El derecho natural como fundamento de la ley
+    \item Los mecanismos de justicia privada y arbitraje
+    \item La descentralización y secesión como limitadores del poder
+\end{enumerate}
+
+% ============================================================================
+\section{El Problema del Juez Estatal}
+% ============================================================================
+
+\subsection{La Imposibilidad de la Neutralidad Judicial}
+
+Una de las críticas más contundentes de Bastos al sistema judicial contemporáneo es la imposibilidad estructural de que un juez funcionario sea verdaderamente neutral:
+
+\cita{Un juez estatal no puede ser neutral. Esta es la trampa. Un juez funcionario es lo menos neutral que puede haber. ¿Cuándo era un juez independiente? Cuando era la justicia noble, cuando no eran del Estado. Los nobles servían de contrapeso a los reyes y a los Estados.}
+
+Esta crítica se fundamenta en la relación de dependencia económica y jerárquica que existe entre el juez y el Estado:
+
+\cita{Una de las grandes trampas de la política moderna es la idea del juez funcionario: el propio juez trabajando para el Estado. En el momento en que el juez trabaja para el gobierno y cobra del gobierno, ya no hay división de poderes. Porque a ese juez se le puede ascender o descender, se le puede mover.}
+
+\subsection{La Centralización Histórica de la Justicia}
+
+Bastos identifica la centralización de la justicia como un paso deliberado en la construcción del Estado moderno:
+
+\cita{Uno de los pasos de la centralización del Estado moderno fue quitar al juez señorial. Antes el juez era el señor, era el duque o el conde. Y esa jurisdicción se quitó y ahora son funcionarios del Estado los que aplican la justicia. Entonces, claro, independiente no es.}
+
+\subsection{El Estado Como Juez y Parte}
+
+La contradicción fundamental reside en que el Estado, siendo una de las partes potenciales en cualquier litigio (especialmente en cuestiones tributarias, regulatorias o penales), no puede actuar simultáneamente como árbitro imparcial:
+
+\cita{¿Quién nos defiende del Estado, si es un monopolista?}
+
+Esta pregunta retórica sintetiza el problema central: en un sistema donde el Estado monopoliza la fuerza legítima y la administración de justicia, los ciudadanos carecen de recursos efectivos cuando el propio Estado es el agresor.
+
+% ============================================================================
+\section{Precedentes Históricos de Justicia Policéntrica}
+% ============================================================================
+
+\subsection{El Sistema Medieval de Fueros}
+
+Bastos identifica en el sistema medieval de fueros un modelo histórico de pluralismo jurídico que funcionó eficazmente:
+
+\cita{En la Edad Media, cada persona tenía una ley distinta según el fuero que tenía. Había en el mismo sitio varias leyes.}
+
+Este sistema, lejos de generar caos, permitía la adaptación del derecho a las circunstancias particulares de cada comunidad y persona.
+
+\subsection{El Feudalismo Como Orden Policéntrico}
+
+Contrariamente a la percepción popular del feudalismo como tiranía absoluta, Bastos lo presenta como el sistema occidental más próximo a la anarquía:
+
+\cita{El feudalismo era bastante ``anárquico''. De los modelos históricos de sociedad occidentales, es el más próximo a la anarquía que existió, aunque a la gente le parezca lo contrario. Porque no había un poder claro, sino que había muchos poderes, poderes policéntricos: por un lado el poder del señor, por otro lado estaba el poder de la Iglesia, había ciudades-estado... Había muchas formas de poder en competencia entre sí.}
+
+Un elemento crucial de este sistema era la exterioridad de la ley respecto al gobernante:
+
+\cita{La gente piensa que el señor feudal era un señor todopoderoso, y no era así. Estaba sujeto a unas leyes, leyes que él no escribía. Piensen que, por ejemplo, un gobernante moderno está sujeto a unas leyes que él puede cambiar. [...] Un señor medieval no podía hacer eso. La ley venía de fuera. Era una ley, bien de derecho romano, o bien de derecho divino, pero no la podía cambiar. En cambio, ahora, cualquier gobernante puede cambiar las normas a su voluntad.}
+
+\subsection{La Lex Mercatoria}
+
+El derecho mercantil medieval constituye otro ejemplo paradigmático de orden jurídico espontáneo sin Estado:
+
+\cita{En una sociedad de este tipo [anarcocapitalista] la regulación sería más parecida a la Lex Mercatoria o a la regulación que rige en los mercados de bonos que a las actuales regulaciones financieras. Recordemos que el fragmentado mundo medieval operaba de una forma análoga y que, contrariamente a lo que se acostumbra a pensar, contaba con un corpus legal bastante homogéneo y con un par de monedas casi hegemónicas.}
+
+\subsection{El Concepto Hispánico de Fueros}
+
+Bastos rescata la valoración de Murray Rothbard sobre la aportación española al pensamiento político:
+
+\cita{Rothbard decía que la aportación principal de la teoría política hispana de todos los tiempos es el concepto de ``fuero''. Porque es un concepto que frena el poder del Estado. Desde el momento en que tú eres jacobino, que tú eliminas los fueros, que tú eliminas las diferencias regionales, estás centralizando e incrementando el poder del Estado.}
+
+Y amplía:
+
+\cita{Los fueros implican una radical descentralización de la legislación, y por tanto, esta creación del pensamiento tradicional español, que fue siempre una de sus banderas principales, constituye uno de los principales límites a la expansión del poder político, pues éste, para poder ejercer su poder, debe lidiar con costumbres y leyes fuertemente arraigadas en la población, restringiendo severamente su capacidad de actuación.}
+
+% ============================================================================
+\section{Fundamentos del Derecho Natural}
+% ============================================================================
+
+\subsection{La Ley Independiente del Estado}
+
+Para Bastos, la legitimidad de cualquier sistema jurídico depende de su anclaje en principios universales que trascienden la voluntad del legislador:
+
+\cita{Cada persona tiene derecho a tener las ideas que quiera. El problema es cómo se concibe después una organización social sobre principios que son absolutamente mudables. Por eso los principios de la ley natural, el derecho a que yo no lo puedo matar, que yo no lo puedo agredir... son cosas que se pueden objetivar de manera común a todas las sociedades.}
+
+\subsection{Propiedad Privada y Libertad}
+
+La propiedad privada constituye el fundamento material de todas las libertades:
+
+\cita{Mucha gente piensa que las libertades nos vienen dadas porque hay una ley que nos da libertad. La libertad, en última instancia, se basa en la propiedad privada. Y es más, toda libertad deriva de la propiedad privada.}
+
+\cita{Cualquier agresión a la libertad es una agresión a algún tipo de derecho de propiedad.}
+
+\subsection{La Tradición Escolástica}
+
+Bastos se distancia del racionalismo ilustrado y abraza la tradición escolástica:
+
+\cita{Como ustedes saben, no todos los austríacos derivan sus principios de la Ilustración. Mises, por ejemplo, lo hace, pero no Rothbard o Hoppe. Yo considero que partir de la escolástica permite entender mejor estos conceptos y que la Ilustración los alteró sustancialmente. Los principios ilustrados pueden derivar perfectamente en el positivismo o en la arrogancia de la planificación, algo que los principios de derecho natural no permiten tan fácilmente.}
+
+\subsection{El Papel de la Religión}
+
+La religión funciona como freno al poder estatal al proporcionar una moral autónoma:
+
+\cita{Normalmente se exponen o se educan a través de algún rito religioso valores acordes al derecho natural: no engañes, no mates a los demás, no robes... Y también la forma de familia que se debe tener, cuáles deben ser las relaciones con tus padres... [...] Y sirven también para frenar el poder del estado, porque imponen una moral autónoma que no depende de la moral del estado. Y el estado normalmente quiere minar esa moral.}
+
+% ============================================================================
+\section{Mecanismos de Seguridad y Defensa Privada}
+% ============================================================================
+
+\subsection{Los Límites de la Protección Estatal}
+
+Bastos cuestiona la premisa de que el Estado efectivamente protege a los ciudadanos:
+
+\cita{Violenta es la gente, no las armas. Además, fíjese en una cosa: el Estado no le puede proteger a usted. El Estado, en el mejor de los casos, lo que puede hacer es detener a quien le agredió a usted, que es muy distinto. En el momento de una agresión, normalmente no hay ningún policía delante.}
+
+\cita{La seguridad la hace la gente. El estado tiene una función después del crimen, detener al delincuente, juzgarlo y castigarlo. Pero para que no nos pase algo somos nosotros los que tomamos las precauciones.}
+
+\subsection{Agencias de Protección Competitivas}
+
+Bastos argumenta que no existe un monopolio natural en la provisión de seguridad:
+
+\cita{No tiene por qué darse un monopolio territorial de la defensa, de la misma forma que nuestros vecinos no tienen por qué contratar con la misma aseguradora de incendios. Es cierto que, a efectos de defensa, la contigüidad es algo importante, pero necesariamente en algún sitio tiene que ser delimitado dónde acaba el espacio a proteger.}
+
+Sobre la posible coexistencia de múltiples agencias:
+
+\cita{¿Pueden convivir en un territorio distintas agencias de protección sin que existan conflictos sociales, étnicos o religiosos derivados de tal multiplicidad? ¿Pueden existir varios ejércitos o policías en un territorio sin que se peleen entre sí? Yo creo que sí y de hecho ya ocurre.}
+
+\subsection{El Estado Define el Monopolio}
+
+El supuesto monopolio natural de la defensa es, en realidad, una construcción política:
+
+\cita{En Defensa, el Estado define el bien de tal forma que sólo sea el Estado el único capaz de prestarlo.}
+
+% ============================================================================
+\section{El Orden Internacional Como Prueba de Concepto}
+% ============================================================================
+
+\subsection{Anarquía Entre Estados}
+
+El sistema internacional funciona sin un gobierno mundial, demostrando la viabilidad de la cooperación sin monopolio de la violencia:
+
+\cita{El orden internacional nos puede enseñar también que, incluso en ausencia de una ley común para todas las personas, somos capaces de convivir en paz, de la misma forma en que en una sociedad anarcocapitalista cada grupo en su comunidad puede establecer normas distintas.}
+
+\cita{Cuesta imaginar marcos legales más distintos que el español y la sharia saudí, pero vemos que los gobernantes de ambos Estados comparten negocios y tratados en paz y cooperación. Algo semejante podría perfectamente ocurrir en una sociedad sin Estado.}
+
+\subsection{Pluralidad Jurídica Existente}
+
+Ya existen ejemplos de pluralidad legal dentro de territorios estatales:
+
+\cita{La pluralidad de leyes en un territorio estatal se da, por ejemplo, en el derecho diplomático (un embajador viviendo en España no está sujeto a la ley española, un militar norteamericano tampoco) y no lo vemos como imposible; de hecho, antiguamente esta era la norma.}
+
+% ============================================================================
+\section{Descentralización y Secesión}
+% ============================================================================
+
+\subsection{Prioridades del Anarcocapitalismo}
+
+Bastos, siguiendo a Hoppe, identifica las prioridades correctas del pensamiento libertario:
+
+\cita{El profesor Hoppe tiene razón cuando apunta a que, para un anarcocapitalista, por lo menos para los de la vieja escuela, lo principal es la cuestión de la guerra y la paz. Y, en segundo lugar, está la cuestión de la descentralización y de la secesión.}
+
+\subsection{Virtudes de la Descentralización}
+
+La fragmentación del poder tiene efectos beneficiosos múltiples:
+
+\cita{La descentralización no sólo frena el poder político, sino que a pequeña escala las funciones sociales se ejercen mejor. Se opone a la centralización del estado en un único ente, porque cuanto más concentrado esté, menos personas controlan a más gente, y tiene más capacidad de influir en ella.}
+
+\cita{Determinadas normas es mejor que se puedan frenar, que se puedan modular o que se puedan adaptar al terreno. Muchas leyes que se hacen (leyes como la de la reforma laboral) no tienen en cuenta las peculiaridades de cada sitio.}
+
+\subsection{El Derecho de Secesión}
+
+El caso de Liechtenstein ilustra cómo la secesión aproxima a la anarquía:
+
+\cita{En Liechtenstein, un país de 60 mil habitantes, cada uno de sus municipios tiene derecho de secesión. Y se pueden marchar cuando quieran. ¿Y por qué incido en la secesión? Porque si la permanencia en un Estado o no es voluntaria, eso se aproxima mucho a la anarquía.}
+
+\subsection{Competencia Institucional}
+
+La descentralización genera competencia fiscal y regulatoria beneficiosa:
+
+\cita{Los impuestos en España, si no hubiera un sistema autonómico, serían más altos. Por ejemplo, seguiríamos todos con el impuesto de sucesiones. Pero basta con que una comunidad lo quite para que las demás vecinas empiecen a bajarlo también, por pura competencia fiscal. Al final, ese sistema descentralizado favorece que haya competencia fiscal o regulatoria entre autonomías.}
+
+% ============================================================================
+\section{El Estado Como Institución}
+% ============================================================================
+
+\subsection{Naturaleza Predatoria}
+
+Bastos rechaza las teorías contractualistas del Estado:
+
+\cita{El Estado no es ningún contrato. El Estado es predación.}
+
+\cita{El Estado es una corporación y se diseñó como una corporación, de tal forma que los gobernantes, salvo que hagan un crimen directo, no son juzgables. Es decir, el gobernante es irresponsable.}
+
+\subsection{El Estado y la Guerra}
+
+La conexión entre Estado y guerra es fundamental:
+
+\cita{El anarcocapitalismo nace, en su origen, de la lucha contra la intervención norteamericana en el exterior. [...] Nace contra la guerra, porque la guerra es la salud del estado. Cuando hay guerra es cuando te suben más los impuestos, cuando te pueden meter en la cárcel por tus ideas (porque ``atentas contra la seguridad nacional''), cuando se establecen sistemas de planificación central.}
+
+\cita{El estado hace la guerra y la guerra hace al estado. El estado moderno, abstracto, es una creación de la guerra, y a su vez, el estado está diseñado para hacer la guerra. Es el principal designio de un estado.}
+
+\subsection{Anarquía Interna del Estado}
+
+Paradójicamente, las élites gobernantes funcionan de manera anárquica entre sí:
+
+\cita{Dentro del Estado no hay un real mando. Eso sí, precisamente porque están en anarquía y están tan bien organizados que pueden ejercer la fuerza a todo el resto.}
+
+% ============================================================================
+\section{Hacia una Sociedad Sin Estado}
+% ============================================================================
+
+\subsection{Definición del Anarcocapitalismo}
+
+\cita{El anarcocapitalismo consiste en establecer una sociedad basada en los principios de libre mercado en ausencia de Estado.}
+
+\subsection{Requisitos Culturales}
+
+No basta con eliminar el Estado; se requiere una base cultural adecuada:
+
+\cita{Yo el capitalismo [de libre mercado] no lo defiendo utilitariamente como lo defendía Mises, sino que lo defiendo éticamente. Porque es un sistema justo, libre y no implica fuerza para nadie. Pero no basta simplemente con tener un sistema de mercado, es decir, hay que tener una sociedad que quiera ser capitalista. Necesita gente que sea frugal, necesita gente que sea trabajadora, necesita gente que sea seria y cumpla los contratos.}
+
+\subsection{Comunidades Cohesionadas}
+
+\cita{Una hipotética sociedad sin Estado no estaría compuesta de individuos atomizados maximizadores de utilidad como plantean los economistas neoclásicos, sino de comunidades fuertemente cohesionadas de tal forma que se presten a la acción común cuando sea necesario y que sean capaces de prestar, con ayuda de organizaciones de mercado, los mismos servicios que ahora ofrecen los Estados.}
+
+% ============================================================================
+\section{Conclusiones}
+% ============================================================================
+
+El análisis del pensamiento de Miguel Anxo Bastos sobre la justicia sin Estado revela una crítica sistemática y fundamentada del monopolio estatal de la función jurisdiccional. Sus argumentos principales pueden resumirse en:
+
+\begin{enumerate}
+    \item \textbf{Imposibilidad estructural de neutralidad}: Un juez que depende económica y jerárquicamente del Estado no puede ser imparcial cuando el Estado es parte interesada.
+
+    \item \textbf{Precedentes históricos exitosos}: El sistema medieval de fueros, la Lex Mercatoria y el orden policéntrico feudal demuestran que la justicia puede funcionar sin monopolio estatal.
+
+    \item \textbf{Fundamento en el derecho natural}: La legitimidad de la ley no deriva de la voluntad del legislador sino de principios universales previos al Estado.
+
+    \item \textbf{Viabilidad de la competencia}: Las agencias de protección privadas pueden coexistir, como ya ocurre de facto en diversos contextos.
+
+    \item \textbf{El orden internacional como modelo}: La cooperación pacífica entre Estados con sistemas legales radicalmente diferentes prueba la viabilidad de la pluralidad jurídica.
+
+    \item \textbf{Descentralización como camino}: La fragmentación del poder mediante fueros, autonomías y derechos de secesión aproxima progresivamente a una sociedad libre.
+\end{enumerate}
+
+El pensamiento de Bastos, enraizado en la tradición escolástica española, la Escuela Austriaca de economía y el anarcocapitalismo de Rothbard y Hoppe, ofrece una alternativa intelectualmente rigurosa al paradigma estatista dominante en la teoría política contemporánea.
+
+% ============================================================================
+\section*{Referencias Bibliográficas}
+% ============================================================================
+\addcontentsline{toc}{section}{Referencias Bibliográficas}
+
+Las citas contenidas en este informe proceden de la colección documental \texttt{bastos}, indexada en Typesense y accedida mediante el servidor MCP. Los documentos originales corresponden a intervenciones públicas, artículos y conferencias de Miguel Anxo Bastos.
+
+\textbf{Autores mencionados por Bastos:}
+\begin{itemize}
+    \item Murray N. Rothbard
+    \item Hans-Hermann Hoppe
+    \item Ludwig von Mises
+    \item Santo Tomás de Aquino
+    \item San Agustín
+    \item Escuela de Salamanca
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,269 @@
+.katex-field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.katex-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.katex-field-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--theme-text);
+}
+
+.katex-field-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.katex-field-compile {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  background-color: var(--theme-elevation-800, #333);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.katex-field-compile:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.katex-field-compile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.katex-field-toggle {
+  background: none;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--theme-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.katex-field-toggle:hover {
+  background-color: var(--theme-elevation-100);
+}
+
+.katex-field-body {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  min-height: calc(100dvh - 200px);
+}
+
+.katex-field-divider {
+  flex: 0 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  color: var(--theme-elevation-300, #999);
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+  user-select: none;
+  border-radius: 2px;
+}
+
+.katex-field-divider:hover {
+  color: var(--theme-elevation-600, #666);
+  background-color: var(--theme-elevation-100);
+}
+
+.katex-field-body--resizing .katex-field-divider {
+  color: var(--theme-elevation-600, #666);
+  background-color: var(--theme-elevation-100);
+}
+
+.katex-field-body--resizing .katex-field-editor,
+.katex-field-body--resizing .katex-field-preview,
+.katex-field-body--resizing iframe {
+  pointer-events: none;
+}
+
+.katex-field-body--stacked {
+  flex-direction: column;
+}
+
+.katex-field-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.katex-field-editor .cm-editor {
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.katex-field-editor .cm-editor.cm-focused {
+  outline: none;
+  border-color: var(--theme-elevation-400);
+}
+
+.katex-field-preview {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--theme-elevation-50);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.katex-field-preview--empty {
+  color: var(--theme-elevation-400);
+  font-size: 13px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.katex-field-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+.katex-field-error {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--theme-error-500, #e74c3c);
+  width: 100%;
+}
+
+.katex-field-error pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  background-color: var(--theme-elevation-100);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* Compilation log panel */
+.katex-field-log {
+  font-size: 12px;
+  color: var(--theme-elevation-600, #a0a0a0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.katex-field-log summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  color: var(--theme-text);
+}
+
+.katex-field-log pre {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: var(--theme-elevation-50);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* AI assistant bar */
+.katex-field-ai {
+  display: flex;
+  gap: 8px;
+}
+
+.katex-field-ai-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--theme-text);
+  background-color: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.katex-field-ai-input:focus {
+  outline: none;
+  border-color: var(--theme-elevation-400);
+}
+
+.katex-field-ai-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.katex-field-ai-button {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  background-color: var(--theme-elevation-800, #333);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.katex-field-ai-button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.katex-field-ai-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.katex-field-ai-message {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.katex-field-ai-message--success {
+  color: var(--theme-success-500, #27ae60);
+  background-color: var(--theme-success-100, rgba(39, 174, 96, 0.1));
+}
+
+.katex-field-ai-message--error {
+  color: var(--theme-error-500, #e74c3c);
+  background-color: var(--theme-error-100, rgba(231, 76, 60, 0.1));
+}
+
+@media (max-width: 768px) {
+  .katex-field-body {
+    flex-direction: column;
+  }
+
+  .katex-field-ai {
+    flex-direction: column;
+  }
+}

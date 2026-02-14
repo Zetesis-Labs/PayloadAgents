@@ -50,6 +50,16 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
+# TeX Live mínimo para compilación LaTeX server-side (pdflatex).
+# Paquetes adicionales se auto-instalan bajo demanda en dev.
+# Para producción, añadir aquí los texmf-dist-* que necesites.
+RUN apk add --no-cache \
+    texlive \
+    texmf-dist-latexrecommended \
+    texmf-dist-latexextra \
+    texmf-dist-fontsrecommended \
+    texmf-dist-langspanish
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 

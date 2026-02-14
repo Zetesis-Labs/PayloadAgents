@@ -19,6 +19,8 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@codemirror/language": "^6.12.1",
+    "@codemirror/legacy-modes": "^6.5.2",
     "@nexo-labs/chat-agent": "workspace:*",
     "@nexo-labs/payload-indexer": "workspace:*",
     "@nexo-labs/payload-taxonomies": "workspace:*",
@@ -34,6 +36,8 @@
     "@payloadcms/ui": "^3.75.0",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@uiw/codemirror-theme-vscode": "^4.25.4",
+    "@uiw/react-codemirror": "^4.25.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",
@@ -42,6 +46,7 @@
     "lucide-react": "^0.563.0",
     "next": "^16",
     "next-auth": "^5.0.0-beta.30",
+    "openai": "^6.21.0",
     "payload": "^3.75.0",
     "payload-authjs": "^0.10.0",
     "react": "^19.2",
