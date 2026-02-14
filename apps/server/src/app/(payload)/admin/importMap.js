@@ -35,7 +35,7 @@ import { WatchTenantCollection as WatchTenantCollection_1d0591e3cf4f332c83a86da1
 import { default as default_1b639377e9a2a76ced05fe2cb57c84a4 } from '@/modules/payload-admin/sync-tenants-button'
 import { default as default_d67366a4d3e799e02b498444ecc82b8d } from '@/modules/payload-admin/import-agent-data-button'
 import { default as default_cb5f4735a17af09a6401c0fbd4d1854f } from '@/modules/payload-admin/import-agents-button'
-import { default as default_33058024fa4936bd368aeac5bdf2fd8f } from '@/modules/payload-admin/katex-field'
+import { default as default_79ca25db217a42a61f3ce5a173b52313 } from '@/modules/payload-admin/latex-field'
 import { Page as Page_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { SortBy as SortBy_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { SortOrder as SortOrder_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
@@ -91,7 +91,7 @@ export const importMap = {
   "@/modules/payload-admin/sync-tenants-button#default": default_1b639377e9a2a76ced05fe2cb57c84a4,
   "@/modules/payload-admin/import-agent-data-button#default": default_d67366a4d3e799e02b498444ecc82b8d,
   "@/modules/payload-admin/import-agents-button#default": default_cb5f4735a17af09a6401c0fbd4d1854f,
-  "@/modules/payload-admin/katex-field#default": default_33058024fa4936bd368aeac5bdf2fd8f,
+  "@/modules/payload-admin/latex-field#default": default_79ca25db217a42a61f3ce5a173b52313,
   "@payloadcms/plugin-import-export/rsc#Page": Page_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#SortOrder": SortOrder_cdf7e044479f899a31f804427d568b36,

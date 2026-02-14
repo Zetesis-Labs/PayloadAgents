@@ -29,7 +29,7 @@ export const Paper: CollectionConfig = {
       admin: {
         description: 'Contenido LaTeX de la fórmula',
         components: {
-          Field: '@/modules/payload-admin/katex-field'
+          Field: '@/modules/payload-admin/latex-field'
         }
       }
     }
