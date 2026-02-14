@@ -12,7 +12,7 @@ export const createAccess: Access<User> = ({ req }) => {
     return true
   }
 
-  if (!isSuperAdmin(req.user) && req.data?.roles?.includes('superadmin')) {
+  if (!isSuperAdmin(req.user) && req.data?.role?.includes('superadmin')) {
     return false
   }
 

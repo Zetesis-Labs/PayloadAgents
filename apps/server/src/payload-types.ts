@@ -68,9 +68,13 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    users: User;
+    sessions: Session;
+    accounts: Account;
+    verifications: Verification;
+    'admin-invitations': AdminInvitation;
     posts: Post;
     books: Book;
-    users: User;
     tenants: Tenant;
     'chat-sessions': ChatSession;
     agents: Agent;
@@ -86,11 +90,20 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    users: {
+      account: 'accounts';
+      session: 'sessions';
+    };
+  };
   collectionsSelect: {
+    users: UsersSelect<false> | UsersSelect<true>;
+    sessions: SessionsSelect<false> | SessionsSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
+    verifications: VerificationsSelect<false> | VerificationsSelect<true>;
+    'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     books: BooksSelect<false> | BooksSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     'chat-sessions': ChatSessionsSelect<false> | ChatSessionsSelect<true>;
     agents: AgentsSelect<false> | AgentsSelect<true>;
@@ -127,22 +140,34 @@ export interface Config {
   };
 }
 export interface UserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
+  forgotPassword:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
+  login:
+    | {
+        email: string;
+        password: string;
+      }
+    | {
+        password: string;
+        username: string;
+      };
   registerFirstUser: {
-    email: string;
     password: string;
-  };
-  unlock: {
+    username?: string;
     email: string;
-    password: string;
   };
+  unlock:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
 }
 export interface PayloadMcpApiKeyAuthOperations {
   forgotPassword: {
@@ -161,6 +186,218 @@ export interface PayloadMcpApiKeyAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  password?: string | null;
+  tenants?:
+    | {
+        tenant: number | Tenant;
+        roles: ('tenant-admin' | 'tenant-viewer')[];
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Users chosen display name
+   */
+  name: string;
+  /**
+   * Whether the email of the user has been verified
+   */
+  emailVerified: boolean;
+  /**
+   * The image of the user
+   */
+  image?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /**
+   * The display username of the user
+   */
+  displayUsername?: string | null;
+  /**
+   * The role/ roles of the user
+   */
+  role?: ('superadmin' | 'user')[] | null;
+  account?: {
+    docs?: (number | Account)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  session?: {
+    docs?: (number | Session)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * The email of the user
+   */
+  email: string;
+  /**
+   * The username of the user
+   */
+  username?: string | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: number;
+  name: string;
+  /**
+   * Used for domain-based tenant handling
+   */
+  domain?: string | null;
+  /**
+   * Used for url paths, example: /tenant-slug/page-slug
+   */
+  slug: string;
+  /**
+   * If checked, logging in is not required to read. Useful for building public pages.
+   */
+  allowPublicRead?: boolean | null;
+  /**
+   * ID de la organizacion en Keycloak (sincronizado automaticamente)
+   */
+  keycloakOrgId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Accounts are used to store user accounts for authentication providers
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts".
+ */
+export interface Account {
+  id: number;
+  /**
+   * The id of the account as provided by the SSO or equal to userId for credential accounts
+   */
+  accountId: string;
+  /**
+   * The id of the provider as provided by the SSO
+   */
+  providerId: string;
+  /**
+   * The user that the account belongs to
+   */
+  user: number | User;
+  /**
+   * The access token of the account. Returned by the provider
+   */
+  accessToken?: string | null;
+  /**
+   * The refresh token of the account. Returned by the provider
+   */
+  refreshToken?: string | null;
+  /**
+   * The id token for the account. Returned by the provider
+   */
+  idToken?: string | null;
+  /**
+   * The date and time when the access token will expire
+   */
+  accessTokenExpiresAt?: string | null;
+  /**
+   * The date and time when the refresh token will expire
+   */
+  refreshTokenExpiresAt?: string | null;
+  /**
+   * The scope of the account. Returned by the provider
+   */
+  scope?: string | null;
+  /**
+   * The hashed password of the account. Mainly used for email and password authentication
+   */
+  password?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * Sessions are active sessions for users. They are used to authenticate users with a session token
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions".
+ */
+export interface Session {
+  id: number;
+  /**
+   * The date and time when the session will expire
+   */
+  expiresAt: string;
+  /**
+   * The unique session token
+   */
+  token: string;
+  createdAt: string;
+  updatedAt: string;
+  /**
+   * The IP address of the device
+   */
+  ipAddress?: string | null;
+  /**
+   * The user agent information of the device
+   */
+  userAgent?: string | null;
+  /**
+   * The user that the session belongs to
+   */
+  user: number | User;
+}
+/**
+ * Verifications are used to verify authentication requests
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "verifications".
+ */
+export interface Verification {
+  id: number;
+  /**
+   * The identifier of the verification request
+   */
+  identifier: string;
+  /**
+   * The value to be verified
+   */
+  value: string;
+  /**
+   * The date and time when the verification request will expire
+   */
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-invitations".
+ */
+export interface AdminInvitation {
+  id: number;
+  role: 'superadmin' | 'user';
+  token: string;
+  url?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -231,32 +468,6 @@ export interface Post {
         id?: string | null;
       }[]
     | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenants".
- */
-export interface Tenant {
-  id: number;
-  name: string;
-  /**
-   * Used for domain-based tenant handling
-   */
-  domain?: string | null;
-  /**
-   * Used for url paths, example: /tenant-slug/page-slug
-   */
-  slug: string;
-  /**
-   * If checked, logging in is not required to read. Useful for building public pages.
-   */
-  allowPublicRead?: boolean | null;
-  /**
-   * ID de la organizacion en Keycloak (sincronizado automaticamente)
-   */
-  keycloakOrgId?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -338,54 +549,11 @@ export interface Book {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  email: string;
-  emailVerified?: string | null;
-  name?: string | null;
-  image?: string | null;
-  password?: string | null;
-  roles?: ('superadmin' | 'user')[] | null;
-  /**
-   * OpenID Connect ID Token (usado para logout con Keycloak)
-   */
-  id_token?: string | null;
-  username?: string | null;
-  tenants?:
-    | {
-        tenant: number | Tenant;
-        roles: ('tenant-admin' | 'tenant-viewer')[];
-        id?: string | null;
-      }[]
-    | null;
-  accounts?:
-    | {
-        provider: string;
-        providerAccountId: string;
-        type: 'oidc' | 'oauth' | 'email' | 'webauthn';
-        id?: string | null;
-      }[]
-    | null;
-  sessions?:
-    | {
-        sessionToken: string;
-        expires: string;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chat-sessions".
  */
 export interface ChatSession {
   id: number;
-  user: string | User;
+  user: number | User;
   /**
    * ID de conversación de Typesense
    */
@@ -690,7 +858,7 @@ export interface PayloadMcpApiKey {
   /**
    * The user that the API key is associated with.
    */
-  user: string | User;
+  user: number | User;
   /**
    * A useful label for the API key.
    */
@@ -877,16 +1045,32 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'sessions';
+        value: number | Session;
+      } | null)
+    | ({
+        relationTo: 'accounts';
+        value: number | Account;
+      } | null)
+    | ({
+        relationTo: 'verifications';
+        value: number | Verification;
+      } | null)
+    | ({
+        relationTo: 'admin-invitations';
+        value: number | AdminInvitation;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: number | Post;
       } | null)
     | ({
         relationTo: 'books';
         value: number | Book;
-      } | null)
-    | ({
-        relationTo: 'users';
-        value: string | User;
       } | null)
     | ({
         relationTo: 'tenants';
@@ -920,7 +1104,7 @@ export interface PayloadLockedDocument {
   user:
     | {
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       }
     | {
         relationTo: 'payload-mcp-api-keys';
@@ -938,7 +1122,7 @@ export interface PayloadPreference {
   user:
     | {
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       }
     | {
         relationTo: 'payload-mcp-api-keys';
@@ -967,6 +1151,97 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  password?: T;
+  tenants?:
+    | T
+    | {
+        tenant?: T;
+        roles?: T;
+        id?: T;
+      };
+  name?: T;
+  emailVerified?: T;
+  image?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  displayUsername?: T;
+  role?: T;
+  account?: T;
+  session?: T;
+  email?: T;
+  username?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions_select".
+ */
+export interface SessionsSelect<T extends boolean = true> {
+  expiresAt?: T;
+  token?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  ipAddress?: T;
+  userAgent?: T;
+  user?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts_select".
+ */
+export interface AccountsSelect<T extends boolean = true> {
+  accountId?: T;
+  providerId?: T;
+  user?: T;
+  accessToken?: T;
+  refreshToken?: T;
+  idToken?: T;
+  accessTokenExpiresAt?: T;
+  refreshTokenExpiresAt?: T;
+  scope?: T;
+  password?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "verifications_select".
+ */
+export interface VerificationsSelect<T extends boolean = true> {
+  identifier?: T;
+  value?: T;
+  expiresAt?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-invitations_select".
+ */
+export interface AdminInvitationsSelect<T extends boolean = true> {
+  role?: T;
+  token?: T;
+  url?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1023,45 +1298,6 @@ export interface BooksSelect<T extends boolean = true> {
     | {
         title?: T;
         content?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  id?: T;
-  email?: T;
-  emailVerified?: T;
-  name?: T;
-  image?: T;
-  password?: T;
-  roles?: T;
-  id_token?: T;
-  username?: T;
-  tenants?:
-    | T
-    | {
-        tenant?: T;
-        roles?: T;
-        id?: T;
-      };
-  accounts?:
-    | T
-    | {
-        provider?: T;
-        providerAccountId?: T;
-        type?: T;
-        id?: T;
-      };
-  sessions?:
-    | T
-    | {
-        sessionToken?: T;
-        expires?: T;
         id?: T;
       };
   updatedAt?: T;

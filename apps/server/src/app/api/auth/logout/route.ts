@@ -1,79 +1,76 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-import { auth, signOut } from '@/modules/authjs/plugins'
+import { getPayload } from '@/modules/get-payload'
+import { getIdTokenForUser } from '@/modules/keycloak/utils/save-id-token'
 
 /**
  * POST /api/auth/logout
  * Custom logout endpoint that includes id_token_hint for proper Keycloak logout
  */
 export async function POST(_request: NextRequest) {
-  console.log('[Logout API] ========== INICIO DEL PROCESO DE LOGOUT ==========')
+  console.log('[Logout] Starting logout process...')
 
   try {
-    console.log('[Logout API] 1️⃣ Obteniendo sesión actual...')
-    const session = await auth()
+    const payload = await getPayload()
+    const headersList = await headers()
 
-    if (!session) {
-      console.log('[Logout API] ❌ No hay sesión activa')
-      return NextResponse.json({ error: 'No hay sesión activa' }, { status: 401 })
+    // Get current session
+    const { user } = await payload.auth({ headers: headersList })
+
+    if (!user || !('email' in user)) {
+      console.log('[Logout] No active session')
+      return NextResponse.json({ error: 'No active session' }, { status: 401 })
     }
 
-    console.log('[Logout API] ✅ Sesión encontrada:', {
-      userId: session.user?.id,
-      userEmail: session.user?.email,
-      hasIdToken: !!session.id_token
-    })
+    console.log('[Logout] User:', user.email)
 
-    // Get the id_token from the session
-    const idToken = session.id_token
-    console.log('[Logout API] 2️⃣ ID Token:', idToken ? `${idToken.substring(0, 20)}...` : 'NO DISPONIBLE')
+    // Get idToken from accounts collection (saved automatically by better-auth)
+    const idToken = await getIdTokenForUser(payload, user.id)
+    console.log('[Logout] ID Token:', idToken ? 'available' : 'not available')
 
-    // Sign out from NextAuth
-    console.log('[Logout API] 3️⃣ Llamando a signOut()...')
-    await signOut({ redirect: false })
-    console.log('[Logout API] ✅ signOut() completado')
+    // Revoke better-auth session
+    try {
+      const payloadWithAuth = payload as unknown as {
+        betterAuth: {
+          api: {
+            signOut: (opts: { headers: Awaited<ReturnType<typeof headers>> }) => Promise<void>
+          }
+        }
+      }
+      await payloadWithAuth.betterAuth.api.signOut({
+        headers: headersList
+      })
+      console.log('[Logout] Session revoked')
+    } catch (error) {
+      console.error('[Logout] Error revoking session:', error)
+    }
 
-    // Build Keycloak logout URL with id_token_hint
-    console.log('[Logout API] 4️⃣ Construyendo URL de logout de Keycloak...')
+    // Build Keycloak logout URL
     const keycloakLogoutUrl = new URL(
       `${process.env.NEXT_PUBLIC_LOCAL_KEYCLOAK_URL}/realms/${process.env.NEXT_PUBLIC_KC_REALM}/protocol/openid-connect/logout`
     )
 
-    // Add id_token_hint if available
     if (idToken) {
       keycloakLogoutUrl.searchParams.set('id_token_hint', idToken)
-      console.log('[Logout API] ✅ id_token_hint agregado al URL')
-    } else {
-      console.log('[Logout API] ⚠️ NO se pudo agregar id_token_hint (no disponible)')
     }
 
-    // Add post_logout_redirect_uri
-    const postLogoutRedirectUri = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const postLogoutRedirectUri = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
     keycloakLogoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri)
-    console.log('[Logout API] ✅ post_logout_redirect_uri configurado:', postLogoutRedirectUri)
 
-    console.log('[Logout API] 5️⃣ URL completa de Keycloak logout:', keycloakLogoutUrl.toString())
+    console.log('[Logout] Keycloak logout URL built')
 
-    console.log('[Logout API] 6️⃣ Creando respuesta y limpiando cookies...')
+    // Create response and clear cookies
     const response = NextResponse.json({
       success: true,
       logoutUrl: keycloakLogoutUrl.toString()
     })
 
-    // Clear all auth-related cookies explicitly
-    console.log('[Logout API] 7️⃣ Limpiando cookies de NextAuth...')
+    // Clear better-auth cookies
     const cookieStore = await cookies()
     const allCookies = cookieStore.getAll()
-    let cookiesCleared = 0
 
     allCookies.forEach(cookie => {
-      if (
-        cookie.name.includes('next-auth') ||
-        cookie.name.includes('authjs') ||
-        cookie.name === '__Secure-authjs.session-token' ||
-        cookie.name === 'authjs.session-token'
-      ) {
-        console.log(`   [Logout API] Limpiando cookie: ${cookie.name}`)
+      if (cookie.name.includes('better-auth')) {
         response.cookies.set(cookie.name, '', {
           maxAge: 0,
           path: '/',
@@ -81,23 +78,15 @@ export async function POST(_request: NextRequest) {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax'
         })
-        cookiesCleared++
       }
     })
 
-    console.log(`[Logout API] ✅ ${cookiesCleared} cookies limpiadas`)
-    console.log('[Logout API] ========== FIN DEL PROCESO DE LOGOUT ==========')
-
+    console.log('[Logout] Complete')
     return response
   } catch (error) {
-    console.error('[Logout API] ❌❌❌ ERROR durante logout:', error)
-    console.error('[Logout API] Stack:', error instanceof Error ? error.stack : 'No stack available')
-
+    console.error('[Logout] Error:', error)
     return NextResponse.json(
-      {
-        error: 'Error al cerrar sesión',
-        details: error instanceof Error ? error.message : 'Error desconocido'
-      },
+      { error: 'Logout failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

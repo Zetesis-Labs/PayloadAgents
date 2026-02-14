@@ -189,9 +189,14 @@ const KatexField: TextareaFieldClientComponent = ({ field, path }) => {
         </div>
 
         {showPreview && (
-          <div role="button" tabIndex={0} className="katex-field-divider" onMouseDown={handleDragStart}>
+          <button
+            type="button"
+            className="katex-field-divider"
+            onMouseDown={handleDragStart}
+            aria-label="Resize divider"
+          >
             <GripVertical size={14} />
-          </div>
+          </button>
         )}
 
         {showPreview && (

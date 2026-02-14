@@ -41,6 +41,15 @@
   },
   "type": "module",
   "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "packageExtensions": {
+      "payload-auth": {
+        "peerDependencies": {
+          "zod": ">=4.0.0"
+        }
+      }
+    }
+  },
   "dependencies": {
     "cross-env": "^7.0.3"
   }
