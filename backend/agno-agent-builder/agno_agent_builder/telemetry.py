@@ -145,20 +145,37 @@ def configure_langfuse_tracing(config: RuntimeConfig, logger: Any) -> TracerProv
         # traceparent into `metadata.existing_trace_id` for the classic
         # `langfuse` callback (`langfuse_otel` drops inbound traceparent in
         # v1.82.0; BerriAI/litellm#15940).
-        if config.payload_url:
-            # Internal CMS calls (agent/installation polling, reads during a
-            # run) add nothing in Langfuse, and outside a run each becomes a
-            # detached root "GET" trace. The global instrumentor only reads
-            # exclusions from this env var; respect an operator override.
-            os.environ.setdefault(
-                "OTEL_PYTHON_HTTPX_EXCLUDED_URLS",
-                httpx_exclusion_pattern(config.payload_url),
-            )
+        #
+        # Exclusions: CMS polling and channel-auth plumbing happen outside any
+        # run, so each call would become a detached root trace in Langfuse.
+        # The global instrumentor only reads them from this env var; respect
+        # an operator override.
+        os.environ.setdefault(
+            "OTEL_PYTHON_HTTPX_EXCLUDED_URLS",
+            httpx_excluded_urls(config.payload_url),
+        )
         HTTPXClientInstrumentor().instrument()
         logger.info("HTTPX traceparent propagation enabled for LiteLLM proxy")
 
     logger.info("Langfuse tracing enabled", host=config.langfuse_host)
     return provider
+
+
+# Channel-auth plumbing (JWKS/OpenID discovery at startup, OAuth token
+# refresh when replying) — pure infrastructure noise with no observability
+# value, and outside any run each fetch becomes a detached root trace.
+_CHANNEL_AUTH_EXCLUSIONS = (
+    r"https://login\.botframework\.com/.*",
+    r"https://login\.microsoftonline\.com/.*",
+)
+
+
+def httpx_excluded_urls(payload_url: str | None) -> str:
+    """Comma-joined value for ``OTEL_PYTHON_HTTPX_EXCLUDED_URLS``."""
+    patterns = list(_CHANNEL_AUTH_EXCLUSIONS)
+    if payload_url:
+        patterns.insert(0, httpx_exclusion_pattern(payload_url))
+    return ",".join(patterns)
 
 
 def httpx_exclusion_pattern(base_url: str) -> str:

@@ -1,15 +1,42 @@
-"""Tests for the httpx exclusion pattern fed to OTEL_PYTHON_HTTPX_EXCLUDED_URLS."""
+"""Tests for the httpx exclusions fed to OTEL_PYTHON_HTTPX_EXCLUDED_URLS."""
 
 from __future__ import annotations
 
 import re
 
-from agno_agent_builder.telemetry import httpx_exclusion_pattern
+from agno_agent_builder.telemetry import httpx_excluded_urls, httpx_exclusion_pattern
 
 
 def _matches(pattern: str, url: str) -> bool:
     # Mirrors opentelemetry.util.http.ExcludeList.url_disabled (re.search).
     return bool(re.search(pattern, url))
+
+
+def _any_matches(env_value: str, url: str) -> bool:
+    # ExcludeList splits the env var on commas and ORs the patterns.
+    return any(_matches(p.strip(), url) for p in env_value.split(","))
+
+
+class TestHttpxExcludedUrls:
+    def test_includes_cms_and_channel_auth(self) -> None:
+        value = httpx_excluded_urls("http://zp-prod-web:80")
+        assert _any_matches(value, "http://zp-prod-web/api/agents/internal/list")
+        assert _any_matches(value, "https://login.botframework.com/v1/.well-known/keys")
+        assert _any_matches(
+            value, "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
+        )
+
+    def test_channel_auth_excluded_even_without_payload_url(self) -> None:
+        value = httpx_excluded_urls(None)
+        assert _any_matches(
+            value, "https://login.botframework.com/v1/.well-known/openidconfiguration"
+        )
+
+    def test_gateway_and_channel_delivery_stay_instrumented(self) -> None:
+        value = httpx_excluded_urls("http://zp-prod-web:80")
+        assert not _any_matches(value, "http://litellm:4000/v1/chat/completions")
+        assert not _any_matches(value, "https://smba.trafficmanager.net/emea/v3/conversations")
+        assert not _any_matches(value, "https://api.telegram.org/bot123/sendMessage")
 
 
 class TestHttpxExclusionPattern:
