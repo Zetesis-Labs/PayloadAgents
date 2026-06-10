@@ -90,7 +90,7 @@ class InternalAuthMiddleware:
 
 # Matches the per-agent endpoints that create or update an agno session
 # row: the legacy AgentOS `/runs` route and the AG-UI `/agui` route.
-_RUNS_PATH_RE = re.compile(r"^/agents/[^/]+/(runs|agui)/?$")
+_RUNS_PATH_RE = re.compile(r"^/agents/(?P<slug>[^/]+)/(runs|agui)/?$")
 
 
 class SessionMetadataMiddleware:
@@ -105,7 +105,8 @@ class SessionMetadataMiddleware:
             return
 
         path: str = scope.get("path", "")
-        if not _RUNS_PATH_RE.match(path):
+        match = _RUNS_PATH_RE.match(path)
+        if not match:
             await self.app(scope, receive, send)
             return
 
@@ -116,13 +117,30 @@ class SessionMetadataMiddleware:
             existing = state.get("metadata") or {}
             existing["tenant_id"] = tenant_id
             state["metadata"] = existing
-            baggage_token = tenant_baggage_context(tenant_id)
+            slug = match.group("slug")
+            baggage_token = tenant_baggage_context(
+                tenant_id,
+                agent_slug=slug,
+                llm_model=_agent_llm_model(scope, slug),
+            )
 
         try:
             await self.app(scope, receive, send)
         finally:
             if baggage_token is not None:
                 detach_tenant_baggage(baggage_token)
+
+
+def _agent_llm_model(scope: Scope, slug: str) -> str | None:
+    """Resolve the agent's llm_model (catalog preset) from the app registry.
+
+    Langfuse can only filter traces by tags, and the preset is otherwise
+    buried in the gateway generation's metadata — surface it as a tag.
+    """
+    registry = getattr(getattr(scope.get("app"), "state", None), "registry", None)
+    agent = registry.get(slug) if registry is not None else None
+    model_id = getattr(getattr(agent, "model", None), "id", None)
+    return str(model_id) if model_id else None
 
 
 def _header(scope: Scope, name: bytes) -> str:

@@ -37,7 +37,13 @@ def build_agent(
     if not llm_model or llm_model.startswith("/") or llm_model.endswith("/"):
         raise InvalidModelError(slug=cfg.slug, llm_model=cfg.llm_model)
 
-    is_native_reasoner = _is_native_reasoner(llm_model)
+    # Through the gateway Agno's reasoning scaffolding stays OFF: the preset
+    # hides the real model (the heuristic would decide blind), the scaffolding
+    # doubles every turn with a strict:true call that OpenAI rejects for
+    # map-shaped tool params (strict mode cannot express
+    # `additionalProperties: <schema>`, e.g. search_collections.filters), and
+    # it inflates the prompt. Native reasoners reason server-side regardless.
+    use_scaffolding = litellm_proxy_url is None and not _is_native_reasoner(llm_model)
 
     return Agent(
         name=cfg.name,
@@ -55,7 +61,7 @@ def build_agent(
         tools=[build_mcp_tools(mcp_url, cfg)],
         add_history_to_context=True,
         num_history_runs=5,
-        reasoning=not is_native_reasoner,
+        reasoning=use_scaffolding,
         tool_call_limit=cfg.tool_call_limit,
         telemetry=False,
     )
