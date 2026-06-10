@@ -10,6 +10,7 @@ import type { CollectionConfig } from 'payload'
 import type { ResolvedPluginConfig } from '../types'
 import { createDecryptAfterReadHook, createEncryptBeforeChangeHook } from './hooks/encrypt-api-key'
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks/reload-runtime'
+import { createModelCatalogValidateHook } from './hooks/validate-model'
 
 export function createAgentsCollection(config: ResolvedPluginConfig): CollectionConfig {
   const base: CollectionConfig = {
@@ -21,6 +22,7 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
       delete: ({ req: { user } }) => Boolean(user)
     },
     hooks: {
+      beforeValidate: [createModelCatalogValidateHook(config)],
       beforeChange: [createEncryptBeforeChangeHook(config)],
       afterChange: [createAfterChangeHook(config)],
       afterRead: [createDecryptAfterReadHook(config)],
@@ -75,10 +77,22 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
                 name: 'llmModel',
                 type: 'text',
                 required: true,
-                defaultValue: 'openai/gpt-4o',
-                admin: {
-                  description: 'LLM model to use (e.g., openai/gpt-4o, anthropic/claude-sonnet-4-20250514)'
-                }
+                // With a catalog there is no sensible default — the admin picks
+                // a preset; without one, keep the historical free-form default.
+                defaultValue: config.modelCatalog ? undefined : 'openai/gpt-4o',
+                admin: config.modelCatalog
+                  ? {
+                      description: 'Model preset from the gateway catalog',
+                      components: {
+                        Field: {
+                          path: '@zetesis/payload-agents-core/client#ModelSelectField',
+                          clientProps: { catalogPath: `/api${config.basePath}/models` }
+                        }
+                      }
+                    }
+                  : {
+                      description: 'LLM model to use (e.g., openai/gpt-4o, anthropic/claude-sonnet-4-20250514)'
+                    }
               },
               {
                 name: 'apiKey',

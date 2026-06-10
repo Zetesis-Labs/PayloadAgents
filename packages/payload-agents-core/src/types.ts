@@ -157,6 +157,25 @@ export interface AgentPluginConfig {
    * errors are logged but never block the response stream.
    */
   onRunCompleted?: OnRunCompleted
+
+  /**
+   * Curated model catalog backed by a LiteLLM gateway.
+   *
+   * When set, `llmModel` stops being free text: the plugin exposes
+   * `GET {basePath}/models` (authenticated) backed by the gateway's
+   * `/model/info`, renders the presets as a select in the admin, and a
+   * beforeValidate hook enforces that agents reference a catalog preset and
+   * that the BYOK key format matches the provider the preset requires
+   * (`model_info.requires_key`). Untouched legacy documents keep working.
+   */
+  modelCatalog?: {
+    /** Gateway base URL without /v1 (e.g. http://litellm:4000). */
+    gatewayUrl: string
+    /** Key used to read /model/info (the gateway master key). */
+    masterKey?: string
+    /** Catalog cache TTL in ms. Default: 60_000. */
+    cacheTtlMs?: number
+  }
 }
 
 // ── Run completed callback ────────────────────────────────────────────────
@@ -242,4 +261,5 @@ export interface ResolvedPluginConfig {
   mediaCollectionSlug: string
   collectionOverrides: CollectionOverrides | undefined
   onRunCompleted: OnRunCompleted | undefined
+  modelCatalog: { gatewayUrl: string; masterKey: string; cacheTtlMs: number } | undefined
 }

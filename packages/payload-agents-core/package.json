@@ -4,7 +4,7 @@
   "description": "Payload CMS plugin for AI agent management — collections, endpoints, and SSE proxy for Agno-based agent runtimes",
   "license": "MIT",
   "author": {
-    "name": "Zetesis - Rubén Garcia",
+    "name": "Zetesis - Rub\u00e9n Garcia",
     "email": "ruben@zetesis.xyz",
     "url": "https://zetesis.xyz"
   },
@@ -24,6 +24,11 @@
       "types": "./dist/index.d.mts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./dist/client.d.mts",
+      "import": "./src/client.ts",
+      "default": "./src/client.ts"
     }
   },
   "main": "./src/index.ts",
@@ -43,14 +48,19 @@
   },
   "peerDependencies": {
     "drizzle-orm": ">=0.36",
-    "payload": "^3.0.0"
+    "payload": "^3.0.0",
+    "@payloadcms/ui": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",
     "payload": "^3.0.0",
     "rimraf": "3.0.2",
     "tsdown": "^0.16.5",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "@payloadcms/ui": "^3.0.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
   },
   "engines": {
     "node": ">=22",
@@ -73,11 +83,24 @@
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
         "default": "./dist/index.mjs"
+      },
+      "./client": {
+        "types": "./dist/client.d.mts",
+        "import": "./dist/client.mjs",
+        "default": "./dist/client.mjs"
       }
     },
     "main": "./dist/index.mjs",
     "types": "./dist/index.d.mts",
     "registry": "https://registry.npmjs.org/",
     "access": "public"
+  },
+  "peerDependenciesMeta": {
+    "@payloadcms/ui": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   }
 }
