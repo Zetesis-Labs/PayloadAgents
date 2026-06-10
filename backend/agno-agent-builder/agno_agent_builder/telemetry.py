@@ -91,7 +91,11 @@ class GatewayAwareBatchSpanProcessor(BatchSpanProcessor):
         if attributes.get(OPENINFERENCE_SPAN_KIND_ATTRIBUTE) == "LLM":
             return True
         url = attributes.get(HTTP_URL_ATTRIBUTE)
-        return isinstance(url, str) and self._proxy_base is not None and url.startswith(self._proxy_base)
+        return (
+            isinstance(url, str)
+            and self._proxy_base is not None
+            and url.startswith(self._proxy_base)
+        )
 
 
 def configure_langfuse_tracing(config: RuntimeConfig, logger: Any) -> TracerProvider | None:
@@ -127,9 +131,7 @@ def configure_langfuse_tracing(config: RuntimeConfig, logger: Any) -> TracerProv
             "x-langfuse-ingestion-version": "4",
         },
     )
-    provider.add_span_processor(
-        GatewayAwareBatchSpanProcessor(exporter, config.litellm_proxy_url)
-    )
+    provider.add_span_processor(GatewayAwareBatchSpanProcessor(exporter, config.litellm_proxy_url))
 
     trace_api.set_tracer_provider(provider)
     AgnoInstrumentor().instrument()
