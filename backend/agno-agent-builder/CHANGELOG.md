@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.11](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.10...agno-agent-builder-v0.1.11) (2026-06-10)
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** default ports optional in httpx exclusion pattern ([05d8f11](https://github.com/Zetesis-Labs/PayloadAgents/commit/05d8f11d54aca9c8bdbba7c34f1dcdeb22b7ce3f))
+* **agno-agent-builder:** make default ports optional in the httpx exclusion pattern ([f747185](https://github.com/Zetesis-Labs/PayloadAgents/commit/f74718512fb17633a2be96d6c3e48ce93ac95848))
+
 ## [0.1.10](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.9...agno-agent-builder-v0.1.10) (2026-06-10)
 
 
