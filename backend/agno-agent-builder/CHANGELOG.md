@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.10](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.9...agno-agent-builder-v0.1.10) (2026-06-10)
+
+
+### Features
+
+* **agno-agent-builder:** optional LiteLLM gateway routing for agent models ([4c39238](https://github.com/Zetesis-Labs/PayloadAgents/commit/4c39238b1734523aee771b23d5d08b4bbd5fc171))
+* **agno-agent-builder:** optional LiteLLM gateway routing for agent models ([07c9218](https://github.com/Zetesis-Labs/PayloadAgents/commit/07c921848b1a7f7f814e6ce3c6d78c143dd1e3bb))
+* **agno-agent-builder:** resolve catalog preset aliases through the gateway ([b0331db](https://github.com/Zetesis-Labs/PayloadAgents/commit/b0331db59d150f25bf3a3f98817fbf6ecc57491f))
+* **agno-agent-builder:** single-trace Langfuse hygiene behind the LiteLLM gateway ([096ac75](https://github.com/Zetesis-Labs/PayloadAgents/commit/096ac7546898495bdae293bca8fd7ae4ec0abb88))
+
+
+### Documentation
+
+* **agno-agent-builder:** build_model docstring reflects presets-only gateway ([78ef770](https://github.com/Zetesis-Labs/PayloadAgents/commit/78ef770e28f05b0366be609c89dad63d2ece30f8))
+
 ## [0.1.9](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.8...agno-agent-builder-v0.1.9) (2026-05-21)
 
 

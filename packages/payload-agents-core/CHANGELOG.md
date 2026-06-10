@@ -1,5 +1,19 @@
 # @zetesis/payload-agents-core
 
+## [0.6.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.0...payload-agents-core-v0.6.1) (2026-06-10)
+
+
+### Features
+
+* **agno-agent-builder:** optional LiteLLM gateway routing for agent models ([4c39238](https://github.com/Zetesis-Labs/PayloadAgents/commit/4c39238b1734523aee771b23d5d08b4bbd5fc171))
+* **payload-agents-core:** curated model catalog backed by the LiteLLM gateway ([0283ea5](https://github.com/Zetesis-Labs/PayloadAgents/commit/0283ea5be1a64cb35a34e43d564349e4b129fdd3))
+
+
+### Bug Fixes
+
+* **payload-agents-core:** dedupe BYOK-spawned deployments in the catalog ([8de92da](https://github.com/Zetesis-Labs/PayloadAgents/commit/8de92da3ddf3b7a318bd9ec51eb4c57cee99be76))
+* **payload-agents-core:** mark the client entry with 'use client' ([7789e67](https://github.com/Zetesis-Labs/PayloadAgents/commit/7789e67ef00562d21bc7801fdd7f2b015a86b4c9))
+
 ## [0.6.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.5.2...payload-agents-core-v0.6.0) (2026-05-21)
 
 
