@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.12](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.11...agno-agent-builder-v0.1.12) (2026-06-10)
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** exclude channel-auth endpoints from httpx tracing ([d75d438](https://github.com/Zetesis-Labs/PayloadAgents/commit/d75d438cef2036121fb7427c1226659e218f0a56))
+* **agno-agent-builder:** exclude channel-auth endpoints from httpx tracing ([f11c0e9](https://github.com/Zetesis-Labs/PayloadAgents/commit/f11c0e9de0bc7be4421bbf7102a6060dda676221))
+
 ## [0.1.11](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.10...agno-agent-builder-v0.1.11) (2026-06-10)
 
 
