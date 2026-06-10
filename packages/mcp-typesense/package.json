@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/mcp-typesense",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Composable MCP (Model Context Protocol) server that exposes Typesense-backed content with taxonomy enrichment, LLM sampling synthesis tools, and pluggable auth.",
   "license": "MIT",
   "sideEffects": false,

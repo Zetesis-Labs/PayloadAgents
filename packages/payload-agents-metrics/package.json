@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-agents-metrics",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Payload CMS plugin for LLM usage observability — token tracking, cost calculation, session analytics, and dashboard components",
   "license": "MIT",
   "author": {

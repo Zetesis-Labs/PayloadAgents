@@ -1,5 +1,19 @@
 # @zetesis/payload-agents-core
 
+## [0.6.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.5.2...payload-agents-core-v0.6.0) (2026-05-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mcp-typesense:** `createDeepInfraBgeReranker` and `createDeepInfraJinaReranker` exports replaced by `createDeepInfraReranker(model, config)`. Custom reranker registrations in `RerankerFactoryConfig.custom` now receive the model identifier as their argument.
+
+### Features
+
+* **mcp-typesense:** add reranker closure primitives and factory ([61cfaf2](https://github.com/Zetesis-Labs/PayloadAgents/commit/61cfaf201f922bb79395e3e1522b1f7f0fc22f00))
+* **mcp-typesense:** wire reranker + retrieval params into search flow ([f1fc308](https://github.com/Zetesis-Labs/PayloadAgents/commit/f1fc3086516fa76f663a888d4da3d020831a5951))
+* **payload-agents-core:** add SearchProfiles collection factory ([6bec978](https://github.com/Zetesis-Labs/PayloadAgents/commit/6bec97822c5e6992535ad93d2ecf034b59711730))
+* SearchProfiles collection + reranker closures for two-stage retrieval ([4206f73](https://github.com/Zetesis-Labs/PayloadAgents/commit/4206f738fd1589d1c8ed8000bf9013354710bcd5))
+
 ## [0.5.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.5.1...payload-agents-core-v0.5.2) (2026-05-17)
 
 

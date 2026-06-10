@@ -1,6 +1,6 @@
 [project]
 name = "agno-agent-builder"
-version = "0.1.8"
+version = "0.1.9"
 description = "Parametrizable Agno-based agent runtime — FastAPI factory with pluggable agent sources, multi-tenant headers, and LISTEN/NOTIFY hot reload."
 requires-python = ">=3.12"
 readme = "README.md"

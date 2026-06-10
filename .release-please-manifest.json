@@ -1,14 +1,14 @@
 {
   "packages/agent-ui": "0.1.4",
-  "packages/mcp-typesense": "0.5.1",
-  "packages/payload-agents-core": "0.5.2",
-  "packages/payload-agents-metrics": "1.2.1",
+  "packages/mcp-typesense": "0.6.0",
+  "packages/payload-agents-core": "0.6.0",
+  "packages/payload-agents-metrics": "1.2.2",
   "packages/payload-documents": "0.5.1",
   "packages/payload-indexer": "0.4.1",
   "packages/payload-lexical-blocks-builder": "0.2.2",
   "packages/payload-taxonomies": "0.2.2",
   "packages/payload-typesense": "0.4.1",
-  "backend/agno-agent-builder": "0.1.8",
+  "backend/agno-agent-builder": "0.1.9",
   "backend/agno-microsoft-teams": "0.1.2",
   "backend/payload-documents-worker-builder": "0.1.3"
 }

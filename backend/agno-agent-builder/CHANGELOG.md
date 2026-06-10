@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.9](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.8...agno-agent-builder-v0.1.9) (2026-05-21)
+
+
+### Features
+
+* **agno-agent-builder:** forward SearchProfile retrieval params as MCP headers ([57aba22](https://github.com/Zetesis-Labs/PayloadAgents/commit/57aba223031d5c8f35bcc64f114781a0eedb156c))
+* **mcp-typesense:** add reranker closure primitives and factory ([61cfaf2](https://github.com/Zetesis-Labs/PayloadAgents/commit/61cfaf201f922bb79395e3e1522b1f7f0fc22f00))
+* **mcp-typesense:** apply SearchProfile.queryRewrite Mustache template before retrieval ([d00479a](https://github.com/Zetesis-Labs/PayloadAgents/commit/d00479a69227c6434ec003495571382df8c32d4b))
+* SearchProfiles collection + reranker closures for two-stage retrieval ([4206f73](https://github.com/Zetesis-Labs/PayloadAgents/commit/4206f738fd1589d1c8ed8000bf9013354710bcd5))
+
 ## [0.1.8](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.7...agno-agent-builder-v0.1.8) (2026-05-17)
 
 
