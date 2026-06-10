@@ -49,18 +49,22 @@ export async function fetchModelCatalog(settings: ModelCatalogSettings): Promise
     throw new Error(`model catalog fetch failed: HTTP ${res.status}`)
   }
   const body = (await res.json()) as { data?: RawModelInfo[] }
-  const presets = (body.data ?? [])
+  // LiteLLM's router registers an extra deployment per BYOK call (client-side
+  // credentials), so /model/info can list the same model_name several times —
+  // dedupe by name; the clones carry identical metadata.
+  const byName = new Map<string, ModelPreset>()
+  for (const m of body.data ?? []) {
     // "*" is the legacy passthrough entry, not a preset
-    .filter(m => typeof m.model_name === 'string' && m.model_name !== '*')
-    .map(m => {
-      const info = m.model_info ?? {}
-      return {
-        name: m.model_name as string,
-        description: readString(info, 'description'),
-        requiresKey: readString(info, 'requires_key'),
-        tier: readString(info, 'catalog_tier')
-      }
+    if (typeof m.model_name !== 'string' || m.model_name === '*' || byName.has(m.model_name)) continue
+    const info = m.model_info ?? {}
+    byName.set(m.model_name, {
+      name: m.model_name,
+      description: readString(info, 'description'),
+      requiresKey: readString(info, 'requires_key'),
+      tier: readString(info, 'catalog_tier')
     })
+  }
+  const presets = [...byName.values()]
 
   CACHE.set(settings.gatewayUrl, { at: Date.now(), presets })
   return presets

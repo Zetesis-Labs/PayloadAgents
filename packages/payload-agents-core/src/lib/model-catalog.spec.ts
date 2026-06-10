@@ -33,6 +33,18 @@ describe('fetchModelCatalog', () => {
     ])
   })
 
+  it('dedupes BYOK-spawned duplicate deployments by model_name', async () => {
+    stubFetch({
+      data: [
+        { model_name: 'chat-estandar', model_info: { requires_key: 'openai' } },
+        { model_name: 'chat-estandar', model_info: { requires_key: 'openai' } }
+      ]
+    })
+    const presets = await fetchModelCatalog(SETTINGS)
+    expect(presets).toHaveLength(1)
+    expect(presets[0]?.name).toBe('chat-estandar')
+  })
+
   it('caches within the TTL', async () => {
     const fn = stubFetch({ data: [{ model_name: 'a', model_info: {} }] })
     await fetchModelCatalog(SETTINGS)
