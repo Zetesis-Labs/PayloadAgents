@@ -27,6 +27,7 @@ dependencies = [
     "langfuse>=3.0",
     "openinference-instrumentation-agno>=0.1",
     "opentelemetry-exporter-otlp>=1.35",
+    "opentelemetry-instrumentation-httpx>=0.46b0",
     "opentelemetry-sdk>=1.35",
     "psycopg[binary]>=3.2",
     "pydantic>=2.9",

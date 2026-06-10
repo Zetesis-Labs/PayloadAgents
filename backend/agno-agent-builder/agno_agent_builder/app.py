@@ -75,6 +75,10 @@ def create_app(config: RuntimeConfig) -> FastAPI:
         mcp_url=config.mcp_url,
         tool_protocol=config.tool_protocol,
         output_format=config.output_format,
+        litellm_proxy_url=config.litellm_proxy_url,
+        litellm_master_key=(
+            config.litellm_master_key.get_secret_value() if config.litellm_master_key else None
+        ),
     )
     engine_holder = EngineHolder(config.database_url)
     reload_lock = asyncio.Lock()

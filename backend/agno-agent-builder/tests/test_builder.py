@@ -34,3 +34,40 @@ class TestBuildModel:
             build_model("cohere", "command-r", "sk-test")
         assert exc.value.details == {"provider": "cohere"}
         assert exc.value.http_status == 422
+
+
+class TestBuildModelViaProxy:
+    """With proxy_url set, every model is routed through the LiteLLM proxy as an
+    OpenAI-compatible endpoint, with BYOK forwarded via extra_body."""
+
+    def test_proxy_routes_openai_with_byok(self) -> None:
+        model = build_model(
+            "openai",
+            "gpt-4o",
+            "sk-agent-key",
+            proxy_url="http://litellm:4000/v1",
+            proxy_key="sk-master",
+        )
+        assert isinstance(model, OpenAIChat)
+        assert model.id == "openai/gpt-4o"
+        assert model.base_url == "http://litellm:4000/v1"
+        assert model.api_key == "sk-master"
+        assert model.extra_body == {"api_key": "sk-agent-key"}
+
+    def test_proxy_routes_anthropic_as_openai_compatible(self) -> None:
+        # Anthropic agents go through the proxy as OpenAI-compatible (no Claude
+        # class); LiteLLM translates and uses the agent's key (BYOK).
+        model = build_model(
+            "anthropic",
+            "claude-sonnet-4-5",
+            "sk-ant-agent",
+            proxy_url="http://litellm:4000/v1",
+            proxy_key="sk-master",
+        )
+        assert isinstance(model, OpenAIChat)
+        assert model.id == "anthropic/claude-sonnet-4-5"
+        assert model.extra_body == {"api_key": "sk-ant-agent"}
+
+    def test_no_proxy_keeps_direct_path(self) -> None:
+        model = build_model("anthropic", "claude-sonnet-4-5", "sk-test")
+        assert isinstance(model, Claude)

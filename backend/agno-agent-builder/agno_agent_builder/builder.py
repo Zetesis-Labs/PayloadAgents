@@ -25,6 +25,8 @@ def build_agent(
     mcp_url: str,
     tool_protocol: str | None = None,
     output_format: str | None = None,
+    litellm_proxy_url: str | None = None,
+    litellm_master_key: str | None = None,
 ) -> Agent:
     """Construct an Agno Agent from a normalized AgentConfig."""
     provider, _, model_id = cfg.llm_model.partition("/")
@@ -36,7 +38,13 @@ def build_agent(
     return Agent(
         name=cfg.name,
         id=cfg.slug,
-        model=build_model(provider, model_id, cfg.api_key.get_secret_value()),
+        model=build_model(
+            provider,
+            model_id,
+            cfg.api_key.get_secret_value(),
+            proxy_url=litellm_proxy_url,
+            proxy_key=litellm_master_key,
+        ),
         instructions=compose_instructions(
             cfg, tool_protocol=tool_protocol, output_format=output_format
         ),
@@ -50,8 +58,30 @@ def build_agent(
     )
 
 
-def build_model(provider: str, model_id: str, api_key: str) -> Model:
-    """Map a provider/model-id tuple to an Agno model instance."""
+def build_model(
+    provider: str,
+    model_id: str,
+    api_key: str,
+    *,
+    proxy_url: str | None = None,
+    proxy_key: str | None = None,
+) -> Model:
+    """Map a provider/model-id tuple to an Agno model instance.
+
+    When ``proxy_url`` is set, every model is routed through the LiteLLM proxy as
+    an OpenAI-compatible endpoint (passthrough ``model_name: "*"``). BYOK is
+    preserved: the agent's own ``api_key`` travels per-request via ``extra_body``
+    (the proxy uses it to call the real provider), while ``proxy_key`` (the proxy
+    master/virtual key) authenticates with the gateway. The proxy computes the
+    real cost and reports it to Langfuse.
+    """
+    if proxy_url:
+        return OpenAIChat(
+            id=f"{provider}/{model_id}",
+            base_url=proxy_url,
+            api_key=proxy_key,
+            extra_body={"api_key": api_key},
+        )
     if provider == "anthropic":
         return Claude(id=model_id, api_key=api_key)
     if provider == "openai":

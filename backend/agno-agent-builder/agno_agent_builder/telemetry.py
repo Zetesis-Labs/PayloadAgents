@@ -16,6 +16,7 @@ import base64
 from typing import Any
 
 from openinference.instrumentation.agno import AgnoInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry import baggage
 from opentelemetry import context as otel_context
 from opentelemetry import trace as trace_api
@@ -93,6 +94,14 @@ def configure_langfuse_tracing(config: RuntimeConfig, logger: Any) -> TracerProv
 
     trace_api.set_tracer_provider(provider)
     AgnoInstrumentor().instrument()
+
+    if config.litellm_proxy_url:
+        # Propagate the W3C `traceparent` header on outbound HTTP so the LiteLLM
+        # proxy nests its Langfuse generation under THIS trace — one trace with
+        # the real cost. Requires the proxy to use the `langfuse_otel` callback
+        # (it honours inbound traceparent; BerriAI/litellm#15940).
+        HTTPXClientInstrumentor().instrument()
+        logger.info("HTTPX traceparent propagation enabled for LiteLLM proxy")
 
     logger.info("Langfuse tracing enabled", host=config.langfuse_host)
     return provider
