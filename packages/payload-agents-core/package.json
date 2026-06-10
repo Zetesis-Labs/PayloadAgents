@@ -1,10 +1,10 @@
 {
   "name": "@zetesis/payload-agents-core",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Payload CMS plugin for AI agent management — collections, endpoints, and SSE proxy for Agno-based agent runtimes",
   "license": "MIT",
   "author": {
-    "name": "Zetesis - Rub\u00e9n Garcia",
+    "name": "Zetesis - Rubén Garcia",
     "email": "ruben@zetesis.xyz",
     "url": "https://zetesis.xyz"
   },
