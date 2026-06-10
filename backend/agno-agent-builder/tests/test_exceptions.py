@@ -69,7 +69,7 @@ class TestExceptionHandler:
         assert body == {
             "error": {
                 "code": "INVALID_LLM_MODEL",
-                "message": "Invalid llmModel 'bad'; expected 'provider/model-id'",
+                "message": "Invalid llmModel 'bad'; expected 'provider/model-id' or a catalog preset name",
                 "details": {"slug": "bastos", "llmModel": "bad"},
             }
         }

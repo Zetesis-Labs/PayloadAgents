@@ -44,9 +44,25 @@ class InvalidModelError(AgentConfigError):
 
     def __init__(self, slug: str, llm_model: str) -> None:
         super().__init__(
-            message=f"Invalid llmModel {llm_model!r}; expected 'provider/model-id'",
+            message=(
+                f"Invalid llmModel {llm_model!r}; expected 'provider/model-id' or a catalog preset name"
+            ),
             code="INVALID_LLM_MODEL",
             details={"slug": slug, "llmModel": llm_model},
+        )
+
+
+class GatewayRequiredError(AgentConfigError):
+    """Catalog preset used without the LiteLLM gateway configured."""
+
+    def __init__(self, llm_model: str) -> None:
+        super().__init__(
+            message=(
+                f"llmModel {llm_model!r} is a catalog preset, which requires the "
+                "LiteLLM gateway (set LITELLM_PROXY_URL) to resolve"
+            ),
+            code="GATEWAY_REQUIRED",
+            details={"llmModel": llm_model},
         )
 
 

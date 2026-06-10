@@ -10,7 +10,11 @@ from agno.models.openai import OpenAIChat, OpenAIResponses
 from agno.tools.mcp import MCPTools
 from agno.tools.mcp.params import StreamableHTTPClientParams
 
-from agno_agent_builder.exceptions import InvalidModelError, UnsupportedProviderError
+from agno_agent_builder.exceptions import (
+    GatewayRequiredError,
+    InvalidModelError,
+    UnsupportedProviderError,
+)
 from agno_agent_builder.instructions import compose_instructions
 from agno_agent_builder.sources.types import AgentConfig
 
@@ -29,18 +33,17 @@ def build_agent(
     litellm_master_key: str | None = None,
 ) -> Agent:
     """Construct an Agno Agent from a normalized AgentConfig."""
-    provider, _, model_id = cfg.llm_model.partition("/")
-    if not model_id:
+    llm_model = cfg.llm_model.strip()
+    if not llm_model or llm_model.startswith("/") or llm_model.endswith("/"):
         raise InvalidModelError(slug=cfg.slug, llm_model=cfg.llm_model)
 
-    is_native_reasoner = any(model_id.startswith(p) for p in _NATIVE_REASONER_PREFIXES)
+    is_native_reasoner = _is_native_reasoner(llm_model)
 
     return Agent(
         name=cfg.name,
         id=cfg.slug,
         model=build_model(
-            provider,
-            model_id,
+            llm_model,
             cfg.api_key.get_secret_value(),
             proxy_url=litellm_proxy_url,
             proxy_key=litellm_master_key,
@@ -58,30 +61,51 @@ def build_agent(
     )
 
 
+def _is_native_reasoner(llm_model: str) -> bool:
+    """Whether the model exposes native reasoning (no Agno scaffolding needed).
+
+    For ``provider/model-id`` values the model id is checked. For catalog
+    presets (no slash) the underlying model is unknown to the runtime, so the
+    preset name itself is checked — name presets accordingly (e.g. ``o4-...``)
+    or accept the default scaffolding.
+    """
+    _, _, model_id = llm_model.rpartition("/")
+    return any(model_id.startswith(p) for p in _NATIVE_REASONER_PREFIXES)
+
+
 def build_model(
-    provider: str,
-    model_id: str,
+    llm_model: str,
     api_key: str,
     *,
     proxy_url: str | None = None,
     proxy_key: str | None = None,
 ) -> Model:
-    """Map a provider/model-id tuple to an Agno model instance.
+    """Map an agent's ``llm_model`` to an Agno model instance.
 
-    When ``proxy_url`` is set, every model is routed through the LiteLLM proxy as
-    an OpenAI-compatible endpoint (passthrough ``model_name: "*"``). BYOK is
-    preserved: the agent's own ``api_key`` travels per-request via ``extra_body``
-    (the proxy uses it to call the real provider), while ``proxy_key`` (the proxy
-    master/virtual key) authenticates with the gateway. The proxy computes the
-    real cost and reports it to Langfuse.
+    ``llm_model`` is either a ``provider/model-id`` pair or a catalog preset
+    name (no slash) defined in the LiteLLM gateway's ``model_list``.
+
+    When ``proxy_url`` is set, every model is routed through the LiteLLM proxy
+    as an OpenAI-compatible endpoint — the value travels verbatim and the
+    gateway resolves it (named preset or wildcard passthrough). BYOK is
+    preserved: the agent's own ``api_key`` goes per-request via ``extra_body``
+    (the proxy uses it to call the real provider), while ``proxy_key`` (the
+    proxy master/virtual key) authenticates with the gateway. The proxy
+    computes the real cost and reports it to Langfuse.
+
+    Without a proxy only ``provider/model-id`` can be resolved — catalog
+    presets require the gateway.
     """
     if proxy_url:
         return OpenAIChat(
-            id=f"{provider}/{model_id}",
+            id=llm_model,
             base_url=proxy_url,
             api_key=proxy_key,
             extra_body={"api_key": api_key},
         )
+    provider, sep, model_id = llm_model.partition("/")
+    if not sep:
+        raise GatewayRequiredError(llm_model=llm_model)
     if provider == "anthropic":
         return Claude(id=model_id, api_key=api_key)
     if provider == "openai":
