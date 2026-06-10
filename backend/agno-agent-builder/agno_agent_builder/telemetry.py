@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 from openinference.instrumentation.agno import AgnoInstrumentor
 from opentelemetry import baggage
@@ -150,13 +152,35 @@ def configure_langfuse_tracing(config: RuntimeConfig, logger: Any) -> TracerProv
             # exclusions from this env var; respect an operator override.
             os.environ.setdefault(
                 "OTEL_PYTHON_HTTPX_EXCLUDED_URLS",
-                f"{config.payload_url.rstrip('/')}/api/.*",
+                httpx_exclusion_pattern(config.payload_url),
             )
         HTTPXClientInstrumentor().instrument()
         logger.info("HTTPX traceparent propagation enabled for LiteLLM proxy")
 
     logger.info("Langfuse tracing enabled", host=config.langfuse_host)
     return provider
+
+
+def httpx_exclusion_pattern(base_url: str) -> str:
+    """Regex for ``OTEL_PYTHON_HTTPX_EXCLUDED_URLS`` matching the CMS API.
+
+    httpx normalizes default ports away (``http://web:80/x`` is recorded as
+    ``http://web/x``), so a pattern built verbatim from the configured base
+    URL never matches when the deployment uses the scheme's default port —
+    in prod the runtime polls ``http://<svc>:80`` and every poll leaked as a
+    detached root "GET" trace. Make the default port optional; keep
+    non-default ports literal.
+    """
+    parsed = urlparse(base_url)
+    host = re.escape(parsed.hostname or "")
+    default_port = {"http": 80, "https": 443}.get(parsed.scheme)
+    if parsed.port is None:
+        host_part = host
+    elif parsed.port == default_port:
+        host_part = f"{host}(:{parsed.port})?"
+    else:
+        host_part = f"{host}:{parsed.port}"
+    return f"{parsed.scheme}://{host_part}/api/.*"
 
 
 def tenant_baggage_context(
