@@ -8,7 +8,7 @@
   "packages/payload-lexical-blocks-builder": "0.2.2",
   "packages/payload-taxonomies": "0.2.2",
   "packages/payload-typesense": "0.4.1",
-  "backend/agno-agent-builder": "0.1.10",
+  "backend/agno-agent-builder": "0.1.11",
   "backend/agno-microsoft-teams": "0.1.2",
   "backend/payload-documents-worker-builder": "0.1.3"
 }
