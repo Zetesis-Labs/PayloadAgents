@@ -87,7 +87,7 @@ def build_model(
 
     When ``proxy_url`` is set, every model is routed through the LiteLLM proxy
     as an OpenAI-compatible endpoint — the value travels verbatim and the
-    gateway resolves it (named preset or wildcard passthrough). BYOK is
+    gateway resolves it against its model_list (catalog presets). BYOK is
     preserved: the agent's own ``api_key`` goes per-request via ``extra_body``
     (the proxy uses it to call the real provider), while ``proxy_key`` (the
     proxy master/virtual key) authenticates with the gateway. The proxy
