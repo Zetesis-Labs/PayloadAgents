@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Client entry point — admin UI components.
  */
