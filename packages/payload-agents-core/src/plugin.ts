@@ -9,6 +9,7 @@ import { createAgentsCollection } from './collections/agents'
 import { createAgentsInternalListHandler } from './endpoints/agents-internal-list'
 import { createAgentsListHandler } from './endpoints/agents-list'
 import { createChatHandler } from './endpoints/chat'
+import { createModelsListHandler } from './endpoints/models'
 import { createSessionDeleteHandler, createSessionGetHandler, createSessionPatchHandler } from './endpoints/session'
 import { createSessionsListHandler } from './endpoints/sessions'
 import { createUsageHandler } from './endpoints/usage'
@@ -32,7 +33,14 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
     encryptionKey: userConfig.encryptionKey,
     mediaCollectionSlug: userConfig.mediaCollectionSlug,
     collectionOverrides: userConfig.collectionOverrides,
-    onRunCompleted: userConfig.onRunCompleted
+    onRunCompleted: userConfig.onRunCompleted,
+    modelCatalog: userConfig.modelCatalog
+      ? {
+          gatewayUrl: userConfig.modelCatalog.gatewayUrl.replace(/\/$/, ''),
+          masterKey: userConfig.modelCatalog.masterKey ?? '',
+          cacheTtlMs: userConfig.modelCatalog.cacheTtlMs ?? 60_000
+        }
+      : undefined
   }
 }
 
@@ -103,6 +111,14 @@ export function agentPlugin(userConfig: AgentPluginConfig): Plugin {
         handler: createUsageHandler(config)
       }
     ]
+
+    if (config.modelCatalog) {
+      endpoints.push({
+        path: `${basePath}/models`,
+        method: 'get' as const,
+        handler: createModelsListHandler(config)
+      })
+    }
 
     return {
       ...incomingConfig,
