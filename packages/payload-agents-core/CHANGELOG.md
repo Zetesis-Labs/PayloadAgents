@@ -1,5 +1,12 @@
 # @zetesis/payload-agents-core
 
+## [0.6.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.1...payload-agents-core-v0.6.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* **payload-agents-core:** force automatic JSX runtime so client components keep their 'use client' boundary ([#91](https://github.com/Zetesis-Labs/PayloadAgents/issues/91)) ([048fe38](https://github.com/Zetesis-Labs/PayloadAgents/commit/048fe38a47efc6a41ccc28de5ef50bf63d700f54))
+
 ## [0.6.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.0...payload-agents-core-v0.6.1) (2026-06-10)
 
 
