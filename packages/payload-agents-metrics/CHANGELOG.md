@@ -1,5 +1,13 @@
 # @zetesis/payload-agents-metrics
 
+## [1.3.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.2.4...payload-agents-metrics-v1.3.0) (2026-06-12)
+
+
+### Features
+
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9e4f089](https://github.com/Zetesis-Labs/PayloadAgents/commit/9e4f0892b6daaece238ad9dd2ca781b2c3e9de93))
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9a1f4c0](https://github.com/Zetesis-Labs/PayloadAgents/commit/9a1f4c0cfadc29f5d2bf5fa51e5bfdcbb28bc252))
+
 ## [1.2.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.2.3...payload-agents-metrics-v1.2.4) (2026-06-11)
 
 
