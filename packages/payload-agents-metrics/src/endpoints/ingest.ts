@@ -21,6 +21,7 @@ const EventSchema = z.object({
   cachedInputTokens: z.number().int().nonnegative().optional(),
   totalTokens: z.number().int().nonnegative().optional(),
   costUsd: z.number().nonnegative().optional(),
+  costSource: z.enum(['gateway', 'table']).optional(),
   startedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
   latencyMs: z.number().int().nonnegative().optional(),
@@ -109,6 +110,8 @@ async function persistEvent(
   const inputTokens = event.inputTokens ?? 0
   const outputTokens = event.outputTokens ?? 0
   const totalTokens = event.totalTokens ?? inputTokens + outputTokens
+  // An explicit costUsd is the gateway's real figure; otherwise fall back to
+  // the static pricing table. costSource records which, defaulting to match.
   const costUsd =
     event.costUsd ??
     calculateLlmCost(
@@ -117,6 +120,7 @@ async function persistEvent(
       { input: inputTokens, output: outputTokens },
       config.extraPricing
     )
+  const costSource = event.costSource ?? (event.costUsd !== undefined ? 'gateway' : 'table')
 
   const data: Record<string, unknown> = {
     user: event.user,
@@ -133,6 +137,7 @@ async function persistEvent(
     cachedInputTokens: event.cachedInputTokens,
     totalTokens,
     costUsd,
+    costSource,
     startedAt: event.startedAt,
     completedAt: event.completedAt ?? new Date().toISOString(),
     latencyMs: event.latencyMs,

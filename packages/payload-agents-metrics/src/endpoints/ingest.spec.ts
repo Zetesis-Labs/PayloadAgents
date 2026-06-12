@@ -144,6 +144,7 @@ describe('createIngestHandler — single event happy path', () => {
     // gpt-4o-mini: input $0.15/M, output $0.60/M → 100*0.15e-6 + 50*0.60e-6 = ~4.5e-5
     await handler(makeReq({ secret: 'secret-xyz', body: validEvent }, payload))
     expect(create.mock.calls[0]?.[0]?.data?.costUsd).toBeCloseTo(4.5e-5, 10)
+    expect(create.mock.calls[0]?.[0]?.data?.costSource).toBe('table')
   })
 
   it('uses an explicit costUsd when the caller provides it (including 0)', async () => {
@@ -151,6 +152,15 @@ describe('createIngestHandler — single event happy path', () => {
     const { payload, create } = makePayload(async () => ({ id: 1 }))
     await handler(makeReq({ secret: 'secret-xyz', body: { ...validEvent, costUsd: 0 } }, payload))
     expect(create.mock.calls[0]?.[0]?.data?.costUsd).toBe(0)
+    // An explicit cost is the gateway's real figure.
+    expect(create.mock.calls[0]?.[0]?.data?.costSource).toBe('gateway')
+  })
+
+  it('honours an explicit costSource override', async () => {
+    const handler = createIngestHandler(baseConfig())
+    const { payload, create } = makePayload(async () => ({ id: 1 }))
+    await handler(makeReq({ secret: 'secret-xyz', body: { ...validEvent, costSource: 'gateway' } }, payload))
+    expect(create.mock.calls[0]?.[0]?.data?.costSource).toBe('gateway')
   })
 
   it('defaults completedAt to now when not provided', async () => {
