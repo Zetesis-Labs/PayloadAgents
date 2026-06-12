@@ -195,6 +195,7 @@ describe('onRunCompleted — latency & cost', () => {
     )
     const data = create.mock.calls[0]?.[0]?.data
     expect(data?.costUsd).toBeCloseTo(0.75, 6)
+    expect(data?.costSource).toBe('table')
   })
 
   it('honours extraPricing for custom models', async () => {
@@ -203,6 +204,78 @@ describe('onRunCompleted — latency & cost', () => {
     await hook({ ...baseCtx, llmModel: 'openai/gpt-4o-mini', metrics: { input_tokens: 1, output_tokens: 1 } }, payload)
     const data = create.mock.calls[0]?.[0]?.data
     expect(data?.costUsd).toBe(3)
+  })
+
+  it('prefers the gateway run-level cost over the pricing table', async () => {
+    const hook = createOnRunCompleted(baseConfig())
+    const { payload, create } = makePayload()
+    await hook(
+      {
+        ...baseCtx,
+        llmModel: 'openai/gpt-4o-mini',
+        // The table would say 0.75; the gateway's real figure wins.
+        metrics: { input_tokens: 1_000_000, output_tokens: 1_000_000, cost: 0.123456 }
+      },
+      payload
+    )
+    const data = create.mock.calls[0]?.[0]?.data
+    expect(data?.costUsd).toBe(0.123456)
+    expect(data?.costSource).toBe('gateway')
+  })
+
+  it('sums per-model gateway costs when no run-level cost is present', async () => {
+    const hook = createOnRunCompleted(baseConfig())
+    const { payload, create } = makePayload()
+    await hook(
+      {
+        ...baseCtx,
+        llmModel: 'openai/gpt-4o-mini',
+        metrics: {
+          details: {
+            model: [
+              { id: 'gpt-4o-mini', provider: 'openai', input_tokens: 10, output_tokens: 5, cost: 0.002 },
+              { id: 'gpt-4o-mini', provider: 'openai', input_tokens: 20, output_tokens: 8, cost: 0.003 }
+            ]
+          }
+        }
+      },
+      payload
+    )
+    const data = create.mock.calls[0]?.[0]?.data
+    expect(data?.costUsd).toBeCloseTo(0.005, 10)
+    expect(data?.costSource).toBe('gateway')
+  })
+
+  it('keeps a reported gateway cost of 0 instead of falling back to the table', async () => {
+    const hook = createOnRunCompleted(baseConfig())
+    const { payload, create } = makePayload()
+    await hook(
+      {
+        ...baseCtx,
+        llmModel: 'openai/gpt-4o-mini',
+        metrics: { input_tokens: 1_000_000, output_tokens: 1_000_000, cost: 0 }
+      },
+      payload
+    )
+    const data = create.mock.calls[0]?.[0]?.data
+    expect(data?.costUsd).toBe(0)
+    expect(data?.costSource).toBe('gateway')
+  })
+
+  it('falls back to the table when the gateway cost is not a finite number', async () => {
+    const hook = createOnRunCompleted(baseConfig())
+    const { payload, create } = makePayload()
+    await hook(
+      {
+        ...baseCtx,
+        llmModel: 'openai/gpt-4o-mini',
+        metrics: { input_tokens: 1_000_000, output_tokens: 1_000_000, cost: null }
+      },
+      payload
+    )
+    const data = create.mock.calls[0]?.[0]?.data
+    expect(data?.costUsd).toBeCloseTo(0.75, 6)
+    expect(data?.costSource).toBe('table')
   })
 })
 

@@ -99,7 +99,7 @@ requires-dist = [
 
 [[package]]
 name = "agno-agent-builder"
-version = "0.1.8"
+version = "0.1.11"
 source = { editable = "agno-agent-builder" }
 dependencies = [
     { name = "ag-ui-protocol" },

@@ -74,6 +74,19 @@ export function createLlmUsageEventsCollection(config: ResolvedMetricsConfig): C
     { name: 'cachedInputTokens', type: 'number', defaultValue: 0 },
     { name: 'totalTokens', type: 'number', required: true, defaultValue: 0 },
     { name: 'costUsd', type: 'number', required: true, defaultValue: 0 },
+    {
+      name: 'costSource',
+      type: 'select',
+      defaultValue: 'table',
+      index: true,
+      options: [
+        { label: 'Gateway (real)', value: 'gateway' },
+        { label: 'Pricing table (estimated)', value: 'table' }
+      ],
+      admin: {
+        description: "Whether costUsd is the LiteLLM gateway's real figure or the static table estimate"
+      }
+    },
     // ── Execution ───────────────────────────────────────────────────
     { name: 'startedAt', type: 'date', index: true },
     { name: 'completedAt', type: 'date', required: true, index: true },
