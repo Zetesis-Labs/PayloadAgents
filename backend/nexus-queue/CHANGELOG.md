@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.2...nexus-queue-v0.1.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **nexus-queue:** import OTLP exporter lazily so the worker runs untraced without it ([#102](https://github.com/Zetesis-Labs/PayloadAgents/issues/102)) ([9c0a3f6](https://github.com/Zetesis-Labs/PayloadAgents/commit/9c0a3f62d2cffbafa33defb89b81a97a0920b738))
+
 ## [0.1.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.1...nexus-queue-v0.1.2) (2026-06-17)
 
 
