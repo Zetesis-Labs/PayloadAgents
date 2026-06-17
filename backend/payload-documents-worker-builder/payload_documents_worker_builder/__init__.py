@@ -1,12 +1,13 @@
 """Public API for `payload-documents-worker-builder`.
 
-Mirrors the shape of `agno_agent_builder.__init__`: a single import surface
-that exposes the factory, the config, the clients and the tasks. Consumers
-should never reach into submodules.
+A thin, ZP-flavoured layer over the `nexus-queue` runtime: the LlamaParse
+parse-document handler, its Payload adapters, the config, and the clients.
 """
 
-from payload_documents_worker_builder.app import WorkerApp, create_app
-from payload_documents_worker_builder.broker import create_broker
+from nexus_queue import WorkerApp
+
+from payload_documents_worker_builder.adapters import PayloadJobState, ZpDocumentsAdapters
+from payload_documents_worker_builder.app import create_app
 from payload_documents_worker_builder.clients import (
     LlamaParseClient,
     LlamaParseError,
@@ -18,7 +19,8 @@ from payload_documents_worker_builder.clients import (
 from payload_documents_worker_builder.config import RuntimeConfig
 from payload_documents_worker_builder.tasks import (
     PARSE_DOCUMENT_TASK_NAME,
-    register_parse_document_task,
+    ParsePayload,
+    parse_document,
 )
 
 __all__ = [
@@ -27,13 +29,15 @@ __all__ = [
     "LlamaParseError",
     "LlamaParseJob",
     "LlamaParseStatus",
+    "ParsePayload",
     "PayloadClient",
     "PayloadError",
+    "PayloadJobState",
     "RuntimeConfig",
     "WorkerApp",
+    "ZpDocumentsAdapters",
     "create_app",
-    "create_broker",
-    "register_parse_document_task",
+    "parse_document",
 ]
 
 __version__ = "0.1.3"

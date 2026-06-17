@@ -5,7 +5,7 @@ description = "Workspace root for Zetesis Python services."
 requires-python = ">=3.12"
 
 [tool.uv.workspace]
-members = ["agno-agent-builder", "agno-agent", "agno-microsoft-teams", "payload-documents-worker-builder", "payload-documents-worker"]
+members = ["agno-agent-builder", "agno-agent", "agno-microsoft-teams", "payload-documents-worker-builder", "payload-documents-worker", "nexus-queue"]
 
 [tool.uv.sources]
 agno-agent-builder = { workspace = true }
@@ -13,6 +13,7 @@ agno-agent = { workspace = true }
 agno-microsoft-teams = { workspace = true }
 payload-documents-worker-builder = { workspace = true }
 payload-documents-worker = { workspace = true }
+nexus-queue = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -52,7 +53,7 @@ warn_unused_configs = true
 ignore_missing_imports = false
 
 [[tool.mypy.overrides]]
-module = ["agno.*", "msal", "taskiq", "taskiq.*", "taskiq_redis", "taskiq_redis.*"]
+module = ["agno.*", "msal", "taskiq", "taskiq.*", "taskiq_redis", "taskiq_redis.*", "prometheus_client", "prometheus_client.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

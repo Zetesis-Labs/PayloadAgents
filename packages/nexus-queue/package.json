@@ -1,0 +1,62 @@
+{
+  "name": "@zetesis/nexus-queue",
+  "version": "0.1.0",
+  "description": "TypeScript producer client for the Nexus-Queue standard — enqueues tasks via the HTTP kicker.",
+  "keywords": [
+    "nexus-queue",
+    "taskiq",
+    "queue",
+    "producer"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Zetesis - Rubén Garcia",
+    "email": "ruben@zetesis.xyz",
+    "url": "https://zetesis.xyz"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zetesis-Labs/PayloadAgents",
+    "directory": "packages/nexus-queue"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "clean": "rimraf -g {dist,*.tsbuildinfo}",
+    "prepublishOnly": "pnpm clean && pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^5.0.10",
+    "tsdown": "^0.16.5",
+    "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    },
+    "main": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}

@@ -7,6 +7,7 @@ deploys can build several `RuntimeConfig` instances from a single env file.
 
 from __future__ import annotations
 
+from nexus_queue import RuntimeConfig as NexusRuntimeConfig
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
 
 
@@ -65,3 +66,16 @@ class RuntimeConfig(BaseModel):
 
     # ── Logging ───────────────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
+
+    def to_nexus_config(self) -> NexusRuntimeConfig:
+        """Derive the runtime config: ZP documents land on stream nq:zp:documents."""
+        return NexusRuntimeConfig(
+            app_name=self.app_name,
+            project="zp",
+            queue="documents",
+            redis_url=self.redis_url,
+            internal_secret=self.internal_secret,
+            public_paths=self.public_paths,
+            max_retries=2,
+            log_level=self.log_level,
+        )

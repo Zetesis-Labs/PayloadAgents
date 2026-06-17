@@ -87,7 +87,8 @@ class PayloadClient:
         path = self._endpoint(collection, doc_id, "parse-context")
         response = await self._client().get(path, headers=self._headers)
         _raise_for_status(response, f"GET {path}")
-        return response.json()
+        context: ParseContext = response.json()
+        return context
 
     async def fetch_parse_file(self, collection: str, doc_id: str | int) -> bytes:
         """GET the plugin's internal binary endpoint.

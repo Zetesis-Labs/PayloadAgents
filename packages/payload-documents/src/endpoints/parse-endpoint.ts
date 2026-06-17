@@ -1,7 +1,10 @@
+import { NexusQueueClient } from '@zetesis/nexus-queue'
 import type { Endpoint, PayloadRequest } from 'payload'
 import type { DocumentsWorkerConfig } from '../plugin/types'
 import { fetchUploadedFile, getLlamaParseClient } from './inline-helpers'
 import { type EndpointConfig, fetchDocument, getRouteId, requireAuth, updateDocument } from './shared'
+
+const DEFAULT_TASK_NAME = 'documents.parse'
 
 export const createParseEndpoint = (config: EndpointConfig): Endpoint => ({
   path: '/:id/parse',
@@ -34,26 +37,10 @@ const queueOnWorker = async (
     parse_job_id: null
   })
 
+  const queue = new NexusQueueClient({ kickerUrl: worker.url, secret: worker.internalSecret })
+
   try {
-    const res = await fetch(`${worker.url.replace(/\/$/, '')}/tasks/parse-document`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Secret': worker.internalSecret
-      },
-      body: JSON.stringify({ document_id: id })
-    })
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      const message = `Worker rejected parse request (HTTP ${res.status}): ${detail.slice(0, 200)}`
-      await updateDocument(req, collectionSlug, id, {
-        parse_status: 'error',
-        parse_error: message
-      })
-      return Response.json({ error: message }, { status: 502 })
-    }
-
+    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey: id })
     return Response.json({ status: 'queued' })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker is unreachable'

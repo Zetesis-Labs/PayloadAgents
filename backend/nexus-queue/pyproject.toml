@@ -1,12 +1,12 @@
 [project]
-name = "payload-documents-worker-builder"
-version = "0.1.3"
-description = "Payload CMS documents worker on the Nexus-Queue runtime — LlamaParse parse-document handler over JobStatePort."
+name = "nexus-queue"
+version = "0.1.0"
+description = "Nexus-Queue — portable taskiq + Redis Streams worker runtime: namespaced streams, versioned envelope, ports-and-adapters, retry/DLQ/idempotency/tracing/metrics middleware."
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Zetesis Labs" }]
-keywords = ["payload", "worker", "nexus-queue", "taskiq", "llamaparse"]
+keywords = ["taskiq", "redis", "queue", "worker", "ports-and-adapters", "dlq"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
@@ -18,10 +18,15 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "httpx>=0.28",
-    "nexus-queue>=0.1.0",
+    "fastapi>=0.115",
+    "opentelemetry-api>=1.35",
+    "prometheus-client>=0.20",
     "pydantic>=2.9",
+    "redis>=5.0",
     "structlog>=24.1",
+    "taskiq>=0.11.18",
+    "taskiq-redis>=1.1.1",
+    "uvicorn[standard]>=0.34",
 ]
 
 [project.urls]
@@ -34,7 +39,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["payload_documents_worker_builder"]
+packages = ["nexus_queue"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"payload_documents_worker_builder/py.typed" = "payload_documents_worker_builder/py.typed"
+"nexus_queue/py.typed" = "nexus_queue/py.typed"

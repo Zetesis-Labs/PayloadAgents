@@ -20,6 +20,12 @@
       "changelog-path": "CHANGELOG.md",
       "release-type": "node"
     },
+    "packages/nexus-queue": {
+      "package-name": "@zetesis/nexus-queue",
+      "component": "nexus-queue-ts",
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "node"
+    },
     "packages/payload-agents-core": {
       "package-name": "@zetesis/payload-agents-core",
       "component": "payload-agents-core",
@@ -71,6 +77,12 @@
     "backend/agno-microsoft-teams": {
       "package-name": "agno-microsoft-teams",
       "component": "agno-microsoft-teams",
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "python"
+    },
+    "backend/nexus-queue": {
+      "package-name": "nexus-queue",
+      "component": "nexus-queue",
       "changelog-path": "CHANGELOG.md",
       "release-type": "python"
     },

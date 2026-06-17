@@ -96,6 +96,7 @@ pnpm test
   |---|---|---|
   | `agent-ui` | `packages/agent-ui` | `agent-ui-v*` |
   | `mcp-typesense` | `packages/mcp-typesense` | `mcp-typesense-v*` |
+  | `nexus-queue-ts` | `packages/nexus-queue` | `nexus-queue-ts-v*` |
   | `payload-agents-core` | `packages/payload-agents-core` | `payload-agents-core-v*` |
   | `payload-agents-metrics` | `packages/payload-agents-metrics` | `payload-agents-metrics-v*` |
   | `payload-documents` | `packages/payload-documents` | `payload-documents-v*` |
@@ -104,6 +105,7 @@ pnpm test
   | `payload-taxonomies` | `packages/payload-taxonomies` | `payload-taxonomies-v*` |
   | `payload-typesense` | `packages/payload-typesense` | `payload-typesense-v*` |
   | `agno-agent-builder` | `backend/agno-agent-builder` | `agno-agent-builder-v*` |
+  | `nexus-queue` | `backend/nexus-queue` | `nexus-queue-v*` |
   | `payload-documents-worker-builder` | `backend/payload-documents-worker-builder` | `payload-documents-worker-builder-v*` |
 
   **Bump rules**:
