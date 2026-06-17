@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-documents",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Payload CMS plugin that adds a documents collection with LlamaParse-powered PDF parsing into editable markdown.",
   "license": "MIT",
   "sideEffects": false,
