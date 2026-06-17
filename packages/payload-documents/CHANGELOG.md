@@ -1,5 +1,12 @@
 # @zetesis/payload-documents
 
+## [0.5.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.2...payload-documents-v0.5.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **payload-documents:** per-attempt idempotency key for parse ([#104](https://github.com/Zetesis-Labs/PayloadAgents/issues/104)) ([a09c22b](https://github.com/Zetesis-Labs/PayloadAgents/commit/a09c22b1671f37e6127c4982f69b5a144389952e))
+
 ## [0.5.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.1...payload-documents-v0.5.2) (2026-06-17)
 
 
