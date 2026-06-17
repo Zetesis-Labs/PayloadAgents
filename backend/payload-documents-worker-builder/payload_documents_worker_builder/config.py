@@ -64,6 +64,12 @@ class RuntimeConfig(BaseModel):
         description="Paths the InternalAuthMiddleware lets through without the secret.",
     )
 
+    # ── Observability ─────────────────────────────────────────────────────
+    metrics_port: int | None = Field(
+        default=None,
+        description="If set, the worker serves Prometheus metrics on this port. None disables it.",
+    )
+
     # ── Logging ───────────────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
 
@@ -77,5 +83,6 @@ class RuntimeConfig(BaseModel):
             internal_secret=self.internal_secret,
             public_paths=self.public_paths,
             max_retries=2,
+            metrics_port=self.metrics_port,
             log_level=self.log_level,
         )
