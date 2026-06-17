@@ -47,6 +47,7 @@ from nexus_queue.ports import (
     StatusEventPort,
 )
 from nexus_queue.publisher import Publisher
+from nexus_queue.tracing import configure_tracing
 
 __all__ = [
     "NQ_VERSION",
@@ -69,6 +70,7 @@ __all__ = [
     "StatusEventPort",
     "WorkerApp",
     "configure_logging",
+    "configure_tracing",
     "consumer_group",
     "create_broker",
     "create_kicker",

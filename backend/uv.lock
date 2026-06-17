@@ -1595,6 +1595,8 @@ source = { editable = "nexus-queue" }
 dependencies = [
     { name = "fastapi" },
     { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
     { name = "prometheus-client" },
     { name = "pydantic" },
     { name = "redis" },
@@ -1608,6 +1610,8 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "opentelemetry-api", specifier = ">=1.35" },
+    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.35" },
+    { name = "opentelemetry-sdk", specifier = ">=1.35" },
     { name = "prometheus-client", specifier = ">=0.20" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "redis", specifier = ">=5.0" },

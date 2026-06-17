@@ -15,6 +15,7 @@ from nexus_queue.config import RuntimeConfig
 from nexus_queue.handlers import HandlerSpec, register
 from nexus_queue.kicker import create_kicker
 from nexus_queue.lifecycle import configure_logging, register_lifecycle
+from nexus_queue.tracing import configure_tracing
 
 
 @dataclass(slots=True, frozen=True)
@@ -37,6 +38,7 @@ def create_worker(
     """Build the broker (namespaced + middleware), register lifecycle + handlers,
     and wrap a FastAPI kicker."""
     configure_logging(config)
+    configure_tracing(config)
     broker = create_broker(config)
     register_lifecycle(broker, config, adapters)
     for spec in handlers:
