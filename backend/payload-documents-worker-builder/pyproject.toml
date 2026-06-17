@@ -1,6 +1,6 @@
 [project]
 name = "payload-documents-worker-builder"
-version = "0.1.3"
+version = "0.1.4"
 description = "Payload CMS documents worker on the Nexus-Queue runtime — LlamaParse parse-document handler over JobStatePort."
 requires-python = ">=3.12"
 readme = "README.md"

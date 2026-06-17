@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/nexus-queue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript producer client for the Nexus-Queue standard — enqueues tasks via the HTTP kicker.",
   "keywords": [
     "nexus-queue",
