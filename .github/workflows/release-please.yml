@@ -57,22 +57,36 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           paths='${{ needs.release-please.outputs.paths_released }}'
           echo "Released paths: $paths"
-          echo "$paths" | jq -r '.[]' | while IFS= read -r path; do
+          # No `set -e`: one already-published package (npm 403) must not abort
+          # the rest. Skip versions already on the registry; fail the job only if
+          # a real publish fails. `done < <(...)` keeps the loop in this shell so
+          # `fail` survives.
+          fail=0
+          while IFS= read -r path; do
             case "$path" in
               packages/*)
                 pkg_name=$(node -p "require('./$path/package.json').name")
-                echo "::group::Publishing $pkg_name ($path)"
-                pnpm --filter "$pkg_name" publish --no-git-checks --access public
+                version=$(node -p "require('./$path/package.json').version")
+                if npm view "$pkg_name@$version" version >/dev/null 2>&1; then
+                  echo "::notice::$pkg_name@$version already published — skipping"
+                  continue
+                fi
+                echo "::group::Publishing $pkg_name@$version ($path)"
+                if ! pnpm --filter "$pkg_name" publish --no-git-checks --access public; then
+                  echo "::error::failed to publish $pkg_name@$version"
+                  fail=1
+                fi
                 echo "::endgroup::"
                 ;;
               *)
                 echo "Skipping non-npm path: $path"
                 ;;
             esac
-          done
+          done < <(echo "$paths" | jq -r '.[]')
+          exit "$fail"
 
   publish-agno-agent-builder:
     needs: [release-please, publish-agno-microsoft-teams]
