@@ -2,9 +2,11 @@
 
 Unifies retry and DLQ in one place so the two decisions stay consistent:
 
-* transient error and attempts remain → re-enqueue with exponential backoff
-  (the delay rides as a label; real delayed delivery needs a ScheduleSource,
-  tracked as a spec open question — without one taskiq re-enqueues eagerly).
+* transient error and attempts remain → park the message in the delayed-retry
+  sorted set scored by its due time (``now + exponential backoff``). Redis
+  Streams deliver immediately, so the backoff can't ride the work stream; the
+  :class:`~nexus_queue.delayed.DelayedRetryPoller` moves the message back onto
+  the broker once its delay elapses.
 * attempts exhausted, or a :class:`NexusPermanentError` → ``XADD`` to the
   ``nq:{project}:{queue}:dlq`` stream with failure metadata, instead of the
   silent ack-and-drop that both reference projects do today.
@@ -14,6 +16,7 @@ from __future__ import annotations
 
 import json
 import random
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -21,11 +24,11 @@ import redis.asyncio as aioredis
 import structlog
 from taskiq.abc.middleware import TaskiqMiddleware
 from taskiq.exceptions import NoResultError
-from taskiq.kicker import AsyncKicker
 from taskiq.message import TaskiqMessage
 from taskiq.result import TaskiqResult
 
 from nexus_queue.config import RuntimeConfig
+from nexus_queue.delayed import pack_retry
 from nexus_queue.exceptions import NexusPermanentError
 
 logger = structlog.get_logger("nexus_queue.retry_dlq")
@@ -71,22 +74,17 @@ class RetryDlqMiddleware(TaskiqMiddleware):
 
         if not permanent and attempt < max_retries:
             delay = self._backoff_delay(attempt)
-            kicker: AsyncKicker[Any, Any] = (
-                AsyncKicker(
-                    task_name=message.task_name,
-                    broker=self.broker,
-                    labels=message.labels,
-                )
-                .with_task_id(message.task_id)
-                .with_labels(_retries=attempt, delay=delay)
-            )
-            await kicker.kiq(*message.args, **message.kwargs)
+            labels = {**message.labels, "_retries": attempt}
+            record = pack_retry(message, labels)
+            if self._redis is not None:
+                await self._redis.zadd(self._config.delayed_set, {record: time.time() + delay})
             result.error = NoResultError()
             logger.info(
-                "retry",
+                "retry-scheduled",
                 task=message.task_name,
                 attempt=attempt,
                 max_retries=max_retries,
+                delay_s=round(delay, 2),
             )
             return
 

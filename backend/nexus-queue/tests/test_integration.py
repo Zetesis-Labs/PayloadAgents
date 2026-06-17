@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import json
 import os
+import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
@@ -52,6 +53,8 @@ def _config(queue: str) -> RuntimeConfig:
         redis_url=REDIS_URL,
         internal_secret=SecretStr(SECRET),
         max_retries=2,
+        retry_base_delay_s=0.2,
+        retry_poll_interval_s=0.05,
     )
 
 
@@ -144,8 +147,9 @@ async def test_idempotency_store(redis_client: aioredis.Redis) -> None:
     store = IdempotencyStore(_config("q3"))
     await store.startup()
     try:
-        assert await store.claim("test-idem") is True
-        assert await store.claim("test-idem") is False
+        assert await store.already_processed("test-idem") is False
+        await store.mark_processed("test-idem")
+        assert await store.already_processed("test-idem") is True
     finally:
         await store.shutdown()
 
@@ -172,6 +176,118 @@ async def test_roundtrip_and_idempotent_consume(redis_client: aioredis.Redis) ->
         await publisher.enqueue("test.echo", EchoPayload(id="rt1"), idempotency_key="test-rt1")
         await asyncio.sleep(0.8)
         assert await redis_client.get("nq:test:runs:rt1") == b"1"
+    finally:
+        receiver.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await receiver
+        await client_broker.shutdown()
+        await worker.broker.shutdown()
+
+
+async def test_transient_failure_retries_with_idempotency_key(
+    redis_client: aioredis.Redis,
+) -> None:
+    """A transient failure must not let the idempotency key suppress the retry:
+    the redelivered message carries the same nq_idem, so dedup that claimed the
+    key up front would skip the retry and silently drop the job."""
+    config = _config("q7")  # max_retries=2
+
+    async def flaky(payload: EchoPayload, deps: _Deps) -> None:
+        attempts = await deps.redis.incr(f"nq:test:attempts:{payload.id}")
+        if attempts < 2:
+            raise RuntimeError("transient")
+        await deps.redis.set(f"nq:test:done:{payload.id}", "1")
+
+    worker = create_worker(
+        config, _Deps(redis=redis_client), [HandlerSpec("test.flaky", flaky, EchoPayload)]
+    )
+    client_broker = create_broker(config)
+    await client_broker.startup()
+    receiver = asyncio.create_task(run_receiver_task(worker.broker, run_startup=True))
+    try:
+        await asyncio.sleep(0.5)
+        await Publisher(client_broker, config).enqueue(
+            "test.flaky", EchoPayload(id="fk1"), idempotency_key="test-fk1"
+        )
+        await _wait_for_key(redis_client, "nq:test:done:fk1")
+        assert await redis_client.get("nq:test:attempts:fk1") == b"2"
+    finally:
+        receiver.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await receiver
+        await client_broker.shutdown()
+        await worker.broker.shutdown()
+
+
+async def test_transient_failure_exhausts_to_dlq(redis_client: aioredis.Redis) -> None:
+    """A transient error that never recovers must exhaust max_retries and land
+    in the DLQ (permanent=False), not loop forever nor get ack-and-dropped."""
+    config = _config("q8")  # max_retries=2
+
+    async def always_fails(payload: EchoPayload, deps: _Deps) -> None:
+        await deps.redis.incr(f"nq:test:tries:{payload.id}")
+        raise RuntimeError("still broken")
+
+    worker = create_worker(
+        config, _Deps(redis=redis_client), [HandlerSpec("test.fail", always_fails, EchoPayload)]
+    )
+    client_broker = create_broker(config)
+    await client_broker.startup()
+    receiver = asyncio.create_task(run_receiver_task(worker.broker, run_startup=True))
+    try:
+        await asyncio.sleep(0.5)
+        await Publisher(client_broker, config).enqueue(
+            "test.fail", EchoPayload(id="x1"), idempotency_key="test-x1"
+        )
+        record = await _wait_for_stream(redis_client, dlq_stream("test", "q8"))
+        assert record["permanent"] is False
+        assert record["task_name"] == "test.fail"
+        assert int(record["attempts"]) == config.max_retries
+        assert await redis_client.get("nq:test:tries:x1") == str(config.max_retries).encode()
+    finally:
+        receiver.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await receiver
+        await client_broker.shutdown()
+        await worker.broker.shutdown()
+
+
+async def test_retry_waits_for_backoff(redis_client: aioredis.Redis) -> None:
+    """The redelivery must be deferred by the backoff delay, not eager: the gap
+    between the failing attempt and the retry must be at least the base delay."""
+    base_delay = 0.5
+    config = RuntimeConfig(
+        app_name="nexus-queue-test",
+        project="test",
+        queue="q9",
+        redis_url=REDIS_URL,
+        internal_secret=SecretStr(SECRET),
+        max_retries=3,
+        retry_base_delay_s=base_delay,
+        retry_poll_interval_s=0.05,
+    )
+    stamps: list[float] = []
+
+    async def flaky(payload: EchoPayload, deps: _Deps) -> None:
+        stamps.append(time.monotonic())
+        if len(stamps) < 2:
+            raise RuntimeError("transient")
+        await deps.redis.set("nq:test:done:bk1", "1")
+
+    worker = create_worker(
+        config, _Deps(redis=redis_client), [HandlerSpec("test.bk", flaky, EchoPayload)]
+    )
+    client_broker = create_broker(config)
+    await client_broker.startup()
+    receiver = asyncio.create_task(run_receiver_task(worker.broker, run_startup=True))
+    try:
+        await asyncio.sleep(0.5)
+        await Publisher(client_broker, config).enqueue(
+            "test.bk", EchoPayload(id="bk1"), idempotency_key="test-bk1"
+        )
+        await _wait_for_key(redis_client, "nq:test:done:bk1", tries=100)
+        assert len(stamps) == 2
+        assert stamps[1] - stamps[0] >= base_delay - 0.1
     finally:
         receiver.cancel()
         with contextlib.suppress(asyncio.CancelledError):

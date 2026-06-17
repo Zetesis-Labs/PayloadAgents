@@ -10,14 +10,18 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+import structlog
+from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 from taskiq import AsyncBroker
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.naming import SINGLE_TENANT
 from nexus_queue.publisher import Publisher
+
+logger = structlog.get_logger("nexus_queue.kicker")
 
 
 class EnqueueRequest(BaseModel):
@@ -33,6 +37,13 @@ def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        # Fail-open is allowed (some deploys front the kicker with a mesh), but it
+        # must never be silent: an empty secret leaves /enqueue unauthenticated.
+        if not config.internal_secret.get_secret_value():
+            logger.warning(
+                "kicker-auth-disabled",
+                detail="internal_secret is empty; /enqueue is unauthenticated",
+            )
         # The kicker connects the broker; the worker process owns its own lifecycle.
         if not broker.is_worker_process:
             await broker.startup()
@@ -64,6 +75,10 @@ def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
     @app.get("/ready")
     async def ready() -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
         return {"status": "ok"}
+
+    @app.get("/metrics")
+    async def metrics() -> Response:  # pyright: ignore[reportUnusedFunction]
+        return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     @app.post("/enqueue/{task}", status_code=status.HTTP_202_ACCEPTED)
     async def enqueue(  # pyright: ignore[reportUnusedFunction]

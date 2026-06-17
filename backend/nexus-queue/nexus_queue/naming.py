@@ -57,6 +57,11 @@ def dlq_stream(project: str, queue: str) -> str:
     return f"nq:{project}:{queue}:dlq"
 
 
+def delayed_set(project: str, queue: str) -> str:
+    """Sorted-set key holding retries until their backoff elapses."""
+    return f"nq:{project}:{queue}:delayed"
+
+
 def status_stream(project: str) -> str:
     """Per-project status-event stream key."""
     return f"nq:{project}:status"

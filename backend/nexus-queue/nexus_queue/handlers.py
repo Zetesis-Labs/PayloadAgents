@@ -51,13 +51,12 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
         require_supported_version(labels)
         state = context.state
 
-        if spec.idempotent:
-            idem = labels.get(LABEL_IDEM)
-            if idem:
-                store: IdempotencyStore = state.nexus_idempotency
-                if not await store.claim(str(idem)):
-                    logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
-                    return
+        raw_idem = labels.get(LABEL_IDEM) if spec.idempotent else None
+        idem = str(raw_idem) if raw_idem else None
+        store: IdempotencyStore | None = state.nexus_idempotency if idem else None
+        if store is not None and idem and await store.already_processed(idem):
+            logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
+            return
 
         adapters = state.nexus_adapters
         payload = spec.payload_model(**kwargs)
@@ -72,6 +71,10 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
             span.set_attribute("nq.tenant", str(labels.get(LABEL_TENANT, SINGLE_TENANT)))
             with CONSUME_SECONDS.labels(config.project, config.queue, spec.task_name).time():
                 await spec.handler(payload, adapters)
+
+        # Record dedup only after success: a failed attempt must stay retryable.
+        if store is not None and idem:
+            await store.mark_processed(idem)
 
     _run.__name__ = "nexus_run_" + spec.task_name.replace(".", "_").replace(":", "_")
     broker.task(task_name=spec.task_name)(_run)

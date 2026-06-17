@@ -10,6 +10,7 @@ from __future__ import annotations
 from nexus_queue.app import WorkerApp, create_worker
 from nexus_queue.broker import create_broker
 from nexus_queue.config import RuntimeConfig
+from nexus_queue.delayed import DelayedRetryPoller
 from nexus_queue.envelope import (
     Envelope,
     missing_required_labels,
@@ -31,6 +32,7 @@ from nexus_queue.naming import (
     NQ_VERSION,
     SINGLE_TENANT,
     consumer_group,
+    delayed_set,
     dlq_stream,
     status_stream,
     work_stream,
@@ -50,6 +52,7 @@ __all__ = [
     "NQ_VERSION",
     "SINGLE_TENANT",
     "BlobStorePort",
+    "DelayedRetryPoller",
     "Envelope",
     "HandlerSpec",
     "IdempotencyStore",
@@ -70,6 +73,7 @@ __all__ = [
     "create_broker",
     "create_kicker",
     "create_worker",
+    "delayed_set",
     "dlq_stream",
     "missing_required_labels",
     "register",

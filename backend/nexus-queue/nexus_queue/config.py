@@ -38,7 +38,7 @@ class RuntimeConfig(BaseModel):
         description="Shared secret required by the kicker (X-Nexus-Secret). Empty disables the kicker auth gate.",
     )
     public_paths: tuple[str, ...] = Field(
-        default=("/health", "/ready", "/docs", "/openapi.json"),
+        default=("/health", "/ready", "/metrics", "/docs", "/openapi.json"),
         description="Kicker paths served without the secret.",
     )
 
@@ -51,7 +51,12 @@ class RuntimeConfig(BaseModel):
     retry_base_delay_s: float = Field(
         default=2.0,
         gt=0,
-        description="Base delay for exponential backoff between retries.",
+        description="Base delay for the exponential backoff applied between retries.",
+    )
+    retry_poll_interval_s: float = Field(
+        default=1.0,
+        gt=0,
+        description="How often the delayed-retry poller drains due retries back onto the work stream.",
     )
     idempotency_ttl_s: int = Field(
         default=86_400,
@@ -83,6 +88,10 @@ class RuntimeConfig(BaseModel):
     @property
     def dlq_stream(self) -> str:
         return naming.dlq_stream(self.project, self.queue)
+
+    @property
+    def delayed_set(self) -> str:
+        return naming.delayed_set(self.project, self.queue)
 
     @property
     def status_stream(self) -> str:

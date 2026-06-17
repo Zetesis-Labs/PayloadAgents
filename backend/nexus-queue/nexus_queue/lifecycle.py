@@ -14,11 +14,16 @@ import structlog
 from taskiq import AsyncBroker, TaskiqEvents, TaskiqState
 
 from nexus_queue.config import RuntimeConfig
+from nexus_queue.delayed import DelayedRetryPoller
 from nexus_queue.naming import idempotency_redis_key
 
 
 class IdempotencyStore:
-    """Redis ``SET NX`` dedup keyed by the message's ``nq_idem`` label."""
+    """Redis mark-done dedup keyed by the message's ``nq_idem`` label.
+
+    The key is recorded only *after* a handler succeeds, so a failed attempt
+    leaves no marker and stays eligible for retry/DLQ. Claiming the key up
+    front would make a re-enqueued retry skip itself as a phantom duplicate."""
 
     def __init__(self, config: RuntimeConfig) -> None:
         self._config = config
@@ -31,18 +36,21 @@ class IdempotencyStore:
         if self._redis is not None:
             await self._redis.aclose()
 
-    async def claim(self, idem: str) -> bool:
-        """Return True if this is the first time we see ``idem`` (proceed),
-        False if it was already claimed within the TTL (skip as duplicate)."""
+    async def already_processed(self, idem: str) -> bool:
+        """True if a message with this key already completed within the TTL."""
         if self._config.idempotency_ttl_s <= 0 or self._redis is None:
-            return True
-        claimed = await self._redis.set(
+            return False
+        return bool(await self._redis.exists(idempotency_redis_key(idem)))
+
+    async def mark_processed(self, idem: str) -> None:
+        """Record completion so later duplicates are skipped within the TTL."""
+        if self._config.idempotency_ttl_s <= 0 or self._redis is None:
+            return
+        await self._redis.set(
             idempotency_redis_key(idem),
             "1",
-            nx=True,
             ex=self._config.idempotency_ttl_s,
         )
-        return bool(claimed)
 
 
 def configure_logging(config: RuntimeConfig) -> None:
@@ -84,8 +92,13 @@ def register_lifecycle(
         store = IdempotencyStore(config)
         await store.startup()
         state.nexus_idempotency = store
+        poller = DelayedRetryPoller(broker, config)
+        await poller.startup()
+        state.nexus_delayed = poller
 
     @broker.on_event(TaskiqEvents.WORKER_SHUTDOWN)
     async def _shutdown(state: TaskiqState) -> None:  # pyright: ignore[reportUnusedFunction]
         store: IdempotencyStore = state.nexus_idempotency
         await store.shutdown()
+        poller: DelayedRetryPoller = state.nexus_delayed
+        await poller.shutdown()
