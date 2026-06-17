@@ -30,6 +30,7 @@ class EnqueueRequest(BaseModel):
 
 def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
     """Build the FastAPI kicker the consumer hands to uvicorn."""
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         # The kicker connects the broker; the worker process owns its own lifecycle.

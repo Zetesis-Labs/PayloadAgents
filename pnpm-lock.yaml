@@ -241,6 +241,21 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/nexus-queue:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.13
+      rimraf:
+        specifier: ^5.0.10
+        version: 5.0.10
+      tsdown:
+        specifier: ^0.16.5
+        version: 0.16.8(typescript@5.7.3)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+
   packages/payload-agents-core:
     dependencies:
       '@toon-format/toon':
@@ -338,6 +353,9 @@ importers:
       '@payloadcms/ui':
         specifier: ^3.81.0
         version: 3.81.0(@types/react@19.1.8)(monaco-editor@0.55.1)(next@16.1.6(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4))(payload@3.81.0(graphql@16.13.1)(typescript@5.7.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.7.3)
+      '@zetesis/nexus-queue':
+        specifier: workspace:*
+        version: link:../nexus-queue
       payload:
         specifier: ^3.81.0
         version: 3.81.0(graphql@16.13.1)(typescript@5.7.3)
