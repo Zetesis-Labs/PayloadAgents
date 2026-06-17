@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-worker-builder-v0.1.4...payload-documents-worker-builder-v0.1.5) (2026-06-17)
+
+
+### Features
+
+* **nexus-queue:** serve worker Prometheus metrics over HTTP ([#100](https://github.com/Zetesis-Labs/PayloadAgents/issues/100)) ([cb5af8a](https://github.com/Zetesis-Labs/PayloadAgents/commit/cb5af8aaa944681358175e425ef88b2ee9e282be))
+
 ## [0.1.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-worker-builder-v0.1.3...payload-documents-worker-builder-v0.1.4) (2026-06-17)
 
 

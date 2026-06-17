@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.1...nexus-queue-v0.1.2) (2026-06-17)
+
+
+### Features
+
+* **nexus-queue:** serve worker Prometheus metrics over HTTP ([#100](https://github.com/Zetesis-Labs/PayloadAgents/issues/100)) ([cb5af8a](https://github.com/Zetesis-Labs/PayloadAgents/commit/cb5af8aaa944681358175e425ef88b2ee9e282be))
+
 ## [0.1.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.0...nexus-queue-v0.1.1) (2026-06-17)
 
 
