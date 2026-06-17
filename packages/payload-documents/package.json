@@ -41,6 +41,9 @@
       "optional": true
     }
   },
+  "dependencies": {
+    "@zetesis/nexus-queue": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22.19.7",
     "@types/react": "^19",

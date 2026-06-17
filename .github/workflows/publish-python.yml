@@ -11,6 +11,7 @@ on:
         options:
           - agno-agent-builder
           - agno-microsoft-teams
+          - nexus-queue
           - payload-documents-worker-builder
       ref:
         description: "Git ref (tag or sha) to publish (defaults to current branch)"

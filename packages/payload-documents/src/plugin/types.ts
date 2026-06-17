@@ -56,10 +56,16 @@ export interface DocumentsWorkerConfig {
    */
   url: string
   /**
-   * Shared secret sent as `X-Internal-Secret`. Must match the value
-   * `payload-documents-worker-builder.RuntimeConfig.internal_secret` was built with.
+   * Shared secret sent as `X-Nexus-Secret`. Must match the value
+   * `payload-documents-worker-builder` / `nexus-queue` `RuntimeConfig.internal_secret`
+   * was built with.
    */
   internalSecret: string
+  /**
+   * Nexus-Queue task name to enqueue (namespaced, e.g. `zp.documents.parse`).
+   * Defaults to `documents.parse`.
+   */
+  taskName?: string
   /**
    * Optional resolver for the binary contents of a document's attached upload.
    * When provided, the plugin registers `GET /:id/parse-file` and the worker
