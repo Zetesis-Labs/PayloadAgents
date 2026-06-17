@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { NexusQueueClient } from '@zetesis/nexus-queue'
 import type { Endpoint, PayloadRequest } from 'payload'
 import type { DocumentsWorkerConfig } from '../plugin/types'
@@ -40,7 +41,11 @@ const queueOnWorker = async (
   const queue = new NexusQueueClient({ kickerUrl: worker.url, secret: worker.internalSecret })
 
   try {
-    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey: id })
+    // Per-attempt idempotency key: dedupes a redelivery of THIS enqueue, but a
+    // static `id` would block intentional reprocessing (a re-parse) for the
+    // dedup TTL. Each POST /parse is a fresh attempt.
+    const idempotencyKey = `${id}:${randomUUID()}`
+    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey })
     return Response.json({ status: 'queued' })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker is unreachable'
