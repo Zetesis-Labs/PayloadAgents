@@ -11,11 +11,14 @@ import logging
 
 import redis.asyncio as aioredis
 import structlog
+from prometheus_client import start_http_server
 from taskiq import AsyncBroker, TaskiqEvents, TaskiqState
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.delayed import DelayedRetryPoller
 from nexus_queue.naming import idempotency_redis_key
+
+logger = structlog.get_logger("nexus_queue.lifecycle")
 
 
 class IdempotencyStore:
@@ -71,6 +74,28 @@ def configure_logging(config: RuntimeConfig) -> None:
     )
 
 
+def _start_metrics_server(config: RuntimeConfig) -> None:
+    """Serve the Prometheus registry over HTTP from the worker process.
+
+    The consume counters/histogram live in this process; the kicker is a
+    separate pod with its own registry, so without this the worker's metrics
+    have no scrape endpoint. Best-effort: a metrics-server failure (e.g. a
+    port collision when mistakenly run multi-process) must never take the
+    worker down."""
+    if config.metrics_port is None:
+        return
+    try:
+        start_http_server(config.metrics_port)
+        logger.info("metrics-server-started", port=config.metrics_port)
+    except OSError as exc:
+        logger.warning(
+            "metrics-server-failed",
+            port=config.metrics_port,
+            error=str(exc),
+            hint="run the worker single-process (taskiq --workers 1)",
+        )
+
+
 def register_lifecycle(
     broker: AsyncBroker,
     config: RuntimeConfig,
@@ -89,6 +114,7 @@ def register_lifecycle(
     async def _startup(state: TaskiqState) -> None:  # pyright: ignore[reportUnusedFunction]
         state.nexus_config = config
         state.nexus_adapters = adapters
+        _start_metrics_server(config)
         store = IdempotencyStore(config)
         await store.startup()
         state.nexus_idempotency = store

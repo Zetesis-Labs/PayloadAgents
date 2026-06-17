@@ -69,6 +69,21 @@ class RuntimeConfig(BaseModel):
         description="Approx MAXLEN for the dead-letter stream; 0 = unbounded.",
     )
 
+    # ── Observability ──────────────────────────────────────────────────────
+    metrics_port: int | None = Field(
+        default=None,
+        gt=0,
+        lt=65_536,
+        description=(
+            "If set, the worker serves Prometheus metrics on this port via an "
+            "in-process HTTP server (scrape target for a ServiceMonitor). The "
+            "taskiq worker has no HTTP server otherwise, so its consume counters "
+            "are invisible without this. Run the worker single-process "
+            "(taskiq --workers 1) and scale by pods, or the port will collide. "
+            "None disables it."
+        ),
+    )
+
     # ── Logging ────────────────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
 
