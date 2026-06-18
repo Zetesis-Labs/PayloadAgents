@@ -1,5 +1,12 @@
 # @zetesis/payload-documents
 
+## [0.5.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.3...payload-documents-v0.5.4) (2026-06-18)
+
+
+### Bug Fixes
+
+* **payload-documents:** constant-time internal-secret comparison ([fab824e](https://github.com/Zetesis-Labs/PayloadAgents/commit/fab824e7caf5e06ae1edefd709b1bbe70c630090))
+
 ## [0.5.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.2...payload-documents-v0.5.3) (2026-06-17)
 
 

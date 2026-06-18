@@ -1,5 +1,12 @@
 # @zetesis/payload-agents-core
 
+## [0.6.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.2...payload-agents-core-v0.6.3) (2026-06-18)
+
+
+### Features
+
+* **payload-agents-core:** reconcile LiteLLM virtual keys per agent ([f72f63a](https://github.com/Zetesis-Labs/PayloadAgents/commit/f72f63af38f667f602b732abbb9eae742beab695))
+
 ## [0.6.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.1...payload-agents-core-v0.6.2) (2026-06-11)
 
 

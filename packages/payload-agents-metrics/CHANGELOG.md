@@ -1,5 +1,18 @@
 # @zetesis/payload-agents-metrics
 
+## [1.3.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.3.0...payload-agents-metrics-v1.3.1) (2026-06-18)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/agent-ui bumped to 0.1.5
+    * @zetesis/payload-agents-core bumped to 0.6.3
+  * peerDependencies
+    * @zetesis/agent-ui bumped to 0.1.5
+    * @zetesis/payload-agents-core bumped to 0.6.3
+
 ## [1.3.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.2.4...payload-agents-metrics-v1.3.0) (2026-06-12)
 
 
