@@ -52,20 +52,6 @@ class InvalidModelError(AgentConfigError):
         )
 
 
-class GatewayRequiredError(AgentConfigError):
-    """Catalog preset used without the LiteLLM gateway configured."""
-
-    def __init__(self, llm_model: str) -> None:
-        super().__init__(
-            message=(
-                f"llmModel {llm_model!r} is a catalog preset, which requires the "
-                "LiteLLM gateway (set LITELLM_PROXY_URL) to resolve"
-            ),
-            code="GATEWAY_REQUIRED",
-            details={"llmModel": llm_model},
-        )
-
-
 class MissingApiKeyError(AgentConfigError):
     """Agent has no API key configured."""
 
@@ -77,14 +63,14 @@ class MissingApiKeyError(AgentConfigError):
         )
 
 
-class UnsupportedProviderError(AgentConfigError):
-    """LLM provider not supported."""
+class MissingLiteLlmVirtualKeyError(AgentConfigError):
+    """Agent is active but has no synced LiteLLM virtual key."""
 
-    def __init__(self, provider: str) -> None:
+    def __init__(self, slug: str) -> None:
         super().__init__(
-            message=f"Unsupported LLM provider {provider!r}. Expected: 'anthropic', 'openai'.",
-            code="UNSUPPORTED_PROVIDER",
-            details={"provider": provider},
+            message=f"Agent {slug!r} has no synced LiteLLM virtual key",
+            code="MISSING_LITELLM_VIRTUAL_KEY",
+            details={"slug": slug},
         )
 
 

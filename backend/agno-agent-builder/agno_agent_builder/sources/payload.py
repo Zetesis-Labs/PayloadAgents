@@ -74,6 +74,7 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
     api_key = doc.get("apiKey")
     if not isinstance(api_key, str) or not api_key:
         raise ValueError(f"agent {slug!r} missing 'apiKey'")
+    litellm_virtual_key = doc.get("litellmVirtualKey")
 
     tenant = doc.get("tenant")
     tenant_slug = tenant.get("slug") if isinstance(tenant, dict) else None
@@ -130,6 +131,11 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
         name=doc.get("name") or slug,
         llm_model=llm_model,
         api_key=SecretStr(api_key),
+        litellm_virtual_key=(
+            SecretStr(litellm_virtual_key)
+            if isinstance(litellm_virtual_key, str) and litellm_virtual_key
+            else None
+        ),
         instructions_extra=doc.get("systemPrompt")
         if isinstance(doc.get("systemPrompt"), str)
         else None,

@@ -54,6 +54,7 @@ class TestPayloadDocToAgentConfig:
         assert cfg.name == "Bastos"
         assert cfg.llm_model == "openai/o4-mini"
         assert cfg.api_key.get_secret_value() == "sk-test"
+        assert cfg.litellm_virtual_key is None
         assert cfg.tenant_slug == "internal"
         assert cfg.taxonomy_slugs == ["bastos"]
         assert cfg.search_collections == ["posts_chunk"]
@@ -65,6 +66,11 @@ class TestPayloadDocToAgentConfig:
         assert cfg.input_k == 50
         assert cfg.top_k == 10
         assert cfg.rewrite_template == "{{query}} en filosofía libertaria austríaca"
+
+    def test_maps_litellm_virtual_key_when_present(self) -> None:
+        cfg = payload_doc_to_agent_config(self._doc(litellmVirtualKey="sk-litellm-agent"))
+        assert cfg.litellm_virtual_key
+        assert cfg.litellm_virtual_key.get_secret_value() == "sk-litellm-agent"
 
     def test_unpopulated_tenant_becomes_none(self) -> None:
         cfg = payload_doc_to_agent_config(self._doc(tenant=2))

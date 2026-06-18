@@ -72,7 +72,6 @@ class RuntimeConfig(BaseModel):
     # LiteLLM proxy (LLM gateway). When set, every agent is routed through the
     # proxy as an OpenAI-compatible endpoint so LiteLLM computes the real cost
     # and reports it to Langfuse. BYOK is preserved: each agent's own apiKey is
-    # forwarded per-request via extra_body, while litellm_master_key authenticates
-    # with the proxy. Leave unset for the direct provider path.
-    litellm_proxy_url: str | None = None
-    litellm_master_key: SecretStr | None = None
+    # forwarded per-request via extra_body, while the agent's per-agent virtual
+    # key authenticates with the proxy.
+    litellm_proxy_url: str

@@ -4,22 +4,17 @@ from __future__ import annotations
 
 from agno.agent import Agent
 from agno.db.postgres import PostgresDb
-from agno.models.anthropic import Claude
 from agno.models.base import Model
-from agno.models.openai import OpenAIChat, OpenAIResponses
+from agno.models.openai import OpenAIChat
 from agno.tools.mcp import MCPTools
 from agno.tools.mcp.params import StreamableHTTPClientParams
 
 from agno_agent_builder.exceptions import (
-    GatewayRequiredError,
     InvalidModelError,
-    UnsupportedProviderError,
+    MissingLiteLlmVirtualKeyError,
 )
 from agno_agent_builder.instructions import compose_instructions
 from agno_agent_builder.sources.types import AgentConfig
-
-_OPENAI_RESPONSES_PREFIXES = ("o1", "o3", "o4", "gpt-4.1", "gpt-5")
-_NATIVE_REASONER_PREFIXES = ("o1", "o3", "o4")
 
 
 def build_agent(
@@ -29,21 +24,14 @@ def build_agent(
     mcp_url: str,
     tool_protocol: str | None = None,
     output_format: str | None = None,
-    litellm_proxy_url: str | None = None,
-    litellm_master_key: str | None = None,
+    litellm_proxy_url: str,
 ) -> Agent:
     """Construct an Agno Agent from a normalized AgentConfig."""
     llm_model = cfg.llm_model.strip()
     if not llm_model or llm_model.startswith("/") or llm_model.endswith("/"):
         raise InvalidModelError(slug=cfg.slug, llm_model=cfg.llm_model)
 
-    # Through the gateway Agno's reasoning scaffolding stays OFF: the preset
-    # hides the real model (the heuristic would decide blind), the scaffolding
-    # doubles every turn with a strict:true call that OpenAI rejects for
-    # map-shaped tool params (strict mode cannot express
-    # `additionalProperties: <schema>`, e.g. search_collections.filters), and
-    # it inflates the prompt. Native reasoners reason server-side regardless.
-    use_scaffolding = litellm_proxy_url is None and not _is_native_reasoner(llm_model)
+    proxy_key = resolve_litellm_proxy_key(cfg)
 
     return Agent(
         name=cfg.name,
@@ -52,7 +40,7 @@ def build_agent(
             llm_model,
             cfg.api_key.get_secret_value(),
             proxy_url=litellm_proxy_url,
-            proxy_key=litellm_master_key,
+            proxy_key=proxy_key,
         ),
         instructions=compose_instructions(
             cfg, tool_protocol=tool_protocol, output_format=output_format
@@ -61,64 +49,49 @@ def build_agent(
         tools=[build_mcp_tools(mcp_url, cfg)],
         add_history_to_context=True,
         num_history_runs=5,
-        reasoning=use_scaffolding,
+        # Reasoning scaffolding stays OFF through the gateway: the preset hides
+        # the real model from Agno's heuristic and native reasoners reason
+        # server-side anyway; scaffolding doubles turns with a strict:true call
+        # OpenAI rejects for map-shaped tool params and inflates the prompt.
+        reasoning=False,
         tool_call_limit=cfg.tool_call_limit,
         telemetry=False,
     )
 
 
-def _is_native_reasoner(llm_model: str) -> bool:
-    """Whether the model exposes native reasoning (no Agno scaffolding needed).
+def resolve_litellm_proxy_key(cfg: AgentConfig) -> str:
+    """The per-agent virtual key used to authenticate with the LiteLLM gateway.
 
-    For ``provider/model-id`` values the model id is checked. For catalog
-    presets (no slash) the underlying model is unknown to the runtime, so the
-    preset name itself is checked — name presets accordingly (e.g. ``o4-...``)
-    or accept the default scaffolding.
+    Fail-closed: an agent without a synced virtual key cannot reach the gateway.
     """
-    _, _, model_id = llm_model.rpartition("/")
-    return any(model_id.startswith(p) for p in _NATIVE_REASONER_PREFIXES)
+    if not cfg.litellm_virtual_key:
+        raise MissingLiteLlmVirtualKeyError(slug=cfg.slug)
+    return cfg.litellm_virtual_key.get_secret_value()
 
 
 def build_model(
     llm_model: str,
     api_key: str,
     *,
-    proxy_url: str | None = None,
-    proxy_key: str | None = None,
+    proxy_url: str,
+    proxy_key: str,
 ) -> Model:
-    """Map an agent's ``llm_model`` to an Agno model instance.
+    """Route an agent's model through the LiteLLM proxy as an OpenAI-compatible
+    endpoint.
 
-    ``llm_model`` is either a ``provider/model-id`` pair or a catalog preset
-    name (no slash) defined in the LiteLLM gateway's ``model_list``.
-
-    When ``proxy_url`` is set, every model is routed through the LiteLLM proxy
-    as an OpenAI-compatible endpoint — the value travels verbatim and the
-    gateway resolves it against its model_list (catalog presets). BYOK is
+    ``llm_model`` is a catalog preset name (or ``provider/model-id``) that
+    travels verbatim; the gateway resolves it against its catalog. BYOK is
     preserved: the agent's own ``api_key`` goes per-request via ``extra_body``
     (the proxy uses it to call the real provider), while ``proxy_key`` (the
-    proxy master/virtual key) authenticates with the gateway. The proxy
-    computes the real cost and reports it to Langfuse.
-
-    Without a proxy only ``provider/model-id`` can be resolved — catalog
-    presets require the gateway.
+    per-agent virtual key) authenticates with the gateway. The proxy computes
+    the real cost and reports it to Langfuse.
     """
-    if proxy_url:
-        return OpenAIChat(
-            id=llm_model,
-            base_url=proxy_url,
-            api_key=proxy_key,
-            extra_body={"api_key": api_key},
-        )
-    provider, sep, model_id = llm_model.partition("/")
-    if not sep:
-        raise GatewayRequiredError(llm_model=llm_model)
-    if provider == "anthropic":
-        return Claude(id=model_id, api_key=api_key)
-    if provider == "openai":
-        if any(model_id.startswith(p) for p in _OPENAI_RESPONSES_PREFIXES):
-            return OpenAIResponses(id=model_id, api_key=api_key)
-        return OpenAIChat(id=model_id, api_key=api_key)
-    raise UnsupportedProviderError(provider=provider)
+    return OpenAIChat(
+        id=llm_model,
+        base_url=proxy_url,
+        api_key=proxy_key,
+        extra_body={"api_key": api_key},
+    )
 
 
 def build_mcp_tools(mcp_url: str, cfg: AgentConfig) -> MCPTools:

@@ -38,7 +38,7 @@ from agno_agent_builder.exceptions import (
     AuthenticationError,
     InvalidModelError,
     MissingApiKeyError,
-    UnsupportedProviderError,
+    MissingLiteLlmVirtualKeyError,
 )
 from agno_agent_builder.instructions import (
     DEFAULT_OUTPUT_FORMAT,
@@ -64,9 +64,9 @@ __all__ = [
     "AuthenticationError",
     "InvalidModelError",
     "MissingApiKeyError",
+    "MissingLiteLlmVirtualKeyError",
     "PayloadAgentSource",
     "RuntimeConfig",
-    "UnsupportedProviderError",
     "build_agent",
     "build_mcp_tools",
     "build_model",
