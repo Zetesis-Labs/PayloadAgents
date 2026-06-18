@@ -1,5 +1,12 @@
 # @zetesis/agent-ui
 
+## [0.1.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/agent-ui-v0.1.4...agent-ui-v0.1.5) (2026-06-18)
+
+
+### Bug Fixes
+
+* **agent-ui:** show limit reset time only for quota errors ([9d59936](https://github.com/Zetesis-Labs/PayloadAgents/commit/9d59936757701f4399b42eb452ca251294b59aaa))
+
 ## [0.1.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/agent-ui-v0.1.3...agent-ui-v0.1.4) (2026-05-17)
 
 

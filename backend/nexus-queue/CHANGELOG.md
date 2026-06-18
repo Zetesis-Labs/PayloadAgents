@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.3...nexus-queue-v0.1.4) (2026-06-18)
+
+
+### Bug Fixes
+
+* **nexus-queue:** claim-based idempotency, per-tenant namespace, re-park retries ([0478b87](https://github.com/Zetesis-Labs/PayloadAgents/commit/0478b87f4f4218b72ae87affcf091119d2350401))
+
 ## [0.1.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.2...nexus-queue-v0.1.3) (2026-06-17)
 
 
