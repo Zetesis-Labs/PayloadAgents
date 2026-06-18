@@ -10,7 +10,6 @@ from agno_agent_builder.exceptions import (
     AuthenticationError,
     InvalidModelError,
     MissingApiKeyError,
-    UnsupportedProviderError,
     agno_agent_builder_exception_handler,
 )
 from fastapi import Request
@@ -29,12 +28,6 @@ class TestExceptionShapes:
         assert exc.code == "MISSING_API_KEY"
         assert exc.http_status == 422
         assert exc.details == {"slug": "bastos"}
-
-    def test_unsupported_provider(self) -> None:
-        exc = UnsupportedProviderError(provider="cohere")
-        assert exc.code == "UNSUPPORTED_PROVIDER"
-        assert exc.http_status == 422
-        assert exc.details == {"provider": "cohere"}
 
     def test_authentication_error_is_401(self) -> None:
         exc = AuthenticationError()

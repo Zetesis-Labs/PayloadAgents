@@ -25,15 +25,13 @@ class AgentRegistry:
         mcp_url: str,
         tool_protocol: str | None = None,
         output_format: str | None = None,
-        litellm_proxy_url: str | None = None,
-        litellm_master_key: str | None = None,
+        litellm_proxy_url: str,
     ) -> None:
         self._source = source
         self._mcp_url = mcp_url
         self._tool_protocol = tool_protocol
         self._output_format = output_format
         self._litellm_proxy_url = litellm_proxy_url
-        self._litellm_master_key = litellm_master_key
         self._agents: dict[str, Agent] = {}
         self._db = PostgresDb(
             db_url=normalize_pg_url(database_url),
@@ -65,7 +63,6 @@ class AgentRegistry:
                     tool_protocol=self._tool_protocol,
                     output_format=self._output_format,
                     litellm_proxy_url=self._litellm_proxy_url,
-                    litellm_master_key=self._litellm_master_key,
                 )
             except Exception:
                 logger.exception("Failed to build agent", slug=cfg.slug)

@@ -18,6 +18,7 @@ class AgentConfig(BaseModel):
     name: str
     llm_model: str
     api_key: SecretStr
+    litellm_virtual_key: SecretStr | None = None
     instructions_extra: str | None = None
     tenant_slug: str | None = None
     taxonomy_slugs: list[str] = []
