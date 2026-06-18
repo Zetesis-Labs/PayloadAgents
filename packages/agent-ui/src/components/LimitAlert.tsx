@@ -5,6 +5,11 @@ import { AlertTriangle, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useAgentChat } from '../runtime/AgentChatProvider'
 
+export function shouldShowLimitReset(errorMessage: string): boolean {
+  const normalized = errorMessage.toLowerCase()
+  return normalized.includes('daily token limit reached') || normalized.includes('http 429')
+}
+
 export const LimitAlert: FC = () => {
   const { limitError, setLimitError, usage } = useAgentChat()
   if (!limitError) return null
@@ -12,6 +17,7 @@ export const LimitAlert: FC = () => {
   const resetTime = usage?.reset_at
     ? new Date(usage.reset_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     : null
+  const showResetTime = resetTime && shouldShowLimitReset(limitError)
 
   return (
     <motion.div
@@ -24,7 +30,9 @@ export const LimitAlert: FC = () => {
         <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
         <div className="flex-1 space-y-1">
           <p className="text-sm font-medium text-destructive">{limitError}</p>
-          {resetTime && <p className="text-xs text-muted-foreground">Tu límite se restablecerá a las {resetTime}</p>}
+          {showResetTime && (
+            <p className="text-xs text-muted-foreground">Tu límite se restablecerá a las {resetTime}</p>
+          )}
         </div>
         <button
           type="button"
