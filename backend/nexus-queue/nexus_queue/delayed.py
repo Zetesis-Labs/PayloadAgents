@@ -78,8 +78,20 @@ class DelayedRetryPoller:
         due = await self._redis.zrangebyscore(self._config.delayed_set, "-inf", time.time())
         for record in due:
             # Atomic claim: only the replica that removes the member re-enqueues it.
-            if await self._redis.zrem(self._config.delayed_set, record) == 1:
+            if await self._redis.zrem(self._config.delayed_set, record) != 1:
+                continue
+            try:
                 await self._reenqueue(json.loads(record))
+            except Exception:
+                # The claim already removed the record; a failed re-enqueue
+                # (broker blip, SIGTERM between the two awaits) would lose the
+                # retry forever. Re-park it slightly in the future so the next
+                # tick retries it instead of dropping it silently.
+                await self._redis.zadd(
+                    self._config.delayed_set,
+                    {record: time.time() + self._config.retry_poll_interval_s},
+                )
+                logger.exception("retry-reenqueue-failed-reparked")
 
     async def _reenqueue(self, data: dict[str, Any]) -> None:
         kicker: AsyncKicker[Any, Any] = AsyncKicker(

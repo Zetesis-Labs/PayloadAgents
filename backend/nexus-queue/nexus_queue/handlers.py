@@ -53,28 +53,33 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
 
         raw_idem = labels.get(LABEL_IDEM) if spec.idempotent else None
         idem = str(raw_idem) if raw_idem else None
+        tenant = str(labels.get(LABEL_TENANT, SINGLE_TENANT))
         store: IdempotencyStore | None = state.nexus_idempotency if idem else None
-        if store is not None and idem and await store.already_processed(idem):
+        # Claim up front so two concurrent in-flight redeliveries can't both run.
+        if store is not None and idem and not await store.claim(idem, tenant):
             logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
             return
 
         adapters = state.nexus_adapters
-        payload = spec.payload_model(**kwargs)
+        try:
+            payload = spec.payload_model(**kwargs)
 
-        traceparent = labels.get(LABEL_TRACE)
-        parent = extract({"traceparent": str(traceparent)}) if traceparent else None
-        with _tracer.start_as_current_span(
-            f"nexus_queue.consume {spec.task_name}",
-            context=parent,
-        ) as span:
-            span.set_attribute("nq.task", spec.task_name)
-            span.set_attribute("nq.tenant", str(labels.get(LABEL_TENANT, SINGLE_TENANT)))
-            with CONSUME_SECONDS.labels(config.project, config.queue, spec.task_name).time():
-                await spec.handler(payload, adapters)
-
-        # Record dedup only after success: a failed attempt must stay retryable.
-        if store is not None and idem:
-            await store.mark_processed(idem)
+            traceparent = labels.get(LABEL_TRACE)
+            parent = extract({"traceparent": str(traceparent)}) if traceparent else None
+            with _tracer.start_as_current_span(
+                f"nexus_queue.consume {spec.task_name}",
+                context=parent,
+            ) as span:
+                span.set_attribute("nq.task", spec.task_name)
+                span.set_attribute("nq.tenant", tenant)
+                with CONSUME_SECONDS.labels(config.project, config.queue, spec.task_name).time():
+                    await spec.handler(payload, adapters)
+        except Exception:
+            # Release the claim so a legitimate retry can re-claim — otherwise the
+            # up-front claim would make the retry skip itself as a phantom dup.
+            if store is not None and idem:
+                await store.release(idem, tenant)
+            raise
 
     _run.__name__ = "nexus_run_" + spec.task_name.replace(".", "_").replace(":", "_")
     broker.task(task_name=spec.task_name)(_run)

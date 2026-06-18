@@ -67,6 +67,11 @@ def status_stream(project: str) -> str:
     return f"nq:{project}:status"
 
 
-def idempotency_redis_key(idem: str) -> str:
-    """Redis key used by the idempotency middleware to dedup a message."""
-    return f"nq:idem:{idem}"
+def idempotency_redis_key(idem: str, *, project: str, tenant: str) -> str:
+    """Redis key used by the idempotency middleware to dedup a message.
+
+    Namespaced by project + tenant (like every other key here) so a shared Redis
+    can't let one tenant poison another's dedup state or collide on a shared
+    natural key.
+    """
+    return f"nq:{project}:idem:{tenant}:{idem}"

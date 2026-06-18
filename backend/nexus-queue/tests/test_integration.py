@@ -147,9 +147,14 @@ async def test_idempotency_store(redis_client: aioredis.Redis) -> None:
     store = IdempotencyStore(_config("q3"))
     await store.startup()
     try:
-        assert await store.already_processed("test-idem") is False
-        await store.mark_processed("test-idem")
-        assert await store.already_processed("test-idem") is True
+        # First claim wins; a concurrent re-delivery of the same key is skipped.
+        assert await store.claim("test-idem", "_") is True
+        assert await store.claim("test-idem", "_") is False
+        # A failed attempt releases the claim so a legitimate retry can re-claim.
+        await store.release("test-idem", "_")
+        assert await store.claim("test-idem", "_") is True
+        # A different tenant is namespaced apart, so it never collides.
+        assert await store.claim("test-idem", "other") is True
     finally:
         await store.shutdown()
 
