@@ -31,9 +31,12 @@ class Settings(BaseSettings):
     langfuse_host: str | None = None
     langfuse_public_key: SecretStr | None = None
     langfuse_secret_key: SecretStr | None = None
+    litellm_proxy_url: str = ""
 
     def model_post_init(self, __context: Any) -> None:
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
         if not self.internal_secret.get_secret_value():
             raise ValueError("INTERNAL_SECRET environment variable is required")
+        if not self.litellm_proxy_url:
+            raise ValueError("LITELLM_PROXY_URL environment variable is required")
