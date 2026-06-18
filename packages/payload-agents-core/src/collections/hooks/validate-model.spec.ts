@@ -32,11 +32,6 @@ afterEach(() => {
 })
 
 describe('createModelCatalogValidateHook', () => {
-  it('is a no-op when no catalog is configured', async () => {
-    const data = { llmModel: 'whatever/model' }
-    await expect(run(configWith(undefined), { data, operation: 'create' })).resolves.toBe(data)
-  })
-
   it('rejects a create with a model outside the catalog', async () => {
     stubFetch()
     await expect(
@@ -76,10 +71,9 @@ describe('createModelCatalogValidateHook', () => {
     ).rejects.toThrow(/requires one/)
   })
 
-  it('fails closed with a clear error when the gateway is down', async () => {
+  it('skips validation (never blocks the write) when the gateway is down', async () => {
     stubFetch({}, false, 502)
-    await expect(run(CFG, { data: { llmModel: 'chat-premium' }, operation: 'create' })).rejects.toThrow(
-      /catalog unavailable/i
-    )
+    const data = { llmModel: 'chat-premium' }
+    await expect(run(CFG, { data, operation: 'create' })).resolves.toBe(data)
   })
 })

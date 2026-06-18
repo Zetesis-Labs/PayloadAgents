@@ -20,14 +20,15 @@ function readString(record: unknown, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined
 }
 
-async function loadCatalog(settings: ModelCatalogSettings): Promise<ModelPreset[]> {
+async function loadCatalog(settings: ModelCatalogSettings): Promise<ModelPreset[] | null> {
   try {
     return await fetchModelCatalog(settings)
   } catch {
-    throw new APIError(
-      'Model catalog unavailable — cannot validate the agent against the gateway. Try again in a moment.',
-      503
-    )
+    // Don't couple the agent write to LiteLLM uptime. If the catalog can't be
+    // reached (and isn't cached), skip validation rather than 503: the sync
+    // job reconciles the key afterwards, and the runtime is fail-closed — an
+    // agent referencing a bogus model simply won't load.
+    return null
   }
 }
 
@@ -52,7 +53,7 @@ function assertKeyMatchesPreset(preset: ModelPreset | undefined, apiKey: string)
 export function createModelCatalogValidateHook(config: ResolvedPluginConfig): CollectionBeforeValidateHook {
   return async ({ data, operation, originalDoc }) => {
     const catalog = config.modelCatalog
-    if (!catalog || !data) return data
+    if (!data) return data
 
     const model = readString(data, 'llmModel')
     const previousModel = readString(originalDoc, 'llmModel')
@@ -64,6 +65,12 @@ export function createModelCatalogValidateHook(config: ResolvedPluginConfig): Co
     if (!modelChanged && !keyProvided) return data
 
     const presets = await loadCatalog(catalog)
+    if (!presets) {
+      console.warn(
+        '[Agents] Model catalog unavailable — skipping model validation; the sync job will reconcile the key.'
+      )
+      return data
+    }
     if (modelChanged) assertPresetExists(presets, model)
 
     if (keyProvided && apiKey) {

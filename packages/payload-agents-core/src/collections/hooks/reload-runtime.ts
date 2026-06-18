@@ -13,6 +13,7 @@
 import { sql } from 'drizzle-orm'
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, Payload } from 'payload'
 import type { ResolvedPluginConfig } from '../../types'
+import { shouldSkipAgentRuntimeReload } from './sync-litellm-virtual-key'
 
 const RELOAD_CHANNEL = 'agent_reload'
 
@@ -22,7 +23,7 @@ function getDrizzle(payload: Payload): Drizzle {
   return (payload.db as unknown as { drizzle: Drizzle }).drizzle
 }
 
-async function notifyReload(payload: Payload, slug: string): Promise<void> {
+export async function notifyReload(payload: Payload, slug: string): Promise<void> {
   try {
     const drizzle = getDrizzle(payload)
     await drizzle.execute(sql`SELECT pg_notify(${RELOAD_CHANNEL}, ${slug})`)
@@ -39,7 +40,8 @@ function docSlug(doc: unknown): string | null {
 }
 
 export function createAfterChangeHook(_config: ResolvedPluginConfig): CollectionAfterChangeHook {
-  return async ({ doc, operation, req }) => {
+  return async ({ context, doc, operation, req }) => {
+    if (shouldSkipAgentRuntimeReload(context)) return doc
     const slug = docSlug(doc)
     if (!slug) return doc
     console.log(`[Agents] ${operation} → notifying agent-runtime to reload "${slug}"`)
@@ -49,7 +51,8 @@ export function createAfterChangeHook(_config: ResolvedPluginConfig): Collection
 }
 
 export function createAfterDeleteHook(_config: ResolvedPluginConfig): CollectionAfterDeleteHook {
-  return async ({ doc, req }) => {
+  return async ({ context, doc, req }) => {
+    if (shouldSkipAgentRuntimeReload(context)) return doc
     const slug = docSlug(doc)
     if (!slug) return doc
     console.log(`[Agents] delete → notifying agent-runtime to reload (removed "${slug}")`)
