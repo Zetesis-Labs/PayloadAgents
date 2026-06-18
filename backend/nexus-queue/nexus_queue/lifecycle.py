@@ -22,11 +22,14 @@ logger = structlog.get_logger("nexus_queue.lifecycle")
 
 
 class IdempotencyStore:
-    """Redis mark-done dedup keyed by the message's ``nq_idem`` label.
+    """Redis claim-based dedup keyed by the message's ``nq_idem`` label.
 
-    The key is recorded only *after* a handler succeeds, so a failed attempt
-    leaves no marker and stays eligible for retry/DLQ. Claiming the key up
-    front would make a re-enqueued retry skip itself as a phantom duplicate."""
+    The claim is taken up front with ``SET NX`` so two concurrent in-flight
+    redeliveries (Redis Streams pending-entry reclaim, a racing replica) can't
+    both run the handler — the loser of the atomic SET short-circuits. A failed
+    handler ``release``s the claim so a legitimate retry can re-claim; a
+    successful handler leaves the claim for the TTL to skip later duplicates.
+    Keys are namespaced per project + tenant."""
 
     def __init__(self, config: RuntimeConfig) -> None:
         self._config = config
@@ -39,21 +42,24 @@ class IdempotencyStore:
         if self._redis is not None:
             await self._redis.aclose()
 
-    async def already_processed(self, idem: str) -> bool:
-        """True if a message with this key already completed within the TTL."""
-        if self._config.idempotency_ttl_s <= 0 or self._redis is None:
-            return False
-        return bool(await self._redis.exists(idempotency_redis_key(idem)))
+    def _key(self, idem: str, tenant: str) -> str:
+        return idempotency_redis_key(idem, project=self._config.project, tenant=tenant)
 
-    async def mark_processed(self, idem: str) -> None:
-        """Record completion so later duplicates are skipped within the TTL."""
+    async def claim(self, idem: str, tenant: str) -> bool:
+        """Atomically claim the key. True -> claimed (run the handler); False ->
+        a prior claim exists (skip as a duplicate)."""
+        if self._config.idempotency_ttl_s <= 0 or self._redis is None:
+            return True
+        claimed = await self._redis.set(
+            self._key(idem, tenant), "1", nx=True, ex=self._config.idempotency_ttl_s
+        )
+        return bool(claimed)
+
+    async def release(self, idem: str, tenant: str) -> None:
+        """Release a claim after a failed attempt so a retry can re-claim."""
         if self._config.idempotency_ttl_s <= 0 or self._redis is None:
             return
-        await self._redis.set(
-            idempotency_redis_key(idem),
-            "1",
-            ex=self._config.idempotency_ttl_s,
-        )
+        await self._redis.delete(self._key(idem, tenant))
 
 
 def configure_logging(config: RuntimeConfig) -> None:
