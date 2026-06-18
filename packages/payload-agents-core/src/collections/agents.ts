@@ -10,6 +10,11 @@ import type { CollectionConfig } from 'payload'
 import type { ResolvedPluginConfig } from '../types'
 import { createDecryptAfterReadHook, createEncryptBeforeChangeHook } from './hooks/encrypt-api-key'
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks/reload-runtime'
+import {
+  createLiteLlmVirtualKeySyncAfterChangeHook,
+  createLiteLlmVirtualKeySyncAfterDeleteHook,
+  createLiteLlmVirtualKeySyncBeforeDeleteHook
+} from './hooks/sync-litellm-virtual-key'
 import { createModelCatalogValidateHook } from './hooks/validate-model'
 
 export function createAgentsCollection(config: ResolvedPluginConfig): CollectionConfig {
@@ -24,9 +29,10 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
     hooks: {
       beforeValidate: [createModelCatalogValidateHook(config)],
       beforeChange: [createEncryptBeforeChangeHook(config)],
-      afterChange: [createAfterChangeHook(config)],
+      beforeDelete: [createLiteLlmVirtualKeySyncBeforeDeleteHook(config)],
+      afterChange: [createLiteLlmVirtualKeySyncAfterChangeHook(config), createAfterChangeHook(config)],
       afterRead: [createDecryptAfterReadHook(config)],
-      afterDelete: [createAfterDeleteHook(config)]
+      afterDelete: [createLiteLlmVirtualKeySyncAfterDeleteHook(), createAfterDeleteHook(config)]
     },
     admin: {
       useAsTitle: 'name',
@@ -77,22 +83,16 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
                 name: 'llmModel',
                 type: 'text',
                 required: true,
-                // With a catalog there is no sensible default — the admin picks
-                // a preset; without one, keep the historical free-form default.
-                defaultValue: config.modelCatalog ? undefined : 'openai/gpt-4o',
-                admin: config.modelCatalog
-                  ? {
-                      description: 'Model preset from the gateway catalog',
-                      components: {
-                        Field: {
-                          path: '@zetesis/payload-agents-core/client#ModelSelectField',
-                          clientProps: { catalogPath: `/api${config.basePath}/models` }
-                        }
-                      }
+                // The admin picks a preset from the gateway catalog.
+                admin: {
+                  description: 'Model preset from the gateway catalog',
+                  components: {
+                    Field: {
+                      path: '@zetesis/payload-agents-core/client#ModelSelectField',
+                      clientProps: { catalogPath: `/api${config.basePath}/models` }
                     }
-                  : {
-                      description: 'LLM model to use (e.g., openai/gpt-4o, anthropic/claude-sonnet-4-20250514)'
-                    }
+                  }
+                }
               },
               {
                 name: 'apiKey',
@@ -122,6 +122,83 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
                 name: 'toolCallLimit',
                 type: 'number',
                 admin: { description: 'Max tool calls per turn. Leave empty for no limit.' }
+              },
+              {
+                type: 'row',
+                fields: [
+                  {
+                    name: 'maxBudgetUsd',
+                    type: 'number',
+                    min: 0,
+                    admin: { description: 'Optional LiteLLM max budget for this agent virtual key, in USD.' }
+                  },
+                  {
+                    name: 'budgetDuration',
+                    type: 'text',
+                    admin: { description: 'Optional LiteLLM budget reset window, e.g. 1d, 30d, 1mo.' }
+                  }
+                ]
+              },
+              {
+                type: 'row',
+                fields: [
+                  {
+                    name: 'rpmLimit',
+                    type: 'number',
+                    min: 0,
+                    admin: { description: 'Optional LiteLLM requests-per-minute limit for this agent.' }
+                  },
+                  {
+                    name: 'tpmLimit',
+                    type: 'number',
+                    min: 0,
+                    admin: { description: 'Optional LiteLLM tokens-per-minute limit for this agent.' }
+                  }
+                ]
+              },
+              {
+                type: 'collapsible',
+                label: 'LiteLLM Virtual Key',
+                admin: { initCollapsed: true },
+                fields: [
+                  {
+                    name: 'litellmVirtualKey',
+                    type: 'text',
+                    admin: { hidden: true }
+                  },
+                  {
+                    name: 'litellmVirtualKeyAlias',
+                    type: 'text',
+                    admin: { readOnly: true, description: 'LiteLLM key alias managed by Payload.' }
+                  },
+                  {
+                    name: 'litellmVirtualKeyFingerprint',
+                    type: 'text',
+                    admin: { readOnly: true, description: 'Last 4 characters of the LiteLLM virtual key.' }
+                  },
+                  {
+                    name: 'litellmVirtualKeySyncStatus',
+                    type: 'select',
+                    admin: { readOnly: true, description: 'Last LiteLLM virtual key sync status.' },
+                    options: [
+                      { label: 'Pending', value: 'pending' },
+                      { label: 'Synced', value: 'synced' },
+                      { label: 'Blocked', value: 'blocked' },
+                      { label: 'Disabled', value: 'disabled' },
+                      { label: 'Error', value: 'error' }
+                    ]
+                  },
+                  {
+                    name: 'litellmVirtualKeySyncedAt',
+                    type: 'date',
+                    admin: { readOnly: true, description: 'Last successful LiteLLM virtual key sync.' }
+                  },
+                  {
+                    name: 'litellmVirtualKeySyncError',
+                    type: 'textarea',
+                    admin: { readOnly: true, description: 'Last LiteLLM virtual key sync error, if any.' }
+                  }
+                ]
               }
             ]
           },

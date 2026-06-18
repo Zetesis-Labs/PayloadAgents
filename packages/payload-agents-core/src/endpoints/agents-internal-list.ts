@@ -1,7 +1,7 @@
 /**
  * GET /api/{collectionSlug}/internal/list — internal endpoint the agent
- * runtime calls to fetch all active agents (with decrypted apiKey + populated
- * tenant + populated retrieval profile at depth=2 so its
+ * runtime calls to fetch all active agents (with decrypted apiKey,
+ * litellmVirtualKey + populated tenant + populated retrieval profile at depth=2 so its
  * taxonomy/folder filters are inlined). Authenticated by `X-Internal-Secret`,
  * scoped to active agents, calls Payload's local API with `overrideAccess:
  * true` so the host's collection access can stay honestly user-scoped.
@@ -50,7 +50,7 @@ export function createAgentsInternalListHandler(config: ResolvedPluginConfig): P
 
     const where: Where = { isActive: { equals: true } }
 
-    // `context.internalAgentRead` tells the apiKey afterRead hook to decrypt;
+    // `context.internalAgentRead` tells the secret-field afterRead hook to decrypt;
     // `overrideAccess: true` skips the host's collection access (and the
     // populated tenant/taxonomies relations) so we don't need bypass branches
     // in the host's collection access functions.

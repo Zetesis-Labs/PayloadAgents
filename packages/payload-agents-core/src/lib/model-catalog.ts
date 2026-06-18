@@ -1,11 +1,11 @@
 /**
  * Model catalog backed by a LiteLLM gateway.
  *
- * The gateway's config (`model_list` with named presets plus `model_info`
- * metadata) is the single source of truth for which models agents may use.
- * This module fetches `/model/info`, normalises it into presets and caches
- * the result briefly so the admin select and the validation hook don't hit
- * the gateway on every call.
+ * The LiteLLM gateway catalog is the source of truth for which models agents
+ * may use. In config mode it is backed by `model_list`; in DB mode it is backed
+ * by LiteLLM DB/Admin UI. This module fetches `/model/info`, normalises it into
+ * presets and caches the result briefly so the admin select and the validation
+ * hook don't hit the gateway on every call.
  */
 
 export interface ModelPreset {
