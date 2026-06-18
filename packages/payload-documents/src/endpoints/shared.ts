@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto'
 import type { PayloadRequest } from 'payload'
 import type { DocumentRecord, DocumentsWorkerConfig } from '../plugin/types'
 
@@ -19,9 +20,19 @@ export const requireAuth = (req: PayloadRequest): Response | null => {
   return null
 }
 
+/**
+ * Constant-time secret comparison. Both sides are SHA-256'd first so the compare
+ * runs over equal-length buffers (no length leak, no length-mismatch throw); the
+ * digest equality still implies the secrets match.
+ */
+const secretsMatch = (a: string, b: string): boolean =>
+  timingSafeEqual(createHash('sha256').update(a).digest(), createHash('sha256').update(b).digest())
+
 export const requireInternalSecret = (req: PayloadRequest, worker: DocumentsWorkerConfig): Response | null => {
   const headerSecret = req.headers?.get?.(INTERNAL_SECRET_HEADER)
-  if (!headerSecret || headerSecret !== worker.internalSecret) {
+  // Reject an unconfigured secret so it can't fail open, then compare in constant
+  // time to deny a timing oracle on this overrideAccess service-account bypass.
+  if (!headerSecret || !worker.internalSecret || !secretsMatch(headerSecret, worker.internalSecret)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   return null
