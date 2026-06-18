@@ -1590,7 +1590,7 @@ wheels = [
 
 [[package]]
 name = "nexus-queue"
-version = "0.1.0"
+version = "0.1.3"
 source = { editable = "nexus-queue" }
 dependencies = [
     { name = "fastapi" },
@@ -1879,7 +1879,7 @@ requires-dist = [
 
 [[package]]
 name = "payload-documents-worker-builder"
-version = "0.1.3"
+version = "0.1.5"
 source = { editable = "payload-documents-worker-builder" }
 dependencies = [
     { name = "httpx" },
