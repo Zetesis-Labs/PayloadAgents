@@ -9,7 +9,7 @@ on:
 jobs:
   ci:
     name: Build, Lint & Type Check
-    runs-on: ubuntu-latest
+    runs-on: herschel-runners
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +38,7 @@ jobs:
 
   agent-runtime:
     name: Agent Runtime (Python)
-    runs-on: ubuntu-latest
+    runs-on: herschel-runners
     defaults:
       run:
         working-directory: backend
