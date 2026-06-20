@@ -67,10 +67,44 @@ export const searchCollectionsSchema = z.object({
     .optional()
     .describe(
       `Inline N neighboring chunks (chunk_index ±N) for each hit, fetched in a single round trip. Default: 0 (no neighbors). Max: ${MAX_EXPAND_CONTEXT}.`
+    ),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Slug of the retrieval profile to use for this query — selects its hard filters, hybrid params, reranker and lente. Call list_retrieval_profiles to see the options available to you and what each is for. If omitted, the default profile is used.'
     )
 })
 
 export type SearchCollectionsInput = z.infer<typeof searchCollectionsSchema>
+
+export interface ProfileRequiredError {
+  error: 'retrieval_profile_required'
+  message: string
+  available_profiles: Array<{ slug: string; name: string; description: string }>
+}
+
+/**
+ * Enforce profile selection: when the caller's token exposes retrieval profiles,
+ * every search MUST pick one (the agent can't query "raw"). Returns an error
+ * payload to surface back to the agent, or null when the call may proceed
+ * (no profiles configured, or a valid one was chosen).
+ */
+export function requireProfileSelection(
+  auth: McpAuthContext | null,
+  chosen: string | undefined
+): ProfileRequiredError | null {
+  const profiles = auth?.availableProfiles ?? []
+  if (profiles.length === 0) return null
+  if (chosen && profiles.some(p => p.slug === chosen)) return null
+  return {
+    error: 'retrieval_profile_required',
+    message: chosen
+      ? `Unknown retrieval_profile "${chosen}". You must search with one of the available profiles.`
+      : 'This search requires a retrieval_profile. Call list_retrieval_profiles and pass the slug of the profile that best fits the query.',
+    available_profiles: profiles
+  }
+}
 
 interface TaxonomyInfo {
   slug: string

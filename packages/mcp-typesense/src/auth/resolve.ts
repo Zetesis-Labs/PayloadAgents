@@ -20,6 +20,7 @@ const TOP_K_HEADER = 'x-top-k'
 const HYBRID_ALPHA_HEADER = 'x-hybrid-alpha'
 const QUERY_REWRITE_TEMPLATE_HEADER = 'x-query-rewrite-template'
 const LEARNED_HEAD_HEADER = 'x-learned-head'
+const RETRIEVAL_PROFILES_HEADER = 'x-retrieval-profiles'
 
 const parseSlugList = (raw: string | string[] | undefined): string[] | undefined => {
   const value = Array.isArray(raw) ? raw[0] : raw
@@ -56,22 +57,45 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
     const taxonomySlugs = parseSlugList(req.headers[TAXONOMY_HEADER_NAME])
     const folderSlugs = parseSlugList(req.headers[FOLDER_HEADER_NAME])
 
-    // Retrieval params from the attached SearchProfile. Empty/absent
-    // headers leave the corresponding field undefined so the search tool
-    // can fall back to its own defaults.
+    // Retrieval params from the chosen SearchProfile. Empty/absent headers
+    // leave the corresponding field undefined so the search tool can fall back
+    // to its own defaults.
     const retrieval = readRetrievalHeaders(req.headers)
 
-    if (!tenantSlug && !taxonomySlugs?.length && !folderSlugs?.length && !retrieval) {
+    // Catalog of profiles the agent can choose from (metadata only).
+    const availableProfiles = readAvailableProfiles(req.headers[RETRIEVAL_PROFILES_HEADER])
+
+    if (!tenantSlug && !taxonomySlugs?.length && !folderSlugs?.length && !retrieval && !availableProfiles?.length) {
       return null
     }
 
-    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval }
+    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles }
   }
 
   // Exhaustive guard. When new variants are added, TypeScript will force
   // handling them here instead of silently returning null.
   const _exhaustive: never = effective
   return _exhaustive
+}
+
+function readAvailableProfiles(
+  raw: string | string[] | undefined
+): Array<{ slug: string; name: string; description: string }> | undefined {
+  const value = readScalar(raw)
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64').toString('utf8')) as unknown
+    if (!Array.isArray(parsed)) return undefined
+    const profiles = parsed
+      .filter(
+        (p): p is { slug: string; name?: string; description?: string } =>
+          Boolean(p) && typeof p === 'object' && typeof (p as { slug?: unknown }).slug === 'string'
+      )
+      .map(p => ({ slug: p.slug, name: p.name ?? p.slug, description: p.description ?? '' }))
+    return profiles.length > 0 ? profiles : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function decodeLearnedHead(raw: string | undefined): { w: number[]; b: number } | undefined {

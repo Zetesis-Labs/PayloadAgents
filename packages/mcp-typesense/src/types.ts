@@ -203,6 +203,14 @@ export interface McpAuthContext {
      */
     learnedHead?: { w: number[]; b: number }
   }
+  /**
+   * Retrieval profiles available to the caller's token. The agent selects one
+   * per query via the search tool's `retrieval_profile` argument; the proxy
+   * resolves the chosen one into the `retrieval` fields above. This catalog is
+   * metadata only (no weights) and powers the `list_retrieval_profiles` tool so
+   * the agent can discover and reason about its options.
+   */
+  availableProfiles?: Array<{ slug: string; name: string; description: string }>
   /** User identifier, for logging/auditing. */
   userId?: string
   /** Arbitrary metadata the auth strategy wants to propagate. */
@@ -258,6 +266,7 @@ export interface FeaturesConfig {
 export interface ToolNameOverrides {
   getTaxonomyTree?: string
   getFilterCriteria?: string
+  listRetrievalProfiles?: string
   getPostSummaries?: string
   getBookToc?: string
   searchCollections?: string

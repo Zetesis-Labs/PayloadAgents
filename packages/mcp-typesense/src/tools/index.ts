@@ -26,7 +26,8 @@ import { getChunksByIds, getChunksByIdsSchema } from './get-chunks-by-ids'
 import { getFilterCriteria, getFilterCriteriaSchema } from './get-filter-criteria'
 import { getPostSummaries, getPostSummariesSchema } from './get-post-summaries'
 import { getTaxonomyTree, getTaxonomyTreeSchema } from './get-taxonomy-tree'
-import { searchCollections, searchCollectionsSchema } from './search-collections'
+import { listRetrievalProfiles, listRetrievalProfilesSchema } from './list-retrieval-profiles'
+import { requireProfileSelection, searchCollections, searchCollectionsSchema } from './search-collections'
 import { summarizeDocument, summarizeDocumentSchema } from './summarize-document'
 import { synthesizeComparison, synthesizeComparisonSchema } from './synthesize-comparison'
 
@@ -136,6 +137,19 @@ export function registerTools(opts: RegisterToolsOptions): void {
   // -- SEARCH ----------------------------------------------------------------
 
   server.registerTool(
+    toolNames.listRetrievalProfiles ?? 'list_retrieval_profiles',
+    {
+      description:
+        'List the retrieval profiles available to you. Each profile bundles hard filters, hybrid params, an optional reranker and an optional lente (a learned re-ranker that biases results toward a register). Pick the one that best fits the query and pass its slug as `retrieval_profile` to search_collections. If you do not pass one, the first (default) profile is used.',
+      inputSchema: { ...listRetrievalProfilesSchema.shape, format: formatParam }
+    },
+    async input => {
+      const result = listRetrievalProfiles(input, getCurrentAuth())
+      return toolResult(result, input.format as OutputFormat)
+    }
+  )
+
+  server.registerTool(
     toolNames.searchCollections ?? 'search_collections',
     {
       description:
@@ -150,7 +164,10 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await searchCollections(input, ctx, getCurrentAuth())
+      const auth = getCurrentAuth()
+      const guard = requireProfileSelection(auth, input.retrieval_profile)
+      if (guard) return toolResult(guard, input.format as OutputFormat)
+      const result = await searchCollections(input, ctx, auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )
