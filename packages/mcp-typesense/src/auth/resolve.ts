@@ -8,7 +8,7 @@
  */
 
 import type { IncomingMessage } from 'node:http'
-import type { McpAuthContext, McpAuthStrategy } from '../types'
+import type { McpAuthContext, McpAuthStrategy, ResolvedRetrievalScope } from '../types'
 
 const DEFAULT_HEADER_NAME = 'x-tenant-slug'
 const TAXONOMY_HEADER_NAME = 'x-taxonomy-slugs'
@@ -19,6 +19,9 @@ const INPUT_K_HEADER = 'x-input-k'
 const TOP_K_HEADER = 'x-top-k'
 const HYBRID_ALPHA_HEADER = 'x-hybrid-alpha'
 const QUERY_REWRITE_TEMPLATE_HEADER = 'x-query-rewrite-template'
+const LEARNED_HEAD_HEADER = 'x-learned-head'
+const RETRIEVAL_PROFILES_HEADER = 'x-retrieval-profiles'
+const GROUP_PROFILES_HEADER = 'x-group-profiles'
 
 const parseSlugList = (raw: string | string[] | undefined): string[] | undefined => {
   const value = Array.isArray(raw) ? raw[0] : raw
@@ -55,22 +58,114 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
     const taxonomySlugs = parseSlugList(req.headers[TAXONOMY_HEADER_NAME])
     const folderSlugs = parseSlugList(req.headers[FOLDER_HEADER_NAME])
 
-    // Retrieval params from the attached SearchProfile. Empty/absent
-    // headers leave the corresponding field undefined so the search tool
-    // can fall back to its own defaults.
+    // Retrieval params from the chosen SearchProfile. Empty/absent headers
+    // leave the corresponding field undefined so the search tool can fall back
+    // to its own defaults.
     const retrieval = readRetrievalHeaders(req.headers)
 
-    if (!tenantSlug && !taxonomySlugs?.length && !folderSlugs?.length && !retrieval) {
+    // Catalog of profiles the agent can choose from (metadata only).
+    const availableProfiles = readAvailableProfiles(req.headers[RETRIEVAL_PROFILES_HEADER])
+
+    // Per-profile resolved config for multi-profile requests (compare).
+    const groupProfiles = readGroupProfiles(req.headers[GROUP_PROFILES_HEADER])
+
+    if (
+      !tenantSlug &&
+      !taxonomySlugs?.length &&
+      !folderSlugs?.length &&
+      !retrieval &&
+      !availableProfiles?.length &&
+      !groupProfiles
+    ) {
       return null
     }
 
-    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval }
+    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles, groupProfiles }
   }
 
   // Exhaustive guard. When new variants are added, TypeScript will force
   // handling them here instead of silently returning null.
   const _exhaustive: never = effective
   return _exhaustive
+}
+
+function readAvailableProfiles(
+  raw: string | string[] | undefined
+): Array<{ slug: string; name: string; description: string }> | undefined {
+  const value = readScalar(raw)
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64').toString('utf8')) as unknown
+    if (!Array.isArray(parsed)) return undefined
+    const profiles = parsed
+      .filter(
+        (p): p is { slug: string; name?: string; description?: string } =>
+          Boolean(p) && typeof p === 'object' && typeof (p as { slug?: unknown }).slug === 'string'
+      )
+      .map(p => ({ slug: p.slug, name: p.name ?? p.slug, description: p.description ?? '' }))
+    return profiles.length > 0 ? profiles : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Decode the per-profile config map for multi-profile requests. The proxy sends
+ * a base64 JSON `{ [slug]: { taxonomySlugs, folderSlugs, retrieval } }`, where
+ * `retrieval.learnedHead` is itself a base64 weights blob (same encoding as the
+ * single-profile header), kept binary so it doesn't bloat the JSON.
+ */
+const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined)
+const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined)
+const strArr = (v: unknown): string[] | undefined => (Array.isArray(v) ? (v as string[]) : undefined)
+
+function parseGroupRetrieval(retrieval: Record<string, unknown> | undefined): ResolvedRetrievalScope['retrieval'] {
+  if (!retrieval) return undefined
+  return {
+    rerankerKind: str(retrieval.rerankerKind),
+    rerankerModel: str(retrieval.rerankerModel),
+    inputK: num(retrieval.inputK),
+    topK: num(retrieval.topK),
+    hybridAlpha: num(retrieval.hybridAlpha),
+    rewriteTemplate: str(retrieval.rewriteTemplate),
+    learnedHead: decodeLearnedHead(str(retrieval.learnedHead))
+  }
+}
+
+function readGroupProfiles(raw: string | string[] | undefined): Record<string, ResolvedRetrievalScope> | undefined {
+  const value = readScalar(raw)
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64').toString('utf8')) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined
+    const out: Record<string, ResolvedRetrievalScope> = {}
+    for (const [slug, raw0] of Object.entries(parsed as Record<string, unknown>)) {
+      const entry = raw0 as { taxonomySlugs?: unknown; folderSlugs?: unknown; retrieval?: Record<string, unknown> }
+      out[slug] = {
+        taxonomySlugs: strArr(entry.taxonomySlugs),
+        folderSlugs: strArr(entry.folderSlugs),
+        retrieval: parseGroupRetrieval(entry.retrieval)
+      }
+    }
+    return Object.keys(out).length > 0 ? out : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function decodeLearnedHead(raw: string | undefined): { w: number[]; b: number } | undefined {
+  if (!raw) return undefined
+  try {
+    const buf = Buffer.from(raw, 'base64')
+    if (buf.byteLength < 8 || buf.byteLength % 4 !== 0) return undefined
+    const dims = buf.byteLength / 4 - 1
+    const w: number[] = []
+    for (let i = 0; i < dims; i++) w.push(buf.readFloatLE(i * 4))
+    const b = buf.readFloatLE(dims * 4)
+    return { w, b }
+  } catch {
+    return undefined
+  }
 }
 
 function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthContext['retrieval'] | undefined {
@@ -80,6 +175,7 @@ function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthConte
   const topK = parseFiniteNumber(headers[TOP_K_HEADER])
   const hybridAlpha = parseFiniteNumber(headers[HYBRID_ALPHA_HEADER])
   const rewriteTemplate = readScalar(headers[QUERY_REWRITE_TEMPLATE_HEADER])
+  const learnedHead = decodeLearnedHead(readScalar(headers[LEARNED_HEAD_HEADER]))
 
   if (
     rerankerKind === undefined &&
@@ -87,9 +183,10 @@ function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthConte
     inputK === undefined &&
     topK === undefined &&
     hybridAlpha === undefined &&
-    rewriteTemplate === undefined
+    rewriteTemplate === undefined &&
+    learnedHead === undefined
   ) {
     return undefined
   }
-  return { rerankerKind, rerankerModel, inputK, topK, hybridAlpha, rewriteTemplate }
+  return { rerankerKind, rerankerModel, inputK, topK, hybridAlpha, rewriteTemplate, learnedHead }
 }

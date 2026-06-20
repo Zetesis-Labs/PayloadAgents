@@ -26,12 +26,21 @@ export const comparePerspectivesSchema = z.object({
         name: z.string().describe('Display name for this group (e.g., "Mises", "Hayek", "Austrian school").'),
         taxonomy_slugs: z
           .union([z.string(), z.array(z.string())])
-          .describe('Taxonomy slug(s) to scope this group. String or string[].')
+          .optional()
+          .describe('Optional taxonomy slug(s) to scope this group (string or string[]).'),
+        retrieval_profile: z
+          .string()
+          .optional()
+          .describe(
+            "Optional profile slug for THIS group — applies that profile's lente and filters. Lets you compare the SAME query under different lentes (e.g. one group per perspective). Falls back to the top-level retrieval_profile."
+          )
       })
     )
     .min(2)
     .max(MAX_GROUPS)
-    .describe(`2-${MAX_GROUPS} groups to compare. Each group runs as an independent scoped search in parallel.`),
+    .describe(
+      `2-${MAX_GROUPS} groups to compare. Each group runs as an independent search in parallel, scoped by its taxonomy_slugs and/or its retrieval_profile.`
+    ),
   per_group: z
     .number()
     .int()
@@ -56,10 +65,29 @@ export const comparePerspectivesSchema = z.object({
     .min(0)
     .max(5)
     .optional()
-    .describe('Inline neighboring chunks (chunk_index ±N) for each hit. Default: 0. Max: 3.')
+    .describe('Inline neighboring chunks (chunk_index ±N) for each hit. Default: 0. Max: 3.'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Slug of the retrieval profile to use. Same selection rules as search_collections: required when your token exposes profiles. Call list_retrieval_profiles to see the options.'
+    )
 })
 
 export type ComparePerspectivesInput = z.infer<typeof comparePerspectivesSchema>
+
+/**
+ * Build the auth context a group runs under. When the group names a profile and
+ * the proxy resolved it (groupProfiles), apply that profile's filters + lente;
+ * otherwise fall back to the request's default auth. This is what lets two
+ * groups run the same query under different lentes.
+ */
+function authForGroup(auth: McpAuthContext | null, slug: string | undefined): McpAuthContext | null {
+  if (!auth || !slug) return auth
+  const gp = auth.groupProfiles?.[slug]
+  if (!gp) return auth
+  return { ...auth, taxonomySlugs: gp.taxonomySlugs, folderSlugs: gp.folderSlugs, retrieval: gp.retrieval }
+}
 
 export async function comparePerspectives(
   input: ComparePerspectivesInput,
@@ -71,7 +99,8 @@ export async function comparePerspectives(
 
   const groupResults = await Promise.all(
     input.groups.map(async g => {
-      const filters: Record<string, string | string[]> = { taxonomy_slugs: g.taxonomy_slugs }
+      const filters = g.taxonomy_slugs ? { taxonomy_slugs: g.taxonomy_slugs } : undefined
+      const groupAuth = authForGroup(auth, g.retrieval_profile ?? input.retrieval_profile)
 
       const result = await searchCollections(
         {
@@ -84,12 +113,13 @@ export async function comparePerspectives(
           expand_context: input.expand_context
         },
         ctx,
-        auth
+        groupAuth
       )
 
       return {
         name: g.name,
         taxonomy_slugs: g.taxonomy_slugs,
+        retrieval_profile: g.retrieval_profile ?? input.retrieval_profile,
         total_found: result.total_found,
         hits: result.hits
       }

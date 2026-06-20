@@ -195,11 +195,41 @@ export interface McpAuthContext {
      * string. When unset, the raw user query is passed through unchanged.
      */
     rewriteTemplate?: string
+    /**
+     * Learned head weights for dot-product re-ranking. When present the
+     * search tool fetches embeddings from Typesense (skips exclude_fields)
+     * and applies `score = w·e + b` to each candidate before the reranker.
+     * w has the same dimensionality as the chunk embedding (BGE-M3 → 1024).
+     */
+    learnedHead?: { w: number[]; b: number }
   }
+  /**
+   * Retrieval profiles available to the caller's token. The agent selects one
+   * per query via the search tool's `retrieval_profile` argument; the proxy
+   * resolves the chosen one into the `retrieval` fields above. This catalog is
+   * metadata only (no weights) and powers the `list_retrieval_profiles` tool so
+   * the agent can discover and reason about its options.
+   */
+  availableProfiles?: Array<{ slug: string; name: string; description: string }>
+  /**
+   * Fully-resolved scope+retrieval config (filters + lente weights) for every
+   * profile referenced in THIS request, keyed by slug. Sent by the proxy only
+   * when a request uses more than one profile (e.g. `compare_perspectives` with
+   * a profile per group), so the tool can apply each group's own lente/filters.
+   * Scoped to the request's used profiles to keep the header small.
+   */
+  groupProfiles?: Record<string, ResolvedRetrievalScope>
   /** User identifier, for logging/auditing. */
   userId?: string
   /** Arbitrary metadata the auth strategy wants to propagate. */
   metadata?: Record<string, unknown>
+}
+
+/** The retrieval-affecting slice of an auth context: scope filters + retrieval params. */
+export interface ResolvedRetrievalScope {
+  taxonomySlugs?: string[]
+  folderSlugs?: string[]
+  retrieval?: McpAuthContext['retrieval']
 }
 
 // ============================================================================
@@ -251,6 +281,7 @@ export interface FeaturesConfig {
 export interface ToolNameOverrides {
   getTaxonomyTree?: string
   getFilterCriteria?: string
+  listRetrievalProfiles?: string
   getPostSummaries?: string
   getBookToc?: string
   searchCollections?: string
