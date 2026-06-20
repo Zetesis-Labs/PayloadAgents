@@ -68,6 +68,12 @@ export interface CreateSearchProfilesCollectionConfig {
    * generated config and override only what you need.
    */
   collectionOverrides?: (config: CollectionConfig) => CollectionConfig
+
+  /**
+   * Slug of the Learned Heads collection the `learnedHead` relationship points
+   * to. Default: `'learned-heads'`.
+   */
+  learnedHeadsSlug?: string
 }
 
 /**
@@ -89,6 +95,7 @@ const rerankerKindOptions: Array<{ label: string; value: SearchProfileRerankerKi
 
 export function createSearchProfilesCollection(config: CreateSearchProfilesCollectionConfig): CollectionConfig {
   const collectionSlug = config.collectionSlug ?? 'search-profiles'
+  const learnedHeadsSlug = config.learnedHeadsSlug ?? 'learned-heads'
   const filterFields = (config.filters ?? []).map(buildFilterField)
 
   const filtersTab =
@@ -204,6 +211,22 @@ export function createSearchProfilesCollection(config: CreateSearchProfilesColle
                   }
                 }
               ]
+            }
+          ]
+        },
+        {
+          label: 'Lente',
+          description:
+            'Optional learned head ("lente") applied as a soft re-ranker after retrieval. Lentes are trained and managed in their own collection and can be reused across profiles.',
+          fields: [
+            {
+              name: 'learnedHead',
+              type: 'relationship',
+              relationTo: learnedHeadsSlug,
+              admin: {
+                description:
+                  'Trained lente. When set and status is "ready", it re-scores the top candidates by dot(weights, embedding) before the reranker. Leave empty for no learned re-ranking.'
+              }
             }
           ]
         }

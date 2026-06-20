@@ -1,6 +1,10 @@
 // Plugin
 
 export {
+  type CreateLearnedHeadsCollectionConfig,
+  createLearnedHeadsCollection
+} from './collections/learned-heads'
+export {
   type CreateSearchProfilesCollectionConfig,
   createSearchProfilesCollection,
   SEARCH_PROFILE_RERANKER_KINDS,
