@@ -167,13 +167,14 @@ def _to_retrieval_profile(profile: dict[str, Any]) -> RetrievalProfile:
     """Map one populated SearchProfile doc into a normalized `RetrievalProfile`."""
     reranker = profile.get("reranker") if isinstance(profile.get("reranker"), dict) else None
     raw_rewrite = profile.get("queryRewrite")
-    slug = profile.get("slug")
+    raw_slug = profile.get("slug")
+    slug = raw_slug if isinstance(raw_slug, str) and raw_slug else ""
+    raw_name = profile.get("name")
+    raw_description = profile.get("description")
     return RetrievalProfile(
-        slug=slug if isinstance(slug, str) and slug else "",
-        name=profile.get("name") if isinstance(profile.get("name"), str) else (slug or ""),
-        description=profile.get("description")
-        if isinstance(profile.get("description"), str)
-        else "",
+        slug=slug,
+        name=raw_name if isinstance(raw_name, str) and raw_name else slug,
+        description=raw_description if isinstance(raw_description, str) else "",
         taxonomy_slugs=_extract_taxonomy_slugs(profile.get("taxonomyFilters")),
         folder_slugs=_extract_folder_slugs(profile.get("folderFilters")),
         reranker_kind=(
