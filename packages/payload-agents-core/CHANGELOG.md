@@ -1,5 +1,17 @@
 # @zetesis/payload-agents-core
 
+## [0.6.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.4...payload-agents-core-v0.6.5) (2026-06-20)
+
+
+### Features
+
+* agent-selectable retrieval lentes + LiteLLM key self-heal ([71d2131](https://github.com/Zetesis-Labs/PayloadAgents/commit/71d213114ff122f1d5ccd2d2348ec50461a40909))
+
+
+### Bug Fixes
+
+* **payload-agents-core:** self-heal LiteLLM virtual-key alias collisions ([cf1dbf8](https://github.com/Zetesis-Labs/PayloadAgents/commit/cf1dbf8df6b0d6baf1dc34c8cce2cbb8c923531c))
+
 ## [0.6.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.3...payload-agents-core-v0.6.4) (2026-06-20)
 
 
