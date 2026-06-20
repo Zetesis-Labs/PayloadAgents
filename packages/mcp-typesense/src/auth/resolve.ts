@@ -19,6 +19,7 @@ const INPUT_K_HEADER = 'x-input-k'
 const TOP_K_HEADER = 'x-top-k'
 const HYBRID_ALPHA_HEADER = 'x-hybrid-alpha'
 const QUERY_REWRITE_TEMPLATE_HEADER = 'x-query-rewrite-template'
+const LEARNED_HEAD_HEADER = 'x-learned-head'
 
 const parseSlugList = (raw: string | string[] | undefined): string[] | undefined => {
   const value = Array.isArray(raw) ? raw[0] : raw
@@ -73,6 +74,21 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
   return _exhaustive
 }
 
+function decodeLearnedHead(raw: string | undefined): { w: number[]; b: number } | undefined {
+  if (!raw) return undefined
+  try {
+    const buf = Buffer.from(raw, 'base64')
+    if (buf.byteLength < 8 || buf.byteLength % 4 !== 0) return undefined
+    const dims = buf.byteLength / 4 - 1
+    const w: number[] = []
+    for (let i = 0; i < dims; i++) w.push(buf.readFloatLE(i * 4))
+    const b = buf.readFloatLE(dims * 4)
+    return { w, b }
+  } catch {
+    return undefined
+  }
+}
+
 function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthContext['retrieval'] | undefined {
   const rerankerKind = readScalar(headers[RERANKER_KIND_HEADER])
   const rerankerModel = readScalar(headers[RERANKER_MODEL_HEADER])
@@ -80,6 +96,7 @@ function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthConte
   const topK = parseFiniteNumber(headers[TOP_K_HEADER])
   const hybridAlpha = parseFiniteNumber(headers[HYBRID_ALPHA_HEADER])
   const rewriteTemplate = readScalar(headers[QUERY_REWRITE_TEMPLATE_HEADER])
+  const learnedHead = decodeLearnedHead(readScalar(headers[LEARNED_HEAD_HEADER]))
 
   if (
     rerankerKind === undefined &&
@@ -87,9 +104,10 @@ function readRetrievalHeaders(headers: IncomingMessage['headers']): McpAuthConte
     inputK === undefined &&
     topK === undefined &&
     hybridAlpha === undefined &&
-    rewriteTemplate === undefined
+    rewriteTemplate === undefined &&
+    learnedHead === undefined
   ) {
     return undefined
   }
-  return { rerankerKind, rerankerModel, inputK, topK, hybridAlpha, rewriteTemplate }
+  return { rerankerKind, rerankerModel, inputK, topK, hybridAlpha, rewriteTemplate, learnedHead }
 }

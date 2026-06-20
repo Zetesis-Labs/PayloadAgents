@@ -165,14 +165,17 @@ function buildSearchParams(args: {
   page: number
   vectorK: number
   hybridAlpha: number
+  excludeEmbedding: boolean
 }): MultiSearchRequestSchema<ChunkDoc, string> {
-  const { collectionDef, mode, query, filters, perPage, page, vectorK, hybridAlpha } = args
+  const { collectionDef, mode, query, filters, perPage, page, vectorK, hybridAlpha, excludeEmbedding } = args
   const params: MultiSearchRequestSchema<ChunkDoc, string> = {
     collection: collectionDef.chunkCollection,
     per_page: perPage,
     page,
-    exclude_fields: 'embedding',
     q: '*'
+  }
+  if (excludeEmbedding) {
+    params.exclude_fields = 'embedding'
   }
 
   if (filters && Object.keys(filters).length > 0) {
@@ -453,6 +456,9 @@ async function executeSearch(
   const topK = clampPositiveInt(auth?.retrieval?.topK, perPage, 1, MAX_PER_PAGE)
   const fetchPerCollection = Math.min(inputK, MAX_PER_PAGE)
 
+  const learnedHead = auth?.retrieval?.learnedHead
+  const excludeEmbedding = !learnedHead
+
   const searches = targets.map(collectionDef =>
     buildSearchParams({
       collectionDef,
@@ -462,7 +468,8 @@ async function executeSearch(
       perPage: fetchPerCollection,
       page,
       vectorK: inputK,
-      hybridAlpha
+      hybridAlpha,
+      excludeEmbedding
     })
   )
 
@@ -492,11 +499,24 @@ async function executeSearch(
     totalFound += r.found || 0
     totalTime += r.search_time_ms || 0
 
-    const hits = (r.hits as SearchResponseHit<ChunkDoc>[] | undefined) ?? []
-    hitsPerCollection.push(hits.map(h => mapHit(h, collectionDef.chunkCollection, snippetLength)))
+    const rawHits = (r.hits as SearchResponseHit<ChunkDoc>[] | undefined) ?? []
+    const mappedHits = rawHits.map(raw => {
+      const hit = mapHit(raw, collectionDef.chunkCollection, snippetLength)
+      if (learnedHead) {
+        const emb = raw.document.embedding as number[] | undefined
+        if (emb && emb.length === learnedHead.w.length) {
+          let s = learnedHead.b
+          for (let i = 0; i < learnedHead.w.length; i++) s += (learnedHead.w[i] ?? 0) * (emb[i] ?? 0)
+          hit.score = s
+        }
+      }
+      return hit
+    })
+    hitsPerCollection.push(mappedHits)
   })
 
   const merged = roundRobinMerge(hitsPerCollection)
+  const afterHead = learnedHead ? [...merged].sort((a, b) => b.score - a.score) : merged
   setAttributes(parentSpan, {
     'retrieval.merged_candidates': merged.length,
     'retrieval.typesense_total_found': totalFound,
@@ -504,7 +524,7 @@ async function executeSearch(
   })
   // Reranker scores chunks against the rewritten query — the same string
   // Typesense used — so reranker/Typesense agree on what "relevant" means.
-  const reranked = await maybeRerank(ctx, auth, queryUsed, merged)
+  const reranked = await maybeRerank(ctx, auth, queryUsed, afterHead)
   const finalHits = reranked.slice(0, topK)
   setAttributes(parentSpan, {
     'retrieval.final_hits_count': finalHits.length,

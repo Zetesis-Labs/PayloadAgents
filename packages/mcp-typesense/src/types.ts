@@ -195,6 +195,13 @@ export interface McpAuthContext {
      * string. When unset, the raw user query is passed through unchanged.
      */
     rewriteTemplate?: string
+    /**
+     * Learned head weights for dot-product re-ranking. When present the
+     * search tool fetches embeddings from Typesense (skips exclude_fields)
+     * and applies `score = w·e + b` to each candidate before the reranker.
+     * w has the same dimensionality as the chunk embedding (BGE-M3 → 1024).
+     */
+    learnedHead?: { w: number[]; b: number }
   }
   /** User identifier, for logging/auditing. */
   userId?: string
