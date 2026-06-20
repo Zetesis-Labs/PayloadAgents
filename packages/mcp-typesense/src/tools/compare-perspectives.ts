@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod'
+import { applyProfileScope } from '../auth/profile-scope'
 import type { ToolContext } from '../context'
 import type { McpAuthContext } from '../types'
 import { searchCollections } from './search-collections'
@@ -76,19 +77,6 @@ export const comparePerspectivesSchema = z.object({
 
 export type ComparePerspectivesInput = z.infer<typeof comparePerspectivesSchema>
 
-/**
- * Build the auth context a group runs under. When the group names a profile and
- * the proxy resolved it (groupProfiles), apply that profile's filters + lente;
- * otherwise fall back to the request's default auth. This is what lets two
- * groups run the same query under different lentes.
- */
-function authForGroup(auth: McpAuthContext | null, slug: string | undefined): McpAuthContext | null {
-  if (!auth || !slug) return auth
-  const gp = auth.groupProfiles?.[slug]
-  if (!gp) return auth
-  return { ...auth, taxonomySlugs: gp.taxonomySlugs, folderSlugs: gp.folderSlugs, retrieval: gp.retrieval }
-}
-
 export async function comparePerspectives(
   input: ComparePerspectivesInput,
   ctx: ToolContext,
@@ -100,7 +88,7 @@ export async function comparePerspectives(
   const groupResults = await Promise.all(
     input.groups.map(async g => {
       const filters = g.taxonomy_slugs ? { taxonomy_slugs: g.taxonomy_slugs } : undefined
-      const groupAuth = authForGroup(auth, g.retrieval_profile ?? input.retrieval_profile)
+      const groupAuth = applyProfileScope(auth, g.retrieval_profile ?? input.retrieval_profile)
 
       const result = await searchCollections(
         {

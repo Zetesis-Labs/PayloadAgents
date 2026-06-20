@@ -16,6 +16,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { getCurrentAuth } from '../auth/context'
+import { applyProfileScope } from '../auth/profile-scope'
 import type { ToolContext } from '../context'
 import { type OutputFormat, toolResult } from '../format'
 import type { FeaturesConfig, ToolNameOverrides } from '../types'
@@ -167,7 +168,11 @@ export function registerTools(opts: RegisterToolsOptions): void {
       const auth = getCurrentAuth()
       const guard = requireProfileSelection(auth, input.retrieval_profile)
       if (guard) return toolResult(guard, input.format as OutputFormat)
-      const result = await searchCollections(input, ctx, auth)
+      // Resolve the chosen profile's lente+filters from the group catalog when
+      // present (Agno route: full catalog forwarded as fixed headers). No-op on
+      // the token route, where the proxy already resolved `auth.retrieval`.
+      const scoped = applyProfileScope(auth, input.retrieval_profile)
+      const result = await searchCollections(input, ctx, scoped)
       return toolResult(result, input.format as OutputFormat)
     }
   )
