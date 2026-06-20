@@ -183,7 +183,10 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await comparePerspectives(input, ctx, getCurrentAuth())
+      const auth = getCurrentAuth()
+      const guard = requireProfileSelection(auth, input.retrieval_profile)
+      if (guard) return toolResult(guard, input.format as OutputFormat)
+      const result = await comparePerspectives(input, ctx, auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )

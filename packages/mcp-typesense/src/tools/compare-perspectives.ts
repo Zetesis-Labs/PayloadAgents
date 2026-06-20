@@ -56,7 +56,13 @@ export const comparePerspectivesSchema = z.object({
     .min(0)
     .max(5)
     .optional()
-    .describe('Inline neighboring chunks (chunk_index ±N) for each hit. Default: 0. Max: 3.')
+    .describe('Inline neighboring chunks (chunk_index ±N) for each hit. Default: 0. Max: 3.'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Slug of the retrieval profile to use. Same selection rules as search_collections: required when your token exposes profiles. Call list_retrieval_profiles to see the options.'
+    )
 })
 
 export type ComparePerspectivesInput = z.infer<typeof comparePerspectivesSchema>
