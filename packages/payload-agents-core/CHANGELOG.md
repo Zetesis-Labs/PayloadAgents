@@ -1,5 +1,13 @@
 # @zetesis/payload-agents-core
 
+## [0.6.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.3...payload-agents-core-v0.6.4) (2026-06-20)
+
+
+### Features
+
+* learned heads (lentes) — standalone collection + MCP re-ranking ([88e7157](https://github.com/Zetesis-Labs/PayloadAgents/commit/88e715780e726f1004c5961a1c3692c2abdf96c2))
+* **payload-agents-core:** add LearnedHeads collection and learnedHead relation ([58cd54c](https://github.com/Zetesis-Labs/PayloadAgents/commit/58cd54c0bf83f4c614d72f4c0b76b209113ef48b))
+
 ## [0.6.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.2...payload-agents-core-v0.6.3) (2026-06-18)
 
 

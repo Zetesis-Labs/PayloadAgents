@@ -1,5 +1,20 @@
 # @zetesis/mcp-typesense
 
+## [0.6.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.0...mcp-typesense-v0.6.1) (2026-06-20)
+
+
+### Features
+
+* learned heads (lentes) — standalone collection + MCP re-ranking ([88e7157](https://github.com/Zetesis-Labs/PayloadAgents/commit/88e715780e726f1004c5961a1c3692c2abdf96c2))
+* **mcp-typesense:** agent-selectable retrieval profiles per query ([f636eb0](https://github.com/Zetesis-Labs/PayloadAgents/commit/f636eb05c50332a60d4eacdf917710b9df3069db))
+* **mcp-typesense:** apply learned head re-ranking via x-learned-head header ([5f23f4d](https://github.com/Zetesis-Labs/PayloadAgents/commit/5f23f4d7a6482dcec50de92d79e0058d3cb1cb1a))
+* **mcp-typesense:** per-group retrieval profile in compare_perspectives ([c4937a8](https://github.com/Zetesis-Labs/PayloadAgents/commit/c4937a8bc016929ad7dd6d1d852de0d6d9d8ff22))
+
+
+### Bug Fixes
+
+* **mcp-typesense:** also require a retrieval profile on compare_perspectives ([6d2086d](https://github.com/Zetesis-Labs/PayloadAgents/commit/6d2086d6b08a6c1e87c2af6e5e7b966493888895))
+
 ## [0.6.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.5.1...mcp-typesense-v0.6.0) (2026-05-21)
 
 
