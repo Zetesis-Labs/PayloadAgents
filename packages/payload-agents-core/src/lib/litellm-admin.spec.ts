@@ -54,6 +54,69 @@ describe('LiteLlmAdminClient', () => {
     )
   })
 
+  it('self-heals an alias collision: deletes the orphan and regenerates', async () => {
+    const conflictBody = {
+      error: { message: "Key with alias 'agent/bastos' already exists.", param: 'key_alias', code: '400' }
+    }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve(conflictBody),
+        text: () => Promise.resolve(JSON.stringify(conflictBody))
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ deleted_keys: ['agent/bastos'] }),
+        text: () => Promise.resolve('')
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ key: 'sk-fresh' }),
+        text: () => Promise.resolve('')
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://litellm:4000', masterKey: 'sk-master' })
+
+    await expect(client.generateKey(PAYLOAD)).resolves.toEqual({ key: 'sk-fresh' })
+
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('http://litellm:4000/key/generate')
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('http://litellm:4000/key/delete')
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({ key_aliases: ['agent/bastos'] })
+    expect(fetchMock.mock.calls[2]?.[0]).toBe('http://litellm:4000/key/generate')
+  })
+
+  it('does not retry a 400 that is not an alias collision', async () => {
+    const badReq = { error: { message: 'models is required', param: 'models', code: '400' } }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: () => Promise.resolve(badReq),
+      text: () => Promise.resolve(JSON.stringify(badReq))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://litellm:4000', masterKey: 'sk-master' })
+
+    await expect(client.generateKey(PAYLOAD)).rejects.toThrow('HTTP 400')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('deletes keys by alias via /key/delete', async () => {
+    const fetchMock = stubFetch({ deleted_keys: ['agent/bastos'] })
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://litellm:4000', masterKey: 'sk-master' })
+
+    await client.deleteKeysByAlias(['agent/bastos'])
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://litellm:4000/key/delete',
+      expect.objectContaining({ body: JSON.stringify({ key_aliases: ['agent/bastos'] }) })
+    )
+  })
+
   it('updates an existing key by key value', async () => {
     const fetchMock = stubFetch({})
     const client = new LiteLlmAdminClient({ gatewayUrl: 'http://litellm:4000', masterKey: 'sk-master' })

@@ -14,6 +14,7 @@ from agno_agent_builder.exceptions import (
     MissingLiteLlmVirtualKeyError,
 )
 from agno_agent_builder.instructions import compose_instructions
+from agno_agent_builder.retrieval_headers import build_retrieval_profile_headers
 from agno_agent_builder.sources.types import AgentConfig
 
 
@@ -115,6 +116,10 @@ def build_mcp_tools(mcp_url: str, cfg: AgentConfig) -> MCPTools:
         headers["x-top-k"] = str(cfg.top_k)
     if cfg.rewrite_template:
         headers["x-query-rewrite-template"] = cfg.rewrite_template
+    # Multi-profile (lente) catalog: the default's lente plus, when the agent has
+    # more than one profile, the full catalog + per-profile config so the LLM can
+    # pick one per query. The fields above already reflect the default profile.
+    headers.update(build_retrieval_profile_headers(cfg.retrieval_profiles))
     if headers:
         params = StreamableHTTPClientParams(url=mcp_url, headers=headers)
         return MCPTools(server_params=params, transport="streamable-http")

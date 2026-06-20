@@ -124,6 +124,65 @@ class TestPayloadDocToAgentConfig:
         assert cfg.folder_slugs == []
         assert cfg.reranker_kind is None
 
+    def test_legacy_default_profile_becomes_single_retrieval_profile(self) -> None:
+        # A doc with only `defaultRetrievalProfile` still yields one entry in the
+        # new catalog, so the builder sends no multi-profile headers (guard off).
+        doc = self._doc()
+        doc["defaultRetrievalProfile"] = {
+            **doc["defaultRetrievalProfile"],
+            "slug": "bastos-default",
+        }
+        cfg = payload_doc_to_agent_config(doc)
+        assert len(cfg.retrieval_profiles) == 1
+        assert cfg.retrieval_profiles[0].slug == "bastos-default"
+        assert cfg.retrieval_profiles[0].hybrid_alpha == 0.5
+
+    def test_maps_multiple_retrieval_profiles_with_lente(self) -> None:
+        doc = self._doc(
+            retrievalProfiles=[
+                {
+                    "slug": "global",
+                    "name": "Global",
+                    "description": "cosine, no lente",
+                    "taxonomyFilters": [],
+                    "searchCollections": ["books_chunk"],
+                },
+                {
+                    "slug": "neoplatonismo",
+                    "name": "Neoplatonismo",
+                    "description": "lente neoplatónica",
+                    "taxonomyFilters": [{"slug": "plotino"}],
+                    "hybridAlpha": 0.7,
+                    "learnedHead": {"status": "ready", "weights": {"w": [0.1, 0.2], "b": 0.3}},
+                },
+            ]
+        )
+        cfg = payload_doc_to_agent_config(doc)
+        assert [p.slug for p in cfg.retrieval_profiles] == ["global", "neoplatonismo"]
+        # Legacy fields mirror the first (default) profile.
+        assert cfg.search_collections == ["books_chunk"]
+        # Lente only on the trained profile.
+        assert cfg.retrieval_profiles[0].learned_head is None
+        assert cfg.retrieval_profiles[1].learned_head is not None
+        assert cfg.retrieval_profiles[1].learned_head.w == [0.1, 0.2]
+        assert cfg.retrieval_profiles[1].learned_head.b == 0.3
+        assert cfg.retrieval_profiles[1].taxonomy_slugs == ["plotino"]
+
+    def test_untrained_lente_is_dropped(self) -> None:
+        doc = self._doc(
+            retrievalProfiles=[
+                {
+                    "slug": "a",
+                    "name": "A",
+                    "learnedHead": {"status": "draft", "weights": {"w": [1.0], "b": 0.0}},
+                },
+                {"slug": "b", "name": "B", "learnedHead": 99},
+            ]
+        )
+        cfg = payload_doc_to_agent_config(doc)
+        assert cfg.retrieval_profiles[0].learned_head is None
+        assert cfg.retrieval_profiles[1].learned_head is None
+
     @pytest.mark.parametrize("missing", ["slug", "llmModel", "apiKey"])
     def test_raises_on_required_missing(self, missing: str) -> None:
         doc = self._doc()

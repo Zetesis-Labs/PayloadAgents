@@ -98,6 +98,10 @@ def compose_instructions(
     if rag_parts:
         sections.append(f"<RAG_CONFIG>\n{chr(10).join(rag_parts)}\n</RAG_CONFIG>")
 
+    profiles_block = _compose_retrieval_profiles(cfg)
+    if profiles_block:
+        sections.append(profiles_block)
+
     limit_line = f"\nMax {cfg.tool_call_limit} tool calls per turn." if cfg.tool_call_limit else ""
     sections.append(
         f"<TOOL_PROTOCOL>\n{tool_protocol or DEFAULT_TOOL_PROTOCOL}{limit_line}\n</TOOL_PROTOCOL>"
@@ -105,3 +109,29 @@ def compose_instructions(
     sections.append(f"<OUTPUT_FORMAT>\n{output_format or DEFAULT_OUTPUT_FORMAT}\n</OUTPUT_FORMAT>")
 
     return "\n\n".join(sections)
+
+
+def _compose_retrieval_profiles(cfg: AgentConfig) -> str | None:
+    """When the agent exposes 2+ retrieval profiles (lentes), tell the LLM it
+    MUST pick one per search. With 0-1 profiles there's nothing to choose, so
+    the block is omitted and the MCP profile-selection guard stays off.
+    """
+    profiles = cfg.retrieval_profiles
+    if len(profiles) < 2:
+        return None
+    lines = [
+        f"- {p.slug}: {p.name}" + (f" — {p.description}" if p.description else "") for p in profiles
+    ]
+    catalog = "\n".join(lines)
+    return (
+        "<RETRIEVAL_PROFILES>\n"
+        "You have multiple retrieval profiles (lentes). Each biases search toward a\n"
+        "different register or perspective. You MUST select one for every retrieval:\n"
+        f"{catalog}\n\n"
+        'Pass `retrieval_profile: "<slug>"` in EVERY search_collections call (and in\n'
+        "each group of compare_perspectives). Pick the profile that best fits the\n"
+        "question; when in doubt call list_retrieval_profiles first. Searching without\n"
+        "a profile is rejected. To compare registers, run compare_perspectives with a\n"
+        "different retrieval_profile per group.\n"
+        "</RETRIEVAL_PROFILES>"
+    )
