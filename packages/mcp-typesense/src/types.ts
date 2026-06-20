@@ -211,10 +211,25 @@ export interface McpAuthContext {
    * the agent can discover and reason about its options.
    */
   availableProfiles?: Array<{ slug: string; name: string; description: string }>
+  /**
+   * Fully-resolved scope+retrieval config (filters + lente weights) for every
+   * profile referenced in THIS request, keyed by slug. Sent by the proxy only
+   * when a request uses more than one profile (e.g. `compare_perspectives` with
+   * a profile per group), so the tool can apply each group's own lente/filters.
+   * Scoped to the request's used profiles to keep the header small.
+   */
+  groupProfiles?: Record<string, ResolvedRetrievalScope>
   /** User identifier, for logging/auditing. */
   userId?: string
   /** Arbitrary metadata the auth strategy wants to propagate. */
   metadata?: Record<string, unknown>
+}
+
+/** The retrieval-affecting slice of an auth context: scope filters + retrieval params. */
+export interface ResolvedRetrievalScope {
+  taxonomySlugs?: string[]
+  folderSlugs?: string[]
+  retrieval?: McpAuthContext['retrieval']
 }
 
 // ============================================================================

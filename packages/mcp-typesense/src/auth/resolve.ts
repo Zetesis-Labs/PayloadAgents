@@ -8,7 +8,7 @@
  */
 
 import type { IncomingMessage } from 'node:http'
-import type { McpAuthContext, McpAuthStrategy } from '../types'
+import type { McpAuthContext, McpAuthStrategy, ResolvedRetrievalScope } from '../types'
 
 const DEFAULT_HEADER_NAME = 'x-tenant-slug'
 const TAXONOMY_HEADER_NAME = 'x-taxonomy-slugs'
@@ -21,6 +21,7 @@ const HYBRID_ALPHA_HEADER = 'x-hybrid-alpha'
 const QUERY_REWRITE_TEMPLATE_HEADER = 'x-query-rewrite-template'
 const LEARNED_HEAD_HEADER = 'x-learned-head'
 const RETRIEVAL_PROFILES_HEADER = 'x-retrieval-profiles'
+const GROUP_PROFILES_HEADER = 'x-group-profiles'
 
 const parseSlugList = (raw: string | string[] | undefined): string[] | undefined => {
   const value = Array.isArray(raw) ? raw[0] : raw
@@ -65,11 +66,21 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
     // Catalog of profiles the agent can choose from (metadata only).
     const availableProfiles = readAvailableProfiles(req.headers[RETRIEVAL_PROFILES_HEADER])
 
-    if (!tenantSlug && !taxonomySlugs?.length && !folderSlugs?.length && !retrieval && !availableProfiles?.length) {
+    // Per-profile resolved config for multi-profile requests (compare).
+    const groupProfiles = readGroupProfiles(req.headers[GROUP_PROFILES_HEADER])
+
+    if (
+      !tenantSlug &&
+      !taxonomySlugs?.length &&
+      !folderSlugs?.length &&
+      !retrieval &&
+      !availableProfiles?.length &&
+      !groupProfiles
+    ) {
       return null
     }
 
-    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles }
+    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles, groupProfiles }
   }
 
   // Exhaustive guard. When new variants are added, TypeScript will force
@@ -93,6 +104,50 @@ function readAvailableProfiles(
       )
       .map(p => ({ slug: p.slug, name: p.name ?? p.slug, description: p.description ?? '' }))
     return profiles.length > 0 ? profiles : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Decode the per-profile config map for multi-profile requests. The proxy sends
+ * a base64 JSON `{ [slug]: { taxonomySlugs, folderSlugs, retrieval } }`, where
+ * `retrieval.learnedHead` is itself a base64 weights blob (same encoding as the
+ * single-profile header), kept binary so it doesn't bloat the JSON.
+ */
+const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined)
+const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined)
+const strArr = (v: unknown): string[] | undefined => (Array.isArray(v) ? (v as string[]) : undefined)
+
+function parseGroupRetrieval(retrieval: Record<string, unknown> | undefined): ResolvedRetrievalScope['retrieval'] {
+  if (!retrieval) return undefined
+  return {
+    rerankerKind: str(retrieval.rerankerKind),
+    rerankerModel: str(retrieval.rerankerModel),
+    inputK: num(retrieval.inputK),
+    topK: num(retrieval.topK),
+    hybridAlpha: num(retrieval.hybridAlpha),
+    rewriteTemplate: str(retrieval.rewriteTemplate),
+    learnedHead: decodeLearnedHead(str(retrieval.learnedHead))
+  }
+}
+
+function readGroupProfiles(raw: string | string[] | undefined): Record<string, ResolvedRetrievalScope> | undefined {
+  const value = readScalar(raw)
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64').toString('utf8')) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined
+    const out: Record<string, ResolvedRetrievalScope> = {}
+    for (const [slug, raw0] of Object.entries(parsed as Record<string, unknown>)) {
+      const entry = raw0 as { taxonomySlugs?: unknown; folderSlugs?: unknown; retrieval?: Record<string, unknown> }
+      out[slug] = {
+        taxonomySlugs: strArr(entry.taxonomySlugs),
+        folderSlugs: strArr(entry.folderSlugs),
+        retrieval: parseGroupRetrieval(entry.retrieval)
+      }
+    }
+    return Object.keys(out).length > 0 ? out : undefined
   } catch {
     return undefined
   }

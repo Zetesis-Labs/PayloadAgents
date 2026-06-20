@@ -184,8 +184,11 @@ export function registerTools(opts: RegisterToolsOptions): void {
     },
     async input => {
       const auth = getCurrentAuth()
-      const guard = requireProfileSelection(auth, input.retrieval_profile)
-      if (guard) return toolResult(guard, input.format as OutputFormat)
+      // Every group must resolve to a valid profile (its own or the top-level default).
+      for (const g of input.groups) {
+        const guard = requireProfileSelection(auth, g.retrieval_profile ?? input.retrieval_profile)
+        if (guard) return toolResult(guard, input.format as OutputFormat)
+      }
       const result = await comparePerspectives(input, ctx, auth)
       return toolResult(result, input.format as OutputFormat)
     }

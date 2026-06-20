@@ -30,7 +30,7 @@ describe('resolveAuth', () => {
     const ctx = resolveAuth(req({ 'x-learned-head': encodeLearnedHead(w, b) }), { type: 'header' })
     const head = ctx?.retrieval?.learnedHead
     expect(head?.w).toHaveLength(4)
-    head?.w.forEach((v, i) => expect(v).toBeCloseTo(w[i] ?? 0, 5))
+    for (let i = 0; i < w.length; i++) expect(head?.w[i]).toBeCloseTo(w[i] ?? 0, 5)
     expect(head?.b).toBeCloseTo(b, 5)
   })
 
@@ -47,5 +47,27 @@ describe('resolveAuth', () => {
     ]
     const ctx = resolveAuth(req({ 'x-retrieval-profiles': encodeProfiles(profiles) }), { type: 'header' })
     expect(ctx?.availableProfiles).toEqual(profiles)
+  })
+
+  it('decodes the per-group profiles map with binary weights', () => {
+    const map = {
+      austriaco: {
+        taxonomySlugs: ['mises'],
+        folderSlugs: [],
+        retrieval: { hybridAlpha: 0.7, learnedHead: encodeLearnedHead([1, 2], 0.5) }
+      },
+      perennialista: {
+        taxonomySlugs: ['guenon'],
+        retrieval: { learnedHead: encodeLearnedHead([-1, -2], -0.5) }
+      }
+    }
+    const header = Buffer.from(JSON.stringify(map)).toString('base64')
+    const ctx = resolveAuth(req({ 'x-group-profiles': header }), { type: 'header' })
+
+    expect(Object.keys(ctx?.groupProfiles ?? {})).toEqual(['austriaco', 'perennialista'])
+    expect(ctx?.groupProfiles?.austriaco?.taxonomySlugs).toEqual(['mises'])
+    expect(ctx?.groupProfiles?.austriaco?.retrieval?.hybridAlpha).toBe(0.7)
+    expect(ctx?.groupProfiles?.austriaco?.retrieval?.learnedHead?.w[0]).toBeCloseTo(1, 5)
+    expect(ctx?.groupProfiles?.perennialista?.retrieval?.learnedHead?.b).toBeCloseTo(-0.5, 5)
   })
 })
