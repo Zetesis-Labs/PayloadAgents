@@ -16,7 +16,7 @@ import httpx
 from pydantic import SecretStr
 
 from agno_agent_builder.logging import get_logger
-from agno_agent_builder.sources.types import AgentConfig
+from agno_agent_builder.sources.types import AgentConfig, LearnedHead, RetrievalProfile
 
 logger = get_logger(__name__)
 
@@ -79,29 +79,37 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
     tenant = doc.get("tenant")
     tenant_slug = tenant.get("slug") if isinstance(tenant, dict) else None
 
-    profile = (
-        doc.get("defaultRetrievalProfile")
-        if isinstance(doc.get("defaultRetrievalProfile"), dict)
-        else None
+    # The agent can carry several retrieval profiles (`retrievalProfiles`, the
+    # multi-lente catalog). Fall back to a legacy single `defaultRetrievalProfile`
+    # during the transition. The first profile is the default: its filters /
+    # reranker / collections populate the legacy single-profile fields so
+    # non-search tools and the RAG_CONFIG block stay scoped to it.
+    raw_profiles = doc.get("retrievalProfiles")
+    profile_dicts = (
+        [p for p in raw_profiles if isinstance(p, dict)]
+        if isinstance(raw_profiles, list)
+        else [p for p in [doc.get("defaultRetrievalProfile")] if isinstance(p, dict)]
     )
-    if profile:
-        taxonomy_slugs = _extract_taxonomy_slugs(profile.get("taxonomyFilters"))
-        folder_slugs = _extract_folder_slugs(profile.get("folderFilters"))
-        reranker = profile.get("reranker") if isinstance(profile.get("reranker"), dict) else None
+    retrieval_profiles = [_to_retrieval_profile(p) for p in profile_dicts]
+    default = profile_dicts[0] if profile_dicts else None
+    if default:
+        taxonomy_slugs = _extract_taxonomy_slugs(default.get("taxonomyFilters"))
+        folder_slugs = _extract_folder_slugs(default.get("folderFilters"))
+        reranker = default.get("reranker") if isinstance(default.get("reranker"), dict) else None
         reranker_kind = (
             reranker.get("kind") if reranker and isinstance(reranker.get("kind"), str) else None
         )
         reranker_model = (
             reranker.get("model") if reranker and isinstance(reranker.get("model"), str) else None
         )
-        hybrid_alpha = _coerce_float(profile.get("hybridAlpha"))
-        input_k = _coerce_int(profile.get("inputK"))
-        top_k = _coerce_int(profile.get("topK"))
-        raw_rewrite = profile.get("queryRewrite")
+        hybrid_alpha = _coerce_float(default.get("hybridAlpha"))
+        input_k = _coerce_int(default.get("inputK"))
+        top_k = _coerce_int(default.get("topK"))
+        raw_rewrite = default.get("queryRewrite")
         rewrite_template = (
             raw_rewrite.strip() if isinstance(raw_rewrite, str) and raw_rewrite.strip() else None
         )
-        raw_collections = profile.get("searchCollections")
+        raw_collections = default.get("searchCollections")
         search_collections = (
             [s for s in raw_collections if isinstance(s, str)]
             if isinstance(raw_collections, list)
@@ -151,7 +159,58 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
         input_k=input_k,
         top_k=top_k,
         rewrite_template=rewrite_template,
+        retrieval_profiles=retrieval_profiles,
     )
+
+
+def _to_retrieval_profile(profile: dict[str, Any]) -> RetrievalProfile:
+    """Map one populated SearchProfile doc into a normalized `RetrievalProfile`."""
+    reranker = profile.get("reranker") if isinstance(profile.get("reranker"), dict) else None
+    raw_rewrite = profile.get("queryRewrite")
+    slug = profile.get("slug")
+    return RetrievalProfile(
+        slug=slug if isinstance(slug, str) and slug else "",
+        name=profile.get("name") if isinstance(profile.get("name"), str) else (slug or ""),
+        description=profile.get("description")
+        if isinstance(profile.get("description"), str)
+        else "",
+        taxonomy_slugs=_extract_taxonomy_slugs(profile.get("taxonomyFilters")),
+        folder_slugs=_extract_folder_slugs(profile.get("folderFilters")),
+        reranker_kind=(
+            reranker.get("kind") if reranker and isinstance(reranker.get("kind"), str) else None
+        ),
+        reranker_model=(
+            reranker.get("model") if reranker and isinstance(reranker.get("model"), str) else None
+        ),
+        hybrid_alpha=_coerce_float(profile.get("hybridAlpha")),
+        input_k=_coerce_int(profile.get("inputK")),
+        top_k=_coerce_int(profile.get("topK")),
+        rewrite_template=(
+            raw_rewrite.strip() if isinstance(raw_rewrite, str) and raw_rewrite.strip() else None
+        ),
+        learned_head=_extract_learned_head(profile.get("learnedHead")),
+    )
+
+
+def _extract_learned_head(head: Any) -> LearnedHead | None:
+    """Pull trained weights off a populated `learnedHead` relation.
+
+    Only applied when the lente is trained (``status == 'ready'``) and carries
+    a valid ``weights`` blob. A bare id (unpopulated) or a draft/failed head
+    yields None — the profile then ranks on cosine + reranker alone.
+    """
+    if not isinstance(head, dict) or head.get("status") != "ready":
+        return None
+    weights = head.get("weights")
+    if not isinstance(weights, dict):
+        return None
+    w = weights.get("w")
+    b = weights.get("b")
+    if not isinstance(w, list) or not all(isinstance(x, (int, float)) for x in w):
+        return None
+    if not isinstance(b, (int, float)):
+        return None
+    return LearnedHead(w=[float(x) for x in w], b=float(b))
 
 
 def _coerce_float(value: Any) -> float | None:
