@@ -1,5 +1,13 @@
 # @zetesis/mcp-typesense
 
+## [0.6.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.1...mcp-typesense-v0.6.2) (2026-06-20)
+
+
+### Features
+
+* agent-selectable retrieval lentes + LiteLLM key self-heal ([71d2131](https://github.com/Zetesis-Labs/PayloadAgents/commit/71d213114ff122f1d5ccd2d2348ec50461a40909))
+* **mcp-typesense:** resolve chosen retrieval_profile in search_collections ([4dfc443](https://github.com/Zetesis-Labs/PayloadAgents/commit/4dfc443e98833c4bfc0b52d9a6d086783042c051))
+
 ## [0.6.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.0...mcp-typesense-v0.6.1) (2026-06-20)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.13](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.12...agno-agent-builder-v0.1.13) (2026-06-20)
+
+
+### Features
+
+* agent-selectable retrieval lentes + LiteLLM key self-heal ([71d2131](https://github.com/Zetesis-Labs/PayloadAgents/commit/71d213114ff122f1d5ccd2d2348ec50461a40909))
+* **agno-agent-builder:** forward multi-profile lente catalog to MCP ([5296e3b](https://github.com/Zetesis-Labs/PayloadAgents/commit/5296e3bd1c43b1f2e0716f897d77025e65c4a3a4))
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** narrow profile field types for mypy ([dbd7a2c](https://github.com/Zetesis-Labs/PayloadAgents/commit/dbd7a2c184035911ea067869513f5a1bbb7d1dbf))
+
 ## [0.1.12](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.11...agno-agent-builder-v0.1.12) (2026-06-10)
 
 
