@@ -1,80 +1,63 @@
 'use client'
 
-import { AgentChatProvider, AgentThread, AgentThreadList } from '@zetesis/agent-ui'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Sparkles, X } from 'lucide-react'
+import {
+  type AgentChatDataSource,
+  type AgentInfo,
+  FloatingChatWrapper as AgentFloatingChat,
+  type SessionSummary
+} from '@zetesis/agent-ui'
+import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 
-interface AgentInfo {
-  slug: string
-  name: string
-  welcomeTitle?: string
-  welcomeSubtitle?: string
-  suggestedQuestions?: Array<{ prompt: string; title: string; description: string }>
+// Concrete AgentChatDataSource backed by the agent plugin's /api/chat/* endpoints
+// (registered by `agentPlugin` with basePath '/chat'). Mirrors the ZetesisPortal
+// wiring; the playground has no tenant roles, so access is granted to any
+// authenticated user (the endpoints themselves enforce auth → 401 when logged out).
+const dataSource: AgentChatDataSource = {
+  getAgents: async () => {
+    const res = await fetch('/api/chat/agents')
+    if (!res.ok) throw new Error('Failed to load agents')
+    const data = (await res.json()) as { agents?: AgentInfo[] }
+    return data.agents ?? []
+  },
+  getRecentSessions: async (agentSlug, limit = 10) => {
+    const params = new URLSearchParams()
+    if (agentSlug) params.set('agentSlug', agentSlug)
+    params.set('limit', String(limit))
+    const res = await fetch(`/api/chat/sessions?${params.toString()}`)
+    if (!res.ok) throw new Error('Failed to load sessions')
+    const data = (await res.json()) as { sessions?: SessionSummary[] }
+    return data.sessions ?? []
+  },
+  getSession: async conversationId => {
+    const res = await fetch(`/api/chat/session?conversationId=${encodeURIComponent(conversationId)}`)
+    if (!res.ok) throw new Error('Failed to load session')
+    return await res.json()
+  },
+  renameSession: async (conversationId, title) => {
+    const res = await fetch(`/api/chat/session?conversationId=${encodeURIComponent(conversationId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    })
+    if (!res.ok) throw new Error('Failed to rename session')
+  },
+  deleteSession: async conversationId => {
+    const res = await fetch(`/api/chat/session?conversationId=${encodeURIComponent(conversationId)}`, {
+      method: 'DELETE'
+    })
+    if (!res.ok) throw new Error('Failed to delete session')
+  }
 }
 
 export function FloatingChatWrapper() {
-  const [open, setOpen] = useState(false)
-  const [agent, setAgent] = useState<AgentInfo | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/chat/agents')
-      .then(r => (r.ok ? (r.json() as Promise<{ agents?: AgentInfo[] }>) : null))
-      .then(data => {
-        if (!cancelled) setAgent(data?.agents?.[0] ?? null)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  if (!agent) return null
-
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
-        aria-label={open ? 'Cerrar chat' : 'Abrir chat'}
-      >
-        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.18 }}
-            className="fixed bottom-24 right-6 z-40 flex h-[600px] w-[420px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
-          >
-            <AgentChatProvider
-              endpoint="/api/chat"
-              agentSlug={agent.slug}
-              agentName={agent.name}
-              generateHref={({ type, value }) => `/${type}/${value.slug || value.id}`}
-              LinkComponent={Link}
-            >
-              <div className="grid flex-1 grid-cols-[180px_1fr] overflow-hidden">
-                <aside className="overflow-y-auto border-r border-border bg-muted/20">
-                  <AgentThreadList />
-                </aside>
-                <main className="overflow-hidden">
-                  <AgentThread
-                    welcomeTitle={agent.welcomeTitle}
-                    welcomeSubtitle={agent.welcomeSubtitle}
-                    suggestedQuestions={agent.suggestedQuestions}
-                  />
-                </main>
-              </div>
-            </AgentChatProvider>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+    <AgentFloatingChat
+      hasAccess
+      dataSource={dataSource}
+      chatEndpoint="/api/chat"
+      LinkComponent={Link}
+      ImageComponent={Image}
+    />
   )
 }

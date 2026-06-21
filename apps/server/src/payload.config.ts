@@ -60,6 +60,13 @@ export default buildConfig({
       agentPlugin({
         runtimeUrl: process.env.AGENT_RUNTIME_URL || 'http://localhost:8000',
         runtimeSecret: process.env.INTERNAL_SECRET,
+        // Curated model catalog served by the LiteLLM gateway (hard dependency):
+        // llmModel is a preset select in admin, writes are validated against the
+        // catalog, and Payload mints one virtual key per agent.
+        modelCatalog: {
+          gatewayUrl: process.env.LITELLM_GATEWAY_URL || 'http://litellm:4000',
+          masterKey: process.env.LITELLM_MASTER_KEY
+        },
         getDailyLimit,
         encryptionKey: process.env.PAYLOAD_SECRET,
         basePath: '/chat',

@@ -76,6 +76,7 @@ export interface Config {
     'llm-usage-events': LlmUsageEvent;
     documents: Document;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -96,6 +97,7 @@ export interface Config {
     'llm-usage-events': LlmUsageEventsSelect<false> | LlmUsageEventsSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -113,7 +115,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      syncLiteLlmVirtualKey: TaskSyncLiteLlmVirtualKey;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -320,7 +328,7 @@ export interface Agent {
    */
   allowGuestAccess?: boolean | null;
   /**
-   * LLM model to use (e.g., openai/gpt-4o, anthropic/claude-sonnet-4-20250514)
+   * Model preset from the gateway catalog
    */
   llmModel: string;
   /**
@@ -340,29 +348,42 @@ export interface Agent {
    */
   toolCallLimit?: number | null;
   /**
-   * Collections to search for RAG context
+   * Optional LiteLLM max budget for this agent virtual key, in USD.
    */
-  searchCollections?: 'posts_chunk'[] | null;
+  maxBudgetUsd?: number | null;
   /**
-   * Taxonomies that filter the RAG content. REQUIRED: if empty, agent will not search any content.
+   * Optional LiteLLM budget reset window, e.g. 1d, 30d, 1mo.
    */
-  taxonomies?: (number | Taxonomy)[] | null;
+  budgetDuration?: string | null;
   /**
-   * Folders that scope the RAG content. Optional: if set, the agent only sees documents inside these folders (and their descendants, since the slug chain mirrors the breadcrumb).
+   * Optional LiteLLM requests-per-minute limit for this agent.
    */
-  folders?: (number | FolderInterface)[] | null;
+  rpmLimit?: number | null;
   /**
-   * Number of chunks to retrieve for RAG context
+   * Optional LiteLLM tokens-per-minute limit for this agent.
    */
-  kResults?: number | null;
+  tpmLimit?: number | null;
+  litellmVirtualKey?: string | null;
   /**
-   * Maximum context size in bytes (default: 64KB)
+   * LiteLLM key alias managed by Payload.
    */
-  maxContextBytes?: number | null;
+  litellmVirtualKeyAlias?: string | null;
   /**
-   * TTL for conversation history in seconds (default: 24h)
+   * Last 4 characters of the LiteLLM virtual key.
    */
-  ttl?: number | null;
+  litellmVirtualKeyFingerprint?: string | null;
+  /**
+   * Last LiteLLM virtual key sync status.
+   */
+  litellmVirtualKeySyncStatus?: ('pending' | 'synced' | 'blocked' | 'disabled' | 'error') | null;
+  /**
+   * Last successful LiteLLM virtual key sync.
+   */
+  litellmVirtualKeySyncedAt?: string | null;
+  /**
+   * Last LiteLLM virtual key sync error, if any.
+   */
+  litellmVirtualKeySyncError?: string | null;
   /**
    * Avatar image for the agent
    */
@@ -436,6 +457,10 @@ export interface LlmUsageEvent {
   cachedInputTokens?: number | null;
   totalTokens: number;
   costUsd: number;
+  /**
+   * Whether costUsd is the LiteLLM gateway's real figure or the static table estimate
+   */
+  costSource?: ('gateway' | 'table') | null;
   startedAt?: string | null;
   completedAt: string;
   latencyMs?: number | null;
@@ -511,6 +536,102 @@ export interface PayloadKv {
     | number
     | boolean
     | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'syncLiteLlmVirtualKey';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'syncLiteLlmVirtualKey') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  /**
+   * Used for concurrency control. Jobs with the same key are subject to exclusive/supersedes rules.
+   */
+  concurrencyKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -694,12 +815,16 @@ export interface AgentsSelect<T extends boolean = true> {
   apiKeyFingerprint?: T;
   systemPrompt?: T;
   toolCallLimit?: T;
-  searchCollections?: T;
-  taxonomies?: T;
-  folders?: T;
-  kResults?: T;
-  maxContextBytes?: T;
-  ttl?: T;
+  maxBudgetUsd?: T;
+  budgetDuration?: T;
+  rpmLimit?: T;
+  tpmLimit?: T;
+  litellmVirtualKey?: T;
+  litellmVirtualKeyAlias?: T;
+  litellmVirtualKeyFingerprint?: T;
+  litellmVirtualKeySyncStatus?: T;
+  litellmVirtualKeySyncedAt?: T;
+  litellmVirtualKeySyncError?: T;
   avatar?: T;
   welcomeTitle?: T;
   welcomeSubtitle?: T;
@@ -733,6 +858,7 @@ export interface LlmUsageEventsSelect<T extends boolean = true> {
   cachedInputTokens?: T;
   totalTokens?: T;
   costUsd?: T;
+  costSource?: T;
   startedAt?: T;
   completedAt?: T;
   latencyMs?: T;
@@ -773,6 +899,38 @@ export interface DocumentsSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  concurrencyKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -827,6 +985,18 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncLiteLlmVirtualKey".
+ */
+export interface TaskSyncLiteLlmVirtualKey {
+  input: {
+    agentId?: string | null;
+    blockEncryptedKey?: string | null;
+    slug?: string | null;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

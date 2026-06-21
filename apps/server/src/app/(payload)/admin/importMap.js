@@ -27,6 +27,7 @@ import { SyncStatusField as SyncStatusField_4a514ff607eb05ca6255fb0fd04affc3 } f
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { default as default_2b626bed1026074d9f37e7a587a41216 } from '@/modules/payload-admin/sync-typesense-button'
+import { ModelSelectField as ModelSelectField_047e71d7ff94958b70084ef0e8629920 } from '@zetesis/payload-agents-core/client'
 import { ParseButtonField as ParseButtonField_30958b88b838a01c37745f7d84cf8cbf } from '@zetesis/payload-documents/client'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_b239c58bd1b8e1388209632203a98c7d } from '../../../views/LlmUsageView'
@@ -62,6 +63,7 @@ export const importMap = {
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/modules/payload-admin/sync-typesense-button#default": default_2b626bed1026074d9f37e7a587a41216,
+  "@zetesis/payload-agents-core/client#ModelSelectField": ModelSelectField_047e71d7ff94958b70084ef0e8629920,
   "@zetesis/payload-documents/client#ParseButtonField": ParseButtonField_30958b88b838a01c37745f7d84cf8cbf,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/views/LlmUsageView#default": default_b239c58bd1b8e1388209632203a98c7d,
