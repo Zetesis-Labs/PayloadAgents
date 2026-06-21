@@ -349,6 +349,10 @@ export interface Agent {
    */
   toolCallLimit?: number | null;
   /**
+   * Search backends (MCP servers) this agent can use, routed through the LiteLLM gateway. Empty = none.
+   */
+  mcpServers?: ('typesense_search' | 'pgvector_search')[] | null;
+  /**
    * Optional LiteLLM max budget for this agent virtual key, in USD.
    */
   maxBudgetUsd?: number | null;
@@ -817,6 +821,7 @@ export interface AgentsSelect<T extends boolean = true> {
   apiKeyFingerprint?: T;
   systemPrompt?: T;
   toolCallLimit?: T;
+  mcpServers?: T;
   maxBudgetUsd?: T;
   budgetDuration?: T;
   rpmLimit?: T;
