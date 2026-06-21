@@ -19,6 +19,7 @@ import { createContentFetcher } from './content/payload-rest'
 import type { CollectionRegistry, ContentFetcher, ToolContext } from './context'
 import { DEFAULT_INSTRUCTIONS } from './defaults'
 import { registerResources } from './resources'
+import { createProfileScopeResolver } from './retrieval-profile/resolver'
 import { createTaxonomyResolver } from './taxonomy/resolver'
 import { registerTools } from './tools'
 import type { ChunkCollectionConfig, McpServerConfig, McpServerHandle } from './types'
@@ -52,7 +53,8 @@ function buildToolContext(config: McpServerConfig): ToolContext {
   const taxonomy = createTaxonomyResolver(config.taxonomy)
   const content: ContentFetcher | null = config.content ? createContentFetcher(config.content) : null
   const resolveReranker = config.reranker?.factory ?? null
-  return { typesense, collections, taxonomy, content, resolveReranker }
+  const resolveProfileScope = config.retrievalProfiles ? createProfileScopeResolver(config.retrievalProfiles) : null
+  return { typesense, collections, taxonomy, content, resolveReranker, resolveProfileScope }
 }
 
 export function createMcpServer(config: McpServerConfig): McpServerHandle {

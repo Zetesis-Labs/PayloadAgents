@@ -20,6 +20,7 @@ const TOP_K_HEADER = 'x-top-k'
 const HYBRID_ALPHA_HEADER = 'x-hybrid-alpha'
 const QUERY_REWRITE_TEMPLATE_HEADER = 'x-query-rewrite-template'
 const LEARNED_HEAD_HEADER = 'x-learned-head'
+const RETRIEVAL_PROFILE_HEADER = 'x-retrieval-profile'
 const RETRIEVAL_PROFILES_HEADER = 'x-retrieval-profiles'
 const GROUP_PROFILES_HEADER = 'x-group-profiles'
 
@@ -66,6 +67,9 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
     // Catalog of profiles the agent can choose from (metadata only).
     const availableProfiles = readAvailableProfiles(req.headers[RETRIEVAL_PROFILES_HEADER])
 
+    // Default profile slug — applied (resolved server-side) when none is chosen.
+    const defaultProfileSlug = readScalar(req.headers[RETRIEVAL_PROFILE_HEADER])
+
     // Per-profile resolved config for multi-profile requests (compare).
     const groupProfiles = readGroupProfiles(req.headers[GROUP_PROFILES_HEADER])
 
@@ -75,12 +79,13 @@ export function resolveAuth(req: IncomingMessage, strategy: McpAuthStrategy | un
       !folderSlugs?.length &&
       !retrieval &&
       !availableProfiles?.length &&
+      !defaultProfileSlug &&
       !groupProfiles
     ) {
       return null
     }
 
-    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles, groupProfiles }
+    return { tenantSlug, taxonomySlugs, folderSlugs, retrieval, availableProfiles, defaultProfileSlug, groupProfiles }
   }
 
   // Exhaustive guard. When new variants are added, TypeScript will force

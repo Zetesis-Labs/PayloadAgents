@@ -8,7 +8,7 @@
 
 import type { Client as TypesenseClient } from 'typesense'
 import type { CreateRerankerInput, Reranker } from './rerankers'
-import type { ChunkCollectionConfig, FetchBooksParams, RawBookDoc } from './types'
+import type { ChunkCollectionConfig, FetchBooksParams, RawBookDoc, ResolvedRetrievalScope } from './types'
 
 // ============================================================================
 // TAXONOMY
@@ -90,4 +90,10 @@ export interface ToolContext {
    * treat null as "reranking disabled".
    */
   resolveReranker: ((input: CreateRerankerInput) => Reranker) | null
+  /**
+   * Resolve a profile's scope (filters + lente) by slug on demand, fetching it
+   * server-side. Null when the consumer configured no resolver — handlers then
+   * rely on header-provided `groupProfiles` (token route) alone.
+   */
+  resolveProfileScope: ((tenantSlug: string, profileSlug: string) => Promise<ResolvedRetrievalScope | null>) | null
 }

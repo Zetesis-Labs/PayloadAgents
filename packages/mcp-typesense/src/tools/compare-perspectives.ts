@@ -88,7 +88,11 @@ export async function comparePerspectives(
   const groupResults = await Promise.all(
     input.groups.map(async g => {
       const filters = g.taxonomy_slugs ? { taxonomy_slugs: g.taxonomy_slugs } : undefined
-      const groupAuth = applyProfileScope(auth, g.retrieval_profile ?? input.retrieval_profile)
+      const groupAuth = await applyProfileScope(
+        auth,
+        g.retrieval_profile ?? input.retrieval_profile,
+        ctx.resolveProfileScope
+      )
 
       const result = await searchCollections(
         {
