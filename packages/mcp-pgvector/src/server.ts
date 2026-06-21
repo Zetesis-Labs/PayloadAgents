@@ -7,6 +7,7 @@
  * search_collections, get_chunks_by_parent, get_chunks_by_ids.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server as HttpServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -75,6 +76,20 @@ const buildSchema = (c: PgvectorMcpCollection, dimensions: number): PgvectorColl
 
 const text = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] })
 
+/**
+ * Per-request taxonomy scope, read from the trusted `x-taxonomy-slugs` header
+ * (injected by the Payload proxy / forwarded by LiteLLM). The MCP server applies
+ * it as a NON-overridable filter so a scoped token cannot read outside it.
+ */
+const scopeStore = new AsyncLocalStorage<{ taxonomySlugs: string[] }>()
+const scopedTaxonomy = (): string[] => scopeStore.getStore()?.taxonomySlugs ?? []
+
+/** Force the scope onto a filter object — the scope always wins over client input. */
+function applyScope(filter: Record<string, unknown>): Record<string, unknown> {
+  const scope = scopedTaxonomy()
+  return scope.length > 0 ? { ...filter, taxonomy_slugs: scope } : filter
+}
+
 function registerTools(server: McpServer, adapter: PgvectorAdapter, collections: PgvectorMcpCollection[]): void {
   const names = collections.map(c => c.name)
   const nameList = names.join(', ')
@@ -99,9 +114,11 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
     async input => {
       const targets = input.collection ? [input.collection] : names
       const limit = input.limit ?? 10
+      // Scope wins over client-supplied taxonomy_slugs — cannot be widened.
+      const filter = applyScope({ ...(input.filters ?? {}) })
       const hits: Array<{ collection: string; id: string; score: number; document: Record<string, unknown> }> = []
       for (const name of targets) {
-        const results = await adapter.searchByText(name, input.query, { limit, filter: input.filters })
+        const results = await adapter.searchByText(name, input.query, { limit, filter })
         for (const r of results) hits.push({ collection: name, id: r.id, score: r.score, document: r.document })
       }
       hits.sort((a, b) => a.score - b.score)
@@ -120,9 +137,10 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
       }
     },
     async input => {
-      const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(input.collection, {
-        parent_doc_id: input.parent_doc_id
-      })
+      const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
+        input.collection,
+        applyScope({ parent_doc_id: input.parent_doc_id })
+      )
       rows.sort((a, b) => Number(a.chunk_index ?? 0) - Number(b.chunk_index ?? 0))
       return text({ chunks: rows, total: rows.length })
     }
@@ -139,7 +157,10 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
       }
     },
     async input => {
-      const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(input.collection, { id: input.ids })
+      const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
+        input.collection,
+        applyScope({ id: input.ids })
+      )
       return text({ chunks: rows, total: rows.length })
     }
   )
@@ -189,6 +210,16 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
       return
     }
 
+    // Trusted scope from the header, applied to every tool call this request makes.
+    const taxHeader = req.headers['x-taxonomy-slugs']
+    const taxonomySlugs =
+      typeof taxHeader === 'string' && taxHeader
+        ? taxHeader
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean)
+        : []
+
     const sessionId = req.headers['mcp-session-id'] as string | undefined
     if (sessionId) {
       const transport = sessions.get(sessionId)
@@ -198,11 +229,11 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
           .end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: 'Session not found' }, id: null }))
         return
       }
-      await transport.handleRequest(req, res)
+      await scopeStore.run({ taxonomySlugs }, () => transport.handleRequest(req, res))
       return
     }
     const transport = await createSession()
-    await transport.handleRequest(req, res)
+    await scopeStore.run({ taxonomySlugs }, () => transport.handleRequest(req, res))
   }
 
   let httpServer: HttpServer | null = null
