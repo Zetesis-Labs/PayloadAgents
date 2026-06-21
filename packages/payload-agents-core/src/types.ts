@@ -1,4 +1,5 @@
 import type { CollectionConfig, Payload, PayloadRequest, TypedUser } from 'payload'
+import type { LiteLlmMcpServerPayload } from './lib/litellm-admin'
 
 /**
  * Context passed to `buildSessionId` when a new chat starts.
@@ -181,6 +182,14 @@ export interface AgentPluginConfig {
     /** Catalog cache TTL in ms. Default: 60_000. */
     cacheTtlMs?: number
   }
+
+  /**
+   * MCP servers to register in the LiteLLM gateway on startup. Typically derived
+   * from the configured search backends' MCP descriptors. They're reconciled
+   * (created/updated, and Payload-managed orphans pruned) so agents can be
+   * granted access to them; admin-added servers in LiteLLM are left untouched.
+   */
+  mcpServers?: LiteLlmMcpServerPayload[]
 }
 
 // ── Run completed callback ────────────────────────────────────────────────
@@ -267,4 +276,5 @@ export interface ResolvedPluginConfig {
   collectionOverrides: CollectionOverrides | undefined
   onRunCompleted: OnRunCompleted | undefined
   modelCatalog: { gatewayUrl: string; masterKey: string; cacheTtlMs: number }
+  mcpServers: LiteLlmMcpServerPayload[]
 }

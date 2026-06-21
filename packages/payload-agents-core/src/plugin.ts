@@ -15,6 +15,7 @@ import { createModelsListHandler } from './endpoints/models'
 import { createSessionDeleteHandler, createSessionGetHandler, createSessionPatchHandler } from './endpoints/session'
 import { createSessionsListHandler } from './endpoints/sessions'
 import { createUsageHandler } from './endpoints/usage'
+import { LiteLlmAdminClient } from './lib/litellm-admin'
 import { defaultBuildSessionId, defaultValidateSessionOwnership } from './lib/session-id'
 import type { AgentPluginConfig, ResolvedPluginConfig } from './types'
 
@@ -75,7 +76,27 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
       gatewayUrl,
       masterKey,
       cacheTtlMs: userConfig.modelCatalog.cacheTtlMs ?? 60_000
-    }
+    },
+    mcpServers: userConfig.mcpServers ?? []
+  }
+}
+
+/**
+ * Reconcile the configured MCP servers into the LiteLLM gateway on startup.
+ * Best-effort: a gateway hiccup logs a warning but never blocks boot (the
+ * virtual-key sync is the hard path; MCP registration is additive).
+ */
+async function syncMcpServersOnInit(config: ResolvedPluginConfig): Promise<void> {
+  if (config.mcpServers.length === 0) return
+  const client = new LiteLlmAdminClient({
+    gatewayUrl: config.modelCatalog.gatewayUrl,
+    masterKey: config.modelCatalog.masterKey
+  })
+  try {
+    const { created, updated, deleted } = await client.syncMcpServers(config.mcpServers, { prune: true })
+    console.info(`[agent-plugin] MCP servers synced to LiteLLM: +${created} ~${updated} -${deleted}`)
+  } catch (error) {
+    console.warn('[agent-plugin] MCP server sync failed:', error instanceof Error ? error.message : error)
   }
 }
 
@@ -165,6 +186,7 @@ export function agentPlugin(userConfig: AgentPluginConfig): Plugin {
       jobs: buildLiteLlmJobs(incomingConfig.jobs, config),
       onInit: async payload => {
         await incomingOnInit?.(payload)
+        await syncMcpServersOnInit(config)
         await enqueueExistingLiteLlmVirtualKeySyncs(payload, config)
       }
     }
