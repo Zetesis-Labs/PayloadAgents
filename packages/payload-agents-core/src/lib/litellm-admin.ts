@@ -131,7 +131,9 @@ export class LiteLlmAdminClient {
         Authorization: `Bearer ${this.masterKey}`,
         'Content-Type': 'application/json'
       },
-      ...(body ? { body: JSON.stringify(body) } : {})
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      // Bound the request: a hung gateway must not block boot or token/key syncs.
+      signal: AbortSignal.timeout(15_000)
     })
     if (!res.ok) {
       // Keep the raw upstream body on `.body` (used for self-heal + server-side

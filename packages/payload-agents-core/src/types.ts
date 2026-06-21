@@ -193,9 +193,11 @@ export interface AgentPluginConfig {
 
   /**
    * How `mcpServers` are reconciled into LiteLLM on startup. `environment` tags
-   * the managed servers so several deployments sharing one gateway don't prune
-   * each other's; `prune` (default true) deletes only THIS environment's managed
-   * orphans. Set `prune: false` to never delete. Reconciliation runs every boot.
+   * the managed servers so several deployments sharing one gateway don't touch
+   * each other's. Pruning is DESTRUCTIVE (it deletes Payload-managed servers from
+   * a possibly shared gateway), so it is OFF by default and only ever runs when
+   * `prune: true` AND an `environment` is set — an empty/default config can never
+   * wipe servers on boot. Reconciliation (create/update) runs every boot.
    */
   mcpServerSync?: { prune?: boolean; environment?: string }
 }

@@ -80,7 +80,7 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
     },
     mcpServers: userConfig.mcpServers ?? [],
     mcpServerSync: {
-      prune: userConfig.mcpServerSync?.prune ?? true,
+      prune: userConfig.mcpServerSync?.prune ?? false,
       environment: userConfig.mcpServerSync?.environment
     }
   }
@@ -92,19 +92,22 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
  * virtual-key sync is the hard path; MCP registration is additive).
  */
 async function syncMcpServersOnInit(config: ResolvedPluginConfig): Promise<void> {
-  const { prune, environment } = config.mcpServerSync
-  // Skip only when there is nothing to register AND nothing to prune. With prune
-  // on, an empty desired list still runs so orphaned managed servers get removed.
+  const { environment } = config.mcpServerSync
+  // Pruning is destructive and only safe when scoped to an environment, so it
+  // requires BOTH prune:true and a non-empty environment. Without the env we
+  // refuse to delete (a default/empty config must never wipe a shared gateway).
+  const prune = config.mcpServerSync.prune && Boolean(environment)
+  if (config.mcpServerSync.prune && !environment) {
+    console.warn(
+      '[agent-plugin] MCP prune requested without mcpServerSync.environment — skipping prune; deleting unscoped would be unsafe on a shared gateway.'
+    )
+  }
+  // Nothing to register and nothing to (safely) prune.
   if (config.mcpServers.length === 0 && !prune) return
   const client = new LiteLlmAdminClient({
     gatewayUrl: config.modelCatalog.gatewayUrl,
     masterKey: config.modelCatalog.masterKey
   })
-  if (prune && !environment) {
-    console.warn(
-      "[agent-plugin] MCP prune is on without mcpServerSync.environment — on a LiteLLM shared across deployments this can delete another deployment's managed servers. Set an environment to scope it."
-    )
-  }
   try {
     const { created, updated, deleted } = await client.syncMcpServers(config.mcpServers, { prune, environment })
     console.info(`[agent-plugin] MCP servers synced to LiteLLM: +${created} ~${updated} -${deleted}`)
