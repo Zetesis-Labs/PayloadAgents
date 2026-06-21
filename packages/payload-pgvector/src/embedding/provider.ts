@@ -31,6 +31,14 @@ export interface OpenAICompatibleEmbeddingConfig {
   model: string
   /** Vector dimensionality. Must match the target `vector(N)` column. */
   dimensions: number
+  /**
+   * Send `dimensions` in the request body so a reduced-dim config produces
+   * vectors that fit the `vector(N)` column. Only the OpenAI `text-embedding-3-*`
+   * family (and gateways proxying them) honour it — ada-002, TEI, Ollama and
+   * most local servers reject the param, so this is OFF by default. Enable it
+   * only when the target model supports dimensionality reduction.
+   */
+  sendDimensions?: boolean
   /** Optional fetch implementation override (testing). Defaults to global fetch. */
   fetchImpl?: typeof fetch
 }
@@ -47,6 +55,7 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
   readonly dimensions: number
   private readonly baseUrl: string
   private readonly apiKey: string
+  private readonly sendDimensions: boolean
   private readonly fetchImpl: typeof fetch
 
   constructor(config: OpenAICompatibleEmbeddingConfig) {
@@ -54,6 +63,7 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
     this.dimensions = config.dimensions
     this.baseUrl = config.baseUrl.replace(/\/$/, '')
     this.apiKey = config.apiKey
+    this.sendDimensions = config.sendDimensions ?? false
     this.fetchImpl = config.fetchImpl ?? fetch
   }
 
@@ -66,7 +76,13 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`
       },
-      body: JSON.stringify({ model: this.model, input: texts })
+      // Request the configured dimensionality only when the target model honours
+      // it (text-embedding-3-*); other backends reject the param. See sendDimensions.
+      body: JSON.stringify({
+        model: this.model,
+        input: texts,
+        ...(this.sendDimensions ? { dimensions: this.dimensions } : {})
+      })
     })
 
     if (!response.ok) {

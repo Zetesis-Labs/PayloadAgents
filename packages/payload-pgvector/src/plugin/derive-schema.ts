@@ -46,6 +46,15 @@ export const deriveCollectionSchemas = (config: PgvectorPluginConfig): PgvectorC
       const chunked = Boolean(tableConfig.embedding?.chunking)
       const standard = chunked ? chunkStandardFields() : docStandardFields()
       const standardNames = new Set(standard.map(f => f.name))
+      const userByName = new Map(tableConfig.fields.map(f => [f.name, f]))
+
+      // Merge the user's index/optional flags onto standard columns they also
+      // declare (e.g. index:true on slug), instead of silently dropping them.
+      const mergedStandard: PgFieldSchema[] = standard.map(s => {
+        const u = userByName.get(s.name)
+        if (!u) return s
+        return { ...s, index: u.index ?? s.index, optional: u.optional ?? s.optional }
+      })
 
       const userFields: PgFieldSchema[] = tableConfig.fields
         .filter(field => !standardNames.has(field.name))
@@ -63,7 +72,7 @@ export const deriveCollectionSchemas = (config: PgvectorPluginConfig): PgvectorC
         idField: 'id',
         embeddingField,
         embedFrom: chunked ? ['chunk_text'] : [],
-        fields: [...standard, ...userFields, embeddingColumn],
+        fields: [...mergedStandard, ...userFields, embeddingColumn],
         hnsw: { distance }
       })
     }

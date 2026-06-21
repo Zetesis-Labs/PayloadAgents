@@ -15,7 +15,7 @@ export interface PgvectorMcpDescriptorOptions {
  */
 export const createPgvectorMcpDescriptor = (opts: PgvectorMcpDescriptorOptions): McpDescriptor => ({
   id: opts.id ?? 'pgvector_search',
-  displayName: opts.displayName ?? 'pgvector Search',
+  displayName: opts.displayName ?? 'pgvector Search (experimental)',
   url: opts.url,
   transport: 'http',
   forwardHeaders: ['x-taxonomy-slugs'],
