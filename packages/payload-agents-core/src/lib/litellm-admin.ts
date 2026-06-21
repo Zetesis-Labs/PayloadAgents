@@ -11,6 +11,8 @@ export interface LiteLlmVirtualKeyPayload {
   budgetDuration?: string
   rpmLimit?: number
   tpmLimit?: number
+  /** Restricts which MCP servers / access-groups this key may reach (LiteLLM object_permission). */
+  objectPermission?: { mcpServers?: string[]; mcpAccessGroups?: string[] }
 }
 
 export interface LiteLlmGeneratedKey {
@@ -74,6 +76,14 @@ function toApiPayload(payload: LiteLlmVirtualKeyPayload, key?: string): Record<s
     key_alias: payload.keyAlias,
     models: payload.models,
     metadata: payload.metadata
+  }
+  if (payload.objectPermission) {
+    result.object_permission = {
+      ...(payload.objectPermission.mcpServers ? { mcp_servers: payload.objectPermission.mcpServers } : {}),
+      ...(payload.objectPermission.mcpAccessGroups
+        ? { mcp_access_groups: payload.objectPermission.mcpAccessGroups }
+        : {})
+    }
   }
   // On update, an unset limit becomes explicit null so LiteLLM clears a
   // previously-set value — /key/update is a partial PATCH, so an omitted field

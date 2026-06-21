@@ -26,6 +26,8 @@ export type { RunMetrics } from './lib/cost-calculator'
 // Utilities (for advanced consumers)
 export { costBreakdown, effectiveTokens, estimateRunCost } from './lib/cost-calculator'
 export { decrypt, encrypt, isEncrypted } from './lib/encryption'
+export type { LiteLlmMcpServerPayload, LiteLlmVirtualKeyPayload } from './lib/litellm-admin'
+export { LiteLlmAdminClient, LiteLlmRequestError } from './lib/litellm-admin'
 export type { MultiTenantSessionStrategy, MultiTenantSessionStrategyOptions } from './lib/multi-tenant'
 export { multiTenantSessionStrategy } from './lib/multi-tenant'
 export { runtimeFetch } from './lib/runtime-client'
