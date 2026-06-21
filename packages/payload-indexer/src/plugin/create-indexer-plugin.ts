@@ -145,7 +145,8 @@ function createSyncStatusAfterRead(adapter: IndexerAdapter, collectionSlug: stri
 }
 
 /**
- * Injects the _syncStatus virtual field into collections that have indexer tables configured
+ * Injects the adapter-namespaced sync-status virtual field (`_syncStatus_<adapter>`)
+ * into collections that have indexer tables configured.
  */
 function injectSyncStatusField(
   payloadCollections: CollectionConfig[],
