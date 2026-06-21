@@ -1,4 +1,5 @@
 export default [
+  'packages/mcp-pgvector',
   'packages/mcp-typesense',
   'packages/nexus-queue',
   'packages/payload-agents-core',

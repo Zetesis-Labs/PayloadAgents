@@ -24,8 +24,15 @@ const mcp = createPgvectorMcpServer({
     baseUrl: process.env.LITELLM_PROXY_URL || 'http://litellm:4000/v1',
     apiKey: process.env.LITELLM_MASTER_KEY || '',
     model: process.env.MCP_PGVECTOR_EMBED_MODEL || 'embeddings-dev',
-    dimensions: Number.parseInt(process.env.MCP_PGVECTOR_EMBED_DIMS || '1536', 10)
+    dimensions: Number.parseInt(process.env.MCP_PGVECTOR_EMBED_DIMS || '1536', 10),
+    // text-embedding-3-* honour dimensionality reduction; must match index-time.
+    sendDimensions: process.env.MCP_PGVECTOR_SEND_DIMS === 'true'
   },
+  // Secure by default at the deployment boundary: a request reaching the MCP
+  // without a taxonomy scope reads nothing (the constructor defaults this OFF to
+  // keep the package generic; the runner is deployment-facing, so it opts IN).
+  // Set MCP_PGVECTOR_REQUIRE_SCOPE=false to allow deliberately unscoped callers.
+  requireScope: process.env.MCP_PGVECTOR_REQUIRE_SCOPE !== 'false',
   collections: [
     {
       name: 'posts_pgvector_chunk',

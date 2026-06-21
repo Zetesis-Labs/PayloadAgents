@@ -21,6 +21,7 @@ import {
   type PgvectorCollectionSchema
 } from '@zetesis/payload-pgvector'
 import { z } from 'zod'
+import { parseScopeHeader, scopeDenied, scopeFilter } from './scope'
 
 /** A searchable pgvector table exposed by the MCP. */
 export interface PgvectorMcpCollection {
@@ -47,6 +48,15 @@ export interface PgvectorMcpConfig {
   /** Embedding config (OpenAI-compatible, e.g. a LiteLLM gateway). */
   embedding: OpenAICompatibleEmbeddingConfig
   collections: PgvectorMcpCollection[]
+  /**
+   * Deny-by-default defense in depth: when true, a request that arrives WITHOUT
+   * an `x-taxonomy-slugs` scope reads nothing instead of the whole corpus. The
+   * Payload proxy already refuses unscoped tokens, so this guards the case where
+   * the MCP is reached directly. Default false to keep the package generic (a
+   * deployment where some callers are legitimately unscoped). Enable it whenever
+   * every caller is expected to be tenant-scoped.
+   */
+  requireScope?: boolean
 }
 
 export interface PgvectorMcpHandle {
@@ -78,16 +88,23 @@ const text = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSO
 
 /**
  * Per-request taxonomy scope, read from the trusted `x-taxonomy-slugs` header
- * (injected by the Payload proxy / forwarded by LiteLLM). The MCP server applies
- * it as a NON-overridable filter so a scoped token cannot read outside it.
+ * (injected by the Payload proxy / forwarded by LiteLLM). The MCP applies it as a
+ * NON-overridable filter so a scoped caller cannot read outside it; `requireScope`
+ * additionally denies unscoped requests (see scope.ts).
  */
-const scopeStore = new AsyncLocalStorage<{ taxonomySlugs: string[] }>()
-const scopedTaxonomy = (): string[] => scopeStore.getStore()?.taxonomySlugs ?? []
+const scopeStore = new AsyncLocalStorage<{ taxonomySlugs: string[]; requireScope: boolean }>()
+const currentScope = (): { taxonomySlugs: string[]; requireScope: boolean } =>
+  scopeStore.getStore() ?? { taxonomySlugs: [], requireScope: false }
 
 /** Force the scope onto a filter object — the scope always wins over client input. */
 function applyScope(filter: Record<string, unknown>): Record<string, unknown> {
-  const scope = scopedTaxonomy()
-  return scope.length > 0 ? { ...filter, taxonomy_slugs: scope } : filter
+  return scopeFilter(filter, currentScope().taxonomySlugs)
+}
+
+/** Deny-by-default: true when this request must read nothing (no scope, scope required). */
+function denied(): boolean {
+  const { taxonomySlugs, requireScope } = currentScope()
+  return scopeDenied(taxonomySlugs, requireScope)
 }
 
 function registerTools(server: McpServer, adapter: PgvectorAdapter, collections: PgvectorMcpCollection[]): void {
@@ -112,6 +129,7 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
       }
     },
     async input => {
+      if (denied()) return text({ hits: [], total: 0 })
       const targets = input.collection ? [input.collection] : names
       const limit = input.limit ?? 10
       // Scope wins over client-supplied taxonomy_slugs — cannot be widened.
@@ -137,6 +155,7 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
       }
     },
     async input => {
+      if (denied()) return text({ chunks: [], total: 0 })
       const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
         input.collection,
         applyScope({ parent_doc_id: input.parent_doc_id })
@@ -157,6 +176,7 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
       }
     },
     async input => {
+      if (denied()) return text({ chunks: [], total: 0 })
       const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
         input.collection,
         applyScope({ id: input.ids })
@@ -180,6 +200,7 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
   const sessions = new Map<string, StreamableHTTPServerTransport>()
   const port = config.transport?.port ?? DEFAULT_PORT
   const host = config.transport?.host ?? DEFAULT_HOST
+  const requireScope = config.requireScope ?? false
 
   async function createSession(): Promise<StreamableHTTPServerTransport> {
     const server = new McpServer(
@@ -211,14 +232,8 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
     }
 
     // Trusted scope from the header, applied to every tool call this request makes.
-    const taxHeader = req.headers['x-taxonomy-slugs']
-    const taxonomySlugs =
-      typeof taxHeader === 'string' && taxHeader
-        ? taxHeader
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean)
-        : []
+    const taxonomySlugs = parseScopeHeader(req.headers['x-taxonomy-slugs'])
+    const scope = { taxonomySlugs, requireScope }
 
     const sessionId = req.headers['mcp-session-id'] as string | undefined
     if (sessionId) {
@@ -229,11 +244,11 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
           .end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: 'Session not found' }, id: null }))
         return
       }
-      await scopeStore.run({ taxonomySlugs }, () => transport.handleRequest(req, res))
+      await scopeStore.run(scope, () => transport.handleRequest(req, res))
       return
     }
     const transport = await createSession()
-    await scopeStore.run({ taxonomySlugs }, () => transport.handleRequest(req, res))
+    await scopeStore.run(scope, () => transport.handleRequest(req, res))
   }
 
   let httpServer: HttpServer | null = null
