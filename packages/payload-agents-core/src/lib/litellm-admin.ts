@@ -23,6 +23,27 @@ export interface LiteLlmModelPayload {
   modelInfo?: Record<string, unknown>
 }
 
+export interface LiteLlmMcpServerPayload {
+  /** Stable id; also the `/{alias}/mcp` gateway path segment. */
+  alias: string
+  serverName: string
+  description?: string
+  transport: string
+  url: string
+  /** Client headers LiteLLM forwards to the MCP (`extra_headers`). */
+  extraHeaders?: string[]
+  /** When true, any virtual key can use this server (no per-key grant needed). */
+  allowAllKeys?: boolean
+  mcpInfo?: Record<string, unknown>
+}
+
+/** Shape of an MCP server as returned by GET /v1/mcp/server (loosely typed). */
+export interface LiteLlmMcpServer {
+  server_id: string
+  alias?: string
+  mcp_info?: { source?: string } | null
+}
+
 /** Error carrying the HTTP status + raw body so callers can react to specific failures. */
 export class LiteLlmRequestError extends Error {
   constructor(
@@ -76,6 +97,21 @@ function toModelApiPayload(payload: LiteLlmModelPayload): Record<string, unknown
     model_name: payload.modelName,
     litellm_params: { model: payload.model },
     ...(payload.modelInfo ? { model_info: payload.modelInfo } : {})
+  }
+}
+
+function toMcpApiPayload(payload: LiteLlmMcpServerPayload): Record<string, unknown> {
+  return {
+    alias: payload.alias,
+    server_name: payload.serverName,
+    ...(payload.description ? { description: payload.description } : {}),
+    transport: payload.transport,
+    url: payload.url,
+    extra_headers: payload.extraHeaders ?? [],
+    allow_all_keys: payload.allowAllKeys ?? false,
+    // Marks this server as Payload-managed so reconciliation never touches
+    // servers an admin added directly in LiteLLM.
+    mcp_info: { source: 'payload', ...(payload.mcpInfo ?? {}) }
   }
 }
 
@@ -171,5 +207,71 @@ export class LiteLlmAdminClient {
       created += 1
     }
     return { created, existing: existingModels.size - created }
+  }
+
+  // === MCP servers ===
+
+  async listMcpServers(): Promise<LiteLlmMcpServer[]> {
+    const body = await this.request<LiteLlmMcpServer[] | { data?: LiteLlmMcpServer[] }>(
+      '/v1/mcp/server',
+      undefined,
+      'GET'
+    )
+    return Array.isArray(body) ? body : (body.data ?? [])
+  }
+
+  async createMcpServer(payload: LiteLlmMcpServerPayload): Promise<void> {
+    await this.request('/v1/mcp/server', toMcpApiPayload(payload), 'POST')
+  }
+
+  async updateMcpServer(serverId: string, payload: LiteLlmMcpServerPayload): Promise<void> {
+    await this.request('/v1/mcp/server', { server_id: serverId, ...toMcpApiPayload(payload) }, 'PUT')
+  }
+
+  async deleteMcpServer(serverId: string): Promise<void> {
+    await this.request(`/v1/mcp/server/${serverId}`, undefined, 'DELETE')
+  }
+
+  /**
+   * Reconcile the Payload-managed MCP servers in LiteLLM to match `servers`
+   * (matched by alias). Creates missing ones, updates existing ones, and—when
+   * `prune`—removes Payload-managed servers no longer present. Servers an admin
+   * added directly (no `mcp_info.source === 'payload'`) are never touched.
+   */
+  async syncMcpServers(
+    servers: LiteLlmMcpServerPayload[],
+    opts: { prune?: boolean } = {}
+  ): Promise<{ created: number; updated: number; deleted: number }> {
+    const existing = await this.listMcpServers()
+    const managed = new Map<string, LiteLlmMcpServer>()
+    for (const server of existing) {
+      if (server.mcp_info?.source === 'payload' && server.alias) {
+        managed.set(server.alias, server)
+      }
+    }
+
+    let created = 0
+    let updated = 0
+    for (const server of servers) {
+      const found = managed.get(server.alias)
+      if (found) {
+        await this.updateMcpServer(found.server_id, server)
+        updated += 1
+      } else {
+        await this.createMcpServer(server)
+        created += 1
+      }
+      managed.delete(server.alias)
+    }
+
+    let deleted = 0
+    if (opts.prune) {
+      for (const orphan of managed.values()) {
+        await this.deleteMcpServer(orphan.server_id)
+        deleted += 1
+      }
+    }
+
+    return { created, updated, deleted }
   }
 }
