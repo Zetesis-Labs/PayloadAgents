@@ -153,6 +153,7 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
         search_collections=search_collections,
         tool_call_limit=tool_call_limit,
         allow_guest_access=bool(doc.get("allowGuestAccess")),
+        mcp_servers=[s for s in (doc.get("mcpServers") or []) if isinstance(s, str)],
         reranker_kind=reranker_kind,
         reranker_model=reranker_model,
         hybrid_alpha=hybrid_alpha,

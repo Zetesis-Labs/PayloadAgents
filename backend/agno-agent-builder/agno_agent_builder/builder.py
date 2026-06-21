@@ -47,7 +47,12 @@ def build_agent(
             cfg, tool_protocol=tool_protocol, output_format=output_format
         ),
         db=db,
-        tools=[build_mcp_tools(mcp_url, cfg)],
+        tools=build_mcp_toolset(
+            cfg,
+            mcp_url=mcp_url,
+            gateway_base=gateway_base_url(litellm_proxy_url),
+            proxy_key=proxy_key,
+        ),
         add_history_to_context=True,
         num_history_runs=5,
         # Reasoning scaffolding stays OFF through the gateway: the preset hides
@@ -95,9 +100,43 @@ def build_model(
     )
 
 
-def build_mcp_tools(mcp_url: str, cfg: AgentConfig) -> MCPTools:
-    """Build an MCPTools instance, forwarding the agent's SearchProfile config as headers."""
+def gateway_base_url(litellm_proxy_url: str) -> str:
+    """The LiteLLM gateway root (MCP endpoints live at ``/{alias}/mcp``, not under ``/v1``)."""
+    return litellm_proxy_url.removesuffix("/v1").rstrip("/")
+
+
+def build_mcp_toolset(
+    cfg: AgentConfig,
+    *,
+    mcp_url: str,
+    gateway_base: str,
+    proxy_key: str,
+) -> list[MCPTools]:
+    """Resolve the agent's MCP tools.
+
+    When the agent selects MCP servers, route each through the LiteLLM gateway
+    at ``/{alias}/mcp`` (authenticated with the per-agent virtual key); the
+    retrieval headers are forwarded to whichever server declares them. With no
+    selection, fall back to the single direct MCP URL (legacy behaviour).
+    """
+    if not cfg.mcp_servers:
+        return [build_mcp_tools(mcp_url, cfg)]
+    return [
+        build_mcp_tools(f"{gateway_base}/{alias}/mcp", cfg, proxy_key=proxy_key)
+        for alias in cfg.mcp_servers
+    ]
+
+
+def build_mcp_tools(mcp_url: str, cfg: AgentConfig, *, proxy_key: str | None = None) -> MCPTools:
+    """Build an MCPTools instance, forwarding the agent's SearchProfile config as headers.
+
+    When ``proxy_key`` is set the endpoint is the LiteLLM gateway, so the
+    per-agent virtual key authenticates the connection.
+    """
     headers: dict[str, str] = {}
+    if proxy_key:
+        headers["x-litellm-api-key"] = f"Bearer {proxy_key}"
+        headers["Authorization"] = f"Bearer {proxy_key}"
     if cfg.tenant_slug:
         headers["x-tenant-slug"] = cfg.tenant_slug
     if cfg.taxonomy_slugs:
