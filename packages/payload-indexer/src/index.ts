@@ -39,6 +39,12 @@ export type { ChunkOptions, TextChunk } from './embedding/chunking/types'
 export type { IndexableCollectionConfig } from './plugin/types'
 
 // ============================================================================
+// MCP DESCRIPTOR EXPORTS
+// ============================================================================
+
+export type { McpDescriptor, McpRetrievalOption } from './mcp/descriptor'
+
+// ============================================================================
 // DOCUMENT EXPORTS
 // ============================================================================
 
