@@ -68,9 +68,11 @@ export const McpSearchTokens: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'typesense_search',
+      // pgvector is only offered when the experimental backend is enabled, so the
+      // picker stays consistent with what's actually deployed.
       options: [
         { label: 'Typesense', value: 'typesense_search' },
-        { label: 'pgvector', value: 'pgvector_search' },
+        ...(process.env.ENABLE_PGVECTOR === 'true' ? [{ label: 'pgvector', value: 'pgvector_search' }] : []),
       ],
       admin: {
         description: 'Which search backend (MCP server) this token reaches, enforced via LiteLLM.',
