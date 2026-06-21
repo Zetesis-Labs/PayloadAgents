@@ -8,16 +8,16 @@ export interface PgvectorMcpDescriptorOptions {
 }
 
 /**
- * MCP descriptor for the pgvector search backend. mcp-pgvector is intentionally
- * thin (filters + limit are tool arguments, not headers), so it exposes no
- * header-mapped tunables yet — the descriptor still lets the app register it in
- * the gateway alongside Typesense.
+ * MCP descriptor for the pgvector search backend. mcp-pgvector is thin (no
+ * tunable knobs), but it DOES honour the trusted `x-taxonomy-slugs` scope header
+ * — so the gateway must forward it, otherwise a scoped token/agent would read
+ * the whole corpus.
  */
 export const createPgvectorMcpDescriptor = (opts: PgvectorMcpDescriptorOptions): McpDescriptor => ({
   id: opts.id ?? 'pgvector_search',
   displayName: opts.displayName ?? 'pgvector Search',
   url: opts.url,
   transport: 'http',
-  forwardHeaders: [],
+  forwardHeaders: ['x-taxonomy-slugs'],
   retrievalOptions: []
 })
