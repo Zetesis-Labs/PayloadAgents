@@ -110,6 +110,9 @@ function denied(): boolean {
 function registerTools(server: McpServer, adapter: PgvectorAdapter, collections: PgvectorMcpCollection[]): void {
   const names = collections.map(c => c.name)
   const nameList = names.join(', ')
+  // Allowlist: a client may only name a configured collection. Without this the
+  // SQL ident guard alone would let any table in the pgvector schema be queried.
+  const known = new Set(names)
 
   server.registerTool(
     'search_collections',
@@ -130,6 +133,9 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
     },
     async input => {
       if (denied()) return text({ hits: [], total: 0 })
+      if (input.collection && !known.has(input.collection)) {
+        return text({ error: `Unknown collection: ${input.collection}. Known: ${nameList}`, hits: [], total: 0 })
+      }
       const targets = input.collection ? [input.collection] : names
       const limit = input.limit ?? 10
       // Scope wins over client-supplied taxonomy_slugs — cannot be widened.
@@ -156,12 +162,19 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
     },
     async input => {
       if (denied()) return text({ chunks: [], total: 0 })
+      if (!known.has(input.collection)) {
+        return text({ error: `Unknown collection: ${input.collection}. Known: ${nameList}`, chunks: [], total: 0 })
+      }
+      // Order by chunk_index in SQL + a high explicit cap, so a large document
+      // returns its chunks in order and we can flag truncation instead of silently
+      // dropping the middle (the default 250 with no ORDER BY did exactly that).
+      const CAP = 5000
       const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
         input.collection,
-        applyScope({ parent_doc_id: input.parent_doc_id })
+        applyScope({ parent_doc_id: input.parent_doc_id }),
+        { orderBy: 'chunk_index', limit: CAP }
       )
-      rows.sort((a, b) => Number(a.chunk_index ?? 0) - Number(b.chunk_index ?? 0))
-      return text({ chunks: rows, total: rows.length })
+      return text({ chunks: rows, total: rows.length, truncated: rows.length >= CAP })
     }
   )
 
@@ -177,9 +190,14 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
     },
     async input => {
       if (denied()) return text({ chunks: [], total: 0 })
+      if (!known.has(input.collection)) {
+        return text({ error: `Unknown collection: ${input.collection}. Known: ${nameList}`, chunks: [], total: 0 })
+      }
+      // Cap at the number of ids requested so we never silently drop any.
       const rows = await adapter.searchDocumentsByFilter<Record<string, unknown>>(
         input.collection,
-        applyScope({ id: input.ids })
+        applyScope({ id: input.ids }),
+        { limit: input.ids.length }
       )
       return text({ chunks: rows, total: rows.length })
     }
