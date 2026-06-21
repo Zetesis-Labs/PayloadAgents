@@ -2,7 +2,7 @@
 
 ## Project
 
-TypeScript monorepo (pnpm workspaces + Turborepo) with 5 publishable npm packages under `@zetesis/`.
+TypeScript monorepo (pnpm workspaces + Turborepo) with 10 publishable npm packages under `@zetesis/` plus a Python backend (uv workspace) for the agent runtime and workers.
 
 Open-source Payload CMS plugins extracted from ZetesisPortal.
 
@@ -48,13 +48,31 @@ To audit types of a package, follow the playbook manually.
 
 ## Packages
 
+### npm packages (`packages/*`)
+
 | Package | Entry points | Internal deps |
 |---------|-------------|---------------|
 | `payload-indexer` | `.` `.client` | -- |
 | `payload-typesense` | `.` | payload-indexer |
-| `payload-lexical-blocks-builder` | `.` `.builder` `.renderer` | -- |
 | `payload-taxonomies` | `.` `.constants` | -- |
-| `chat-agent` | `.` `.styles.css` | -- |
+| `payload-lexical-blocks-builder` | `.` `.builder` `.renderer` | -- |
+| `payload-agents-core` | `.` `.client` | -- |
+| `payload-agents-metrics` | `.` `.client` | agent-ui, payload-agents-core |
+| `payload-documents` | `.` `.client` | nexus-queue |
+| `agent-ui` | `.` `.styles.css` | -- |
+| `mcp-typesense` | `.` | -- |
+| `nexus-queue` | `.` | -- |
+
+### Apps (`apps/*`, private)
+
+- `server` -- Payload CMS playground (Next.js)
+- `mcp` -- MCP server (Bun), wraps `@zetesis/mcp-typesense`
+
+### Python backend (`backend/*`, uv workspace)
+
+- `agno-agent-builder` / `agno-agent` -- Agno agent runtime (routed through the LiteLLM gateway)
+- `nexus-queue` -- Taskiq + Redis Streams worker base
+- `payload-documents-worker-builder` / `payload-documents-worker` -- LlamaParse PDF parser
 
 ## Commands
 
@@ -87,7 +105,7 @@ pnpm test
 - **No `as any`** -- always use a typed alternative
 - **No `eslint-disable` / `biome-ignore`** -- fix the cause, not the symptom
 - **pnpm** as package manager (v10)
-- **Node 22.x+**
+- **Node 24** (matches CI; the Dev Container ships it). `engines` allow 22–25.
 - **Conventional commits drive releases** -- release-please opens/updates a release PR (`chore(main): release ...`) automatically. No manual `.changeset/*.md` files.
 
   **Valid scopes** (must match `component` in `release-please-config.json`):
