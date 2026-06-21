@@ -7,7 +7,13 @@ from unittest.mock import MagicMock
 import pytest
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from agno_agent_builder.builder import build_agent, build_model, resolve_litellm_proxy_key
+from agno_agent_builder.builder import (
+    build_agent,
+    build_mcp_toolset,
+    build_model,
+    gateway_base_url,
+    resolve_litellm_proxy_key,
+)
 from agno_agent_builder.exceptions import InvalidModelError, MissingLiteLlmVirtualKeyError
 from agno_agent_builder.sources import AgentConfig
 from pydantic import SecretStr
@@ -113,7 +119,8 @@ class TestBuildAgent:
         # build_mcp_tools constructs a real MCPTools; stub it so the test stays a
         # pure unit of build_agent's wiring.
         monkeypatch.setattr(
-            "agno_agent_builder.builder.build_mcp_tools", lambda mcp_url, cfg: MagicMock()
+            "agno_agent_builder.builder.build_mcp_tools",
+            lambda mcp_url, cfg, proxy_key=None: MagicMock(),
         )
 
         agent = self._build(self._cfg())
@@ -123,3 +130,55 @@ class TestBuildAgent:
         assert agent.model.base_url == "http://litellm:4000/v1"
         assert agent.model.api_key == "sk-virtual"
         assert agent.model.extra_body == {"api_key": "sk-ant-agent"}
+
+
+class TestBuildMcpToolset:
+    """The agent's MCP selection drives which MCPs it connects to, routed through
+    the LiteLLM gateway; no selection keeps the single legacy direct URL."""
+
+    def _cfg(self, mcp_servers: list[str]) -> AgentConfig:
+        return AgentConfig(
+            slug="bastos",
+            name="Bastos",
+            llm_model="chat-premium",
+            api_key=SecretStr("sk-ant-agent"),
+            litellm_virtual_key=SecretStr("sk-virtual"),
+            mcp_servers=mcp_servers,
+        )
+
+    def test_gateway_base_strips_v1(self) -> None:
+        assert gateway_base_url("http://litellm:4000/v1") == "http://litellm:4000"
+        assert gateway_base_url("http://litellm:4000/") == "http://litellm:4000"
+
+    def test_no_selection_uses_single_direct_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[str] = []
+        monkeypatch.setattr(
+            "agno_agent_builder.builder.build_mcp_tools",
+            lambda mcp_url, cfg, proxy_key=None: seen.append(mcp_url) or MagicMock(),
+        )
+        tools = build_mcp_toolset(
+            self._cfg([]),
+            mcp_url="http://mcp:9000",
+            gateway_base="http://litellm:4000",
+            proxy_key="sk-virtual",
+        )
+        assert len(tools) == 1
+        assert seen == ["http://mcp:9000"]
+
+    def test_selection_routes_each_through_gateway(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[str] = []
+        monkeypatch.setattr(
+            "agno_agent_builder.builder.build_mcp_tools",
+            lambda mcp_url, cfg, proxy_key=None: seen.append(mcp_url) or MagicMock(),
+        )
+        tools = build_mcp_toolset(
+            self._cfg(["typesense_search", "pgvector_search"]),
+            mcp_url="http://mcp:9000",
+            gateway_base="http://litellm:4000",
+            proxy_key="sk-virtual",
+        )
+        assert len(tools) == 2
+        assert seen == [
+            "http://litellm:4000/typesense_search/mcp",
+            "http://litellm:4000/pgvector_search/mcp",
+        ]
