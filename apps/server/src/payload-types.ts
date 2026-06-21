@@ -360,10 +360,7 @@ export interface Agent {
    * Max tool calls per turn. Leave empty for no limit.
    */
   toolCallLimit?: number | null;
-  /**
-   * Search backends (MCP servers) this agent can use, routed through the LiteLLM gateway. Empty = none.
-   */
-  mcpServers?: ('typesense_search' | 'pgvector_search')[] | null;
+  mcpServers?: string[] | null;
   /**
    * Optional LiteLLM max budget for this agent virtual key, in USD.
    */
