@@ -3,14 +3,21 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspace",
-  "runServices": ["db", "typesense", "app"],
-  "forwardPorts": [3000, 3030, 5432, 8000, 8108],
+  "runServices": ["db", "typesense", "redis", "litellm", "typesense-dashboard", "app"],
+  "forwardPorts": [3000, 3030, 4000, 5432, 6379, 8000, 8001, 8081, 8108],
   "portsAttributes": {
     "3000": { "label": "Payload CMS", "onAutoForward": "openPreview" },
     "3030": { "label": "MCP Server", "onAutoForward": "ignore" },
+    "4000": { "label": "LiteLLM Admin UI", "onAutoForward": "notify" },
     "5432": { "label": "PostgreSQL", "onAutoForward": "ignore" },
+    "6379": { "label": "Redis", "onAutoForward": "ignore" },
     "8000": { "label": "Agent Runtime", "onAutoForward": "ignore" },
+    "8001": { "label": "Documents Worker", "onAutoForward": "ignore" },
+    "8081": { "label": "Typesense Dashboard", "onAutoForward": "ignore" },
     "8108": { "label": "Typesense", "onAutoForward": "ignore" }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "customizations": {
     "vscode": {
@@ -20,7 +27,8 @@
         "bradlc.vscode-tailwindcss",
         "ms-azuretools.vscode-docker",
         "github.vscode-github-actions",
-        "unifiedjs.vscode-mdx"
+        "unifiedjs.vscode-mdx",
+        "ms-python.python"
       ],
       "settings": {
         "editor.formatOnSave": true,
@@ -34,8 +42,8 @@
       }
     }
   },
-  "postCreateCommand": "pnpm install && echo 'Checking services...' && .devcontainer/check-services.sh",
-  "postStartCommand": "echo 'Waiting for services to be ready...' && sleep 5 && echo 'To start the dev server, run: pnpm dev'",
+  "postCreateCommand": "pnpm install && (cd backend && uv sync --all-packages) && echo 'Checking services...' && .devcontainer/check-services.sh",
+  "postStartCommand": "echo 'Services starting. Stack completo: Run & Debug → \"Launch\". Solo TS: pnpm dev (Server + MCP).'",
   "otherPortsAttributes": {
     "onAutoForward": "notify"
   },
