@@ -32,4 +32,8 @@ export { OpenAICompatibleEmbeddingProvider } from './embedding/provider'
 // Plugin (schema sync)
 export { createPgvectorPlugin } from './plugin/create-pgvector-plugin'
 export { deriveCollectionSchemas } from './plugin/derive-schema'
+export type { PgvectorMcpDescriptorOptions } from './plugin/mcp-descriptor'
+
+// MCP descriptor
+export { createPgvectorMcpDescriptor } from './plugin/mcp-descriptor'
 export type { PgvectorFieldMapping, PgvectorPluginConfig } from './plugin/types'
