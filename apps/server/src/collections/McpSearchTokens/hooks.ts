@@ -34,11 +34,13 @@ function liteLlmClient(): LiteLlmAdminClient | null {
 }
 
 /**
- * Mint/update a per-token LiteLLM virtual key scoped (via object_permission) to
- * the token's selected MCP backend. Routing through LiteLLM gives the external
- * token traceability + backend access control; the key is internal (the proxy
- * uses it upstream, the user never sees it). Best-effort: failures set an error
- * status but never block token creation.
+ * Mint/update a per-token LiteLLM virtual key for the token's selected MCP
+ * backend. Routing through LiteLLM gives the external token traceability (and a
+ * place to hang budgets/rate limits); the key is internal (the proxy uses it
+ * upstream, the user never sees it). Which backend the token reaches is enforced
+ * by the proxy, which builds the upstream URL from the token's `mcpServer` field
+ * — NOT by per-key object_permission, which the gateway's allow_all_keys servers
+ * do not honour. Best-effort: failures set an error status, never block creation.
  */
 export const syncMcpTokenKeyAfterChange: CollectionAfterChangeHook = async ({ context, doc, previousDoc, req }) => {
   if (context?.[SKIP_KEY_SYNC]) return doc
@@ -69,8 +71,12 @@ export const syncMcpTokenKeyAfterChange: CollectionAfterChangeHook = async ({ co
     const keyPayload: LiteLlmVirtualKeyPayload = {
       keyAlias: `mcp-token/${record.id}`,
       models: [],
-      metadata: { source: 'payload', mcpTokenId: String(record.id), userId: String(record.user ?? '') },
-      objectPermission: { mcpServers: [mcpServer] },
+      metadata: {
+        source: 'payload',
+        mcpTokenId: String(record.id),
+        mcpServer,
+        userId: String(record.user ?? ''),
+      },
     }
     const existing = record.litellmVirtualKey ? decrypt(record.litellmVirtualKey, encKey) : undefined
     let plaintextKey: string

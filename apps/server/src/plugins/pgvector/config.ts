@@ -19,5 +19,7 @@ export const pgvectorEmbedding: OpenAICompatibleEmbeddingConfig = {
   baseUrl: process.env.LITELLM_PROXY_URL || 'http://litellm:4000/v1',
   apiKey: process.env.LITELLM_MASTER_KEY || '',
   model: 'embeddings-dev',
-  dimensions: 1536
+  dimensions: 1536,
+  // text-embedding-3-small honours dimensionality reduction, so pin it explicitly.
+  sendDimensions: true
 }

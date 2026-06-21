@@ -29,13 +29,23 @@ async function getDailyLimit(_payload: Payload, _userId: string | number): Promi
 }
 
 /**
+ * pgvector is an EXPERIMENTAL second backend, opt-in via ENABLE_PGVECTOR=true.
+ * When enabled it indexes in parallel with Typesense (a synchronous dual-write —
+ * see plugins/pgvector) and exposes its own MCP for A/B comparison. Off by
+ * default so the speculative probe never couples content saves to a second engine.
+ */
+const PGVECTOR_ENABLED = process.env.ENABLE_PGVECTOR === 'true'
+
+/**
  * MCP descriptors for the configured search backends. The app supplies the
  * deployment URLs; agentPlugin registers them in LiteLLM on boot so agents can
- * select them. Both backends index in parallel, so both MCPs are exposed.
+ * select them.
  */
 const mcpDescriptors: McpDescriptor[] = [
   createTypesenseMcpDescriptor({ url: process.env.MCP_TYPESENSE_URL || 'http://app:3030/mcp' }),
-  createPgvectorMcpDescriptor({ url: process.env.MCP_PGVECTOR_URL || 'http://app:3041/mcp' })
+  ...(PGVECTOR_ENABLED
+    ? [createPgvectorMcpDescriptor({ url: process.env.MCP_PGVECTOR_URL || 'http://app:3041/mcp' })]
+    : [])
 ]
 const mcpServers = mcpDescriptors.map(descriptor => ({
   alias: descriptor.id,
@@ -80,7 +90,7 @@ export default buildConfig({
     const metrics = metricsPlugin({ multiTenant: false, basePath: '/metrics' })
     return [
       typesensePlugin,
-      pgvectorPlugin,
+      ...(PGVECTOR_ENABLED ? [pgvectorPlugin] : []),
       agentPlugin({
         runtimeUrl: process.env.AGENT_RUNTIME_URL || 'http://localhost:8000',
         runtimeSecret: process.env.INTERNAL_SECRET,
@@ -92,6 +102,9 @@ export default buildConfig({
           masterKey: process.env.LITELLM_MASTER_KEY
         },
         mcpServers,
+        // Tag managed MCP servers by environment so a shared LiteLLM across
+        // deployments doesn't prune across them (prune defaults on, scoped here).
+        mcpServerSync: { environment: process.env.MCP_MANAGED_ENV },
         getDailyLimit,
         encryptionKey: process.env.PAYLOAD_SECRET,
         basePath: '/chat',

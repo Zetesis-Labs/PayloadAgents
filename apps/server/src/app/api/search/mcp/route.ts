@@ -11,14 +11,20 @@ export const maxDuration = 60
 
 const MCP_INTERNAL_URL = process.env.MCP_INTERNAL_URL || 'http://localhost:3030/mcp'
 const LITELLM_GATEWAY_URL = (process.env.LITELLM_GATEWAY_URL || 'http://litellm:4000').replace(/\/$/, '')
+// The backend MCP_INTERNAL_URL serves directly. The legacy direct fallback is
+// ONLY valid for this backend — falling back for any other would cross backends
+// (e.g. serve a pgvector token from Typesense).
+const DIRECT_MCP_ALIAS = process.env.MCP_DIRECT_ALIAS || 'typesense_search'
+
+type Upstream = { url: string; authHeaders: Record<string, string> } | { notReady: true }
 
 /**
- * Resolve the upstream MCP URL + auth headers for a token. When the token has a
- * synced LiteLLM virtual key, route through the gateway at `/{alias}/mcp` with
- * that key (traceability + backend access control enforced by LiteLLM). Without
- * a key, fall back to the direct MCP URL (legacy, non-breaking).
+ * Resolve the upstream MCP URL + auth headers for a token. With a synced LiteLLM
+ * virtual key, route through the gateway at `/{alias}/mcp` with that key. Without
+ * a key, fall back to the direct MCP URL ONLY for the direct backend; any other
+ * backend fails closed rather than cross to the wrong index.
  */
-function resolveUpstream(auth: TokenAuth): { url: string; authHeaders: Record<string, string> } {
+function resolveUpstream(auth: TokenAuth): Upstream {
   if (auth.virtualKey && auth.mcpAlias) {
     return {
       url: `${LITELLM_GATEWAY_URL}/${auth.mcpAlias}/mcp`,
@@ -28,7 +34,14 @@ function resolveUpstream(auth: TokenAuth): { url: string; authHeaders: Record<st
       },
     }
   }
-  return { url: MCP_INTERNAL_URL, authHeaders: {} }
+  // No virtual key. For the direct backend this is the normal path; it also
+  // covers the degraded case where a direct-backend token HAS a key that failed
+  // to decrypt (rotated PAYLOAD_SECRET) — it serves direct, trading gateway
+  // traceability for availability. Any OTHER alias fails closed below.
+  if (!auth.mcpAlias || auth.mcpAlias === DIRECT_MCP_ALIAS) {
+    return { url: MCP_INTERNAL_URL, authHeaders: {} }
+  }
+  return { notReady: true }
 }
 
 interface TokenAuth {
@@ -88,9 +101,16 @@ async function authenticateRequest(hdrs: Headers, request: Request): Promise<Tok
     : []
 
   // Decrypt the internal per-token LiteLLM key (set by the collection sync hook).
+  // A decrypt failure (rotated PAYLOAD_SECRET, corrupt ciphertext) must not 500
+  // — treat it as "no key" so resolveUpstream decides the safe path.
   const encKey = process.env.PAYLOAD_SECRET
   const stored = typeof doc.litellmVirtualKey === 'string' ? doc.litellmVirtualKey : null
-  const virtualKey = stored && encKey ? decrypt(stored, encKey) : null
+  let virtualKey: string | null = null
+  try {
+    virtualKey = stored && encKey ? decrypt(stored, encKey) : null
+  } catch {
+    virtualKey = null
+  }
   const mcpAlias = typeof doc.mcpServer === 'string' ? doc.mcpServer : null
 
   updateTokenLastUsed(payload, tokenDoc.id as number | string)
@@ -102,7 +122,27 @@ async function proxyToMcp(request: Request): Promise<Response> {
   const auth = await authenticateRequest(hdrs, request)
   if (auth instanceof NextResponse) return auth
 
-  const { url: upstreamUrl, authHeaders } = resolveUpstream(auth)
+  // Deny-by-default: a token with no taxonomy scope must NOT read the whole
+  // corpus. Scope is injected downstream only when non-empty (and the MCP applies
+  // no taxonomy filter without it), so an unscoped token would fail open. Refuse
+  // here — the proxy is the single source of truth for token permissions. A
+  // deliberately broad token would need an explicit opt-in field, not the absence
+  // of a scope.
+  if (auth.taxonomySlugs.length === 0) {
+    return NextResponse.json(
+      { error: 'Token has no taxonomy scope; refusing to serve (assign at least one taxonomy to the token)' },
+      { status: 403 }
+    )
+  }
+
+  const target = resolveUpstream(auth)
+  if ('notReady' in target) {
+    return NextResponse.json(
+      { error: 'Token not ready — its gateway key has not finished syncing' },
+      { status: 503 }
+    )
+  }
+  const { url: upstreamUrl, authHeaders } = target
 
   const forwardHeaders: Record<string, string> = {
     'Content-Type': hdrs.get('content-type') || 'application/json',
