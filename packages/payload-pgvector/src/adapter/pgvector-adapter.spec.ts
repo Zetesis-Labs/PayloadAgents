@@ -4,6 +4,7 @@ vi.mock('../core/logging/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }))
 
+import { logger } from '../core/logging/logger'
 import { PgvectorAdapter } from './pgvector-adapter'
 import type { PgvectorCollectionSchema } from './types'
 
@@ -107,6 +108,24 @@ describe('PgvectorAdapter', () => {
     it('uses the cosine operator <=> by default', async () => {
       await adapter.vectorSearch('chunks', [0.1, 0.2, 0.3])
       expect(pool.last().text).toContain('<=>')
+    })
+  })
+
+  describe('ensureCollection incompatible-schema warnings', () => {
+    it('warns when the existing embedding column dimension differs from config', async () => {
+      vi.mocked(logger.warn).mockClear()
+      pool.rows = [{ dim: 1024 }] // pg_attribute reports the existing column as vector(1024)
+      await adapter.ensureCollection(schema) // schema declares vector(3)
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('vector(1024) but config wants vector(3)')
+      )
+    })
+
+    it('does not warn when the dimension matches (no existing column)', async () => {
+      vi.mocked(logger.warn).mockClear()
+      pool.rows = [] // column doesn't exist yet
+      await adapter.ensureCollection(schema)
+      expect(logger.warn).not.toHaveBeenCalled()
     })
   })
 

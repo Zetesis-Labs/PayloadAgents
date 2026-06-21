@@ -117,6 +117,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
       await client.query('CREATE EXTENSION IF NOT EXISTS vector')
       await client.query(`CREATE SCHEMA IF NOT EXISTS ${ident(this.schema)}`)
       await this.createTable(client, schema, idField)
+      await this.warnOnIncompatibleSchema(client, schema, embeddingField, distance)
       await this.ensureIndexes(client, schema, embeddingField, Boolean(embeddingFieldSchema), distance)
     } finally {
       client.release()
@@ -170,6 +171,55 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     for (const field of schema.fields) {
       await client.query(
         `ALTER TABLE ${this.relName(schema.name)} ADD COLUMN IF NOT EXISTS ${ident(field.name)} ${sqlColumnType(field)}`
+      )
+    }
+  }
+
+  /**
+   * The schema sync is additive (CREATE/ADD ... IF NOT EXISTS), so it can't change
+   * an embedding column's dimension or an HNSW index's distance once they exist.
+   * Detect those incompatible drifts and warn loudly — the operator must drop &
+   * recreate (and reindex) to apply them; silently they'd break inserts/searches
+   * or degrade relevance.
+   */
+  private async warnOnIncompatibleSchema(
+    client: PoolClient,
+    schema: PgvectorCollectionSchema,
+    embeddingField: string,
+    distance: CollectionEmbedInfo['distance']
+  ): Promise<void> {
+    const expectedDim = schema.fields.find(f => f.name === embeddingField)?.dimensions
+    if (expectedDim) {
+      // For a pgvector column, atttypmod holds the declared dimension (-1 if none).
+      const { rows } = await client.query<{ dim: number }>(
+        `SELECT a.atttypmod AS dim FROM pg_attribute a
+         JOIN pg_class c ON a.attrelid = c.oid
+         JOIN pg_namespace n ON c.relnamespace = n.oid
+         WHERE n.nspname = $1 AND c.relname = $2 AND a.attname = $3 AND NOT a.attisdropped`,
+        [this.schema, schema.name, embeddingField]
+      )
+      const actualDim = rows[0]?.dim
+      if (typeof actualDim === 'number' && actualDim > 0 && actualDim !== expectedDim) {
+        logger.warn(
+          `[${schema.name}] embedding column "${embeddingField}" is vector(${actualDim}) but config wants vector(${expectedDim}). ` +
+            'The additive schema sync will NOT change it — drop & recreate the table and reindex to switch dimensions.'
+        )
+      }
+    }
+
+    const indexName = `${schema.name}_${embeddingField}_hnsw`
+    const expectedOpclass = DISTANCE_OPS[distance].opclass
+    const { rows } = await client.query<{ def: string }>(
+      `SELECT pg_get_indexdef(ic.oid) AS def FROM pg_class ic
+       JOIN pg_namespace n ON ic.relnamespace = n.oid
+       WHERE n.nspname = $1 AND ic.relname = $2`,
+      [this.schema, indexName]
+    )
+    const def = rows[0]?.def
+    if (def && !def.includes(expectedOpclass)) {
+      logger.warn(
+        `[${schema.name}] HNSW index "${indexName}" exists with a different distance metric (config: ${distance}/${expectedOpclass}). ` +
+          "CREATE INDEX IF NOT EXISTS won't rebuild it — drop the index to switch distance."
       )
     }
   }
