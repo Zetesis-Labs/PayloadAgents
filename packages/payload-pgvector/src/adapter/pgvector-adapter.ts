@@ -244,6 +244,39 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     }
   }
 
+  /**
+   * Atomically replace the rows matching `filter` with `documents`. Embeddings
+   * are resolved FIRST (before any delete), then delete + insert run in a single
+   * transaction. If embedding fails, nothing is deleted; if any insert fails, the
+   * delete rolls back — a reindex can never leave a document with no chunks.
+   */
+  async replaceDocumentsByFilter(
+    collectionName: string,
+    filter: Record<string, unknown>,
+    documents: IndexDocument[]
+  ): Promise<void> {
+    const info = this.embedInfo.get(collectionName)
+    // Embed before touching the table — a gateway failure must not lose the index.
+    const vectors = await this.resolveVectors(documents, info)
+    const { clause, params } = this.buildWhere(filter, info?.columnTypes)
+
+    const client = await this.pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query(`DELETE FROM ${this.relName(collectionName)}${clause}`, params)
+      for (let i = 0; i < documents.length; i++) {
+        await this.insertRow(client, collectionName, documents[i], vectors[i], info)
+      }
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      logger.error(`Failed to replace documents in ${collectionName}`, error)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
   async deleteDocument(collectionName: string, documentId: string): Promise<void> {
     const idField = this.embedInfo.get(collectionName)?.idField ?? 'id'
     await this.pool.query(`DELETE FROM ${this.relName(collectionName)} WHERE ${ident(idField)} = $1`, [documentId])
@@ -274,22 +307,30 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     params.push(...whereParams)
     params.push(limit)
 
+    // Exclude rows with no embedding: `NULL <=> v` is NULL → Number(null) === 0
+    // would rank an unembedded row as a perfect match. They can't take part in a
+    // vector search anyway.
+    const notNull = `${ident(embeddingField)} IS NOT NULL`
+    const where = clause ? `${clause} AND ${notNull}` : ` WHERE ${notNull}`
+
     const sql =
       `SELECT *, ${ident(embeddingField)} ${op} $1::vector AS _distance ` +
-      `FROM ${this.relName(collectionName)}${clause} ` +
+      `FROM ${this.relName(collectionName)}${where} ` +
       `ORDER BY ${ident(embeddingField)} ${op} $1::vector ` +
       `LIMIT $${params.length}`
 
     const result = await this.pool.query(sql, params)
-    return result.rows.map(row => {
-      const distance = Number(row._distance)
-      const document = this.projectRow(row, embeddingField, includeFields, excludeFields)
-      return {
-        id: String((document as Record<string, unknown>)[info?.idField ?? 'id'] ?? ''),
-        score: distance,
-        document: document as TDoc
-      }
-    })
+    return result.rows
+      .map(row => {
+        const distance = Number(row._distance)
+        const document = this.projectRow(row, embeddingField, includeFields, excludeFields)
+        return {
+          id: String((document as Record<string, unknown>)[info?.idField ?? 'id'] ?? ''),
+          score: distance,
+          document: document as TDoc
+        }
+      })
+      .filter(r => Number.isFinite(r.score))
   }
 
   /**
@@ -314,14 +355,17 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
   async searchDocumentsByFilter<TDoc = Record<string, unknown>>(
     collectionName: string,
     filter: Record<string, unknown>,
-    options?: { includeFields?: string[]; limit?: number }
+    options?: { includeFields?: string[]; limit?: number; orderBy?: string }
   ): Promise<TDoc[]> {
     const info = this.embedInfo.get(collectionName)
     const embeddingField = info?.embeddingField ?? 'embedding'
     const { clause, params } = this.buildWhere(filter, info?.columnTypes)
+    // Deterministic order when requested — without it Postgres returns an
+    // arbitrary subset under LIMIT, silently dropping rows for large documents.
+    const orderClause = options?.orderBy ? ` ORDER BY ${ident(options.orderBy)}` : ''
     const limit = options?.limit ?? 250
     params.push(limit)
-    const sql = `SELECT * FROM ${this.relName(collectionName)}${clause} LIMIT $${params.length}`
+    const sql = `SELECT * FROM ${this.relName(collectionName)}${clause}${orderClause} LIMIT $${params.length}`
     const result = await this.pool.query(sql, params)
     return result.rows.map(row => this.projectRow(row, embeddingField, options?.includeFields) as TDoc)
   }

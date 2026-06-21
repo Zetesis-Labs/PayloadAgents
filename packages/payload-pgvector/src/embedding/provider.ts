@@ -82,7 +82,9 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
         model: this.model,
         input: texts,
         ...(this.sendDimensions ? { dimensions: this.dimensions } : {})
-      })
+      }),
+      // Bound the request: a hung gateway must not block CMS saves or boot.
+      signal: AbortSignal.timeout(30_000)
     })
 
     if (!response.ok) {

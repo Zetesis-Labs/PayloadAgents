@@ -97,15 +97,36 @@ describe('PgvectorAdapter', () => {
       expect(params).toEqual(['[0.1,0.2,0.3]', 'd1', 7])
     })
 
-    it('omits WHERE and keeps vector+limit when no filter', async () => {
+    it('always excludes null embeddings even with no filter', async () => {
       await adapter.vectorSearch('chunks', [0.1, 0.2, 0.3], { limit: 4 })
-      expect(pool.last().text).not.toContain('WHERE')
+      // Without this, NULL distance → Number(null)=0 would rank unembedded rows first.
+      expect(pool.last().text).toContain('WHERE "embedding" IS NOT NULL')
       expect(pool.last().params).toEqual(['[0.1,0.2,0.3]', 4])
     })
 
     it('uses the cosine operator <=> by default', async () => {
       await adapter.vectorSearch('chunks', [0.1, 0.2, 0.3])
       expect(pool.last().text).toContain('<=>')
+    })
+  })
+
+  describe('replaceDocumentsByFilter (atomic reindex)', () => {
+    it('runs delete + insert in one transaction (BEGIN → DELETE → INSERT → COMMIT)', async () => {
+      await adapter.replaceDocumentsByFilter('chunks', { parent_doc_id: 'd1' }, [
+        // precomputed embedding so no EmbeddingProvider is needed for the test
+        { id: '1', parent_doc_id: 'd1', chunk_text: 'a', embedding: [0.1, 0.2, 0.3] }
+      ])
+      const texts = pool.queries.map(q => q.text)
+      const begin = texts.findIndex(t => t.includes('BEGIN'))
+      const del = texts.findIndex(t => t.startsWith('DELETE'))
+      const ins = texts.findIndex(t => t.includes('INSERT INTO'))
+      const commit = texts.findIndex(t => t.includes('COMMIT'))
+      expect(begin).toBeGreaterThanOrEqual(0)
+      expect(begin).toBeLessThan(del)
+      expect(del).toBeLessThan(ins)
+      expect(ins).toBeLessThan(commit)
+      expect(texts[del]).toContain('DELETE FROM "pgvector"."chunks"')
+      expect(texts[del]).toContain('"parent_doc_id" =')
     })
   })
 
