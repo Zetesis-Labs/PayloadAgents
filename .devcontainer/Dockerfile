@@ -1,27 +1,26 @@
-FROM node:25-alpine
+FROM node:24-bookworm-slim
 
-RUN apk add --no-cache \
-    git \
-    bash \
-    curl \
-    docker-cli docker-cli-buildx docker-cli-compose
+# Debian (glibc) base → paridad con el backend en prod (uv:python3.12-bookworm-slim)
+# y con CI (Node 24). Evita la fricción de musl con sharp/native deps y wheels Python.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git bash curl ca-certificates netcat-openbsd unzip \
+ && rm -rf /var/lib/apt/lists/*
 
 # Claude CLI (official installer)
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# uv (Python package runner) — needed for MCP servers like mcpdoc
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    ln -s /root/.local/bin/uv /usr/local/bin/uv && \
-    ln -s /root/.local/bin/uvx /usr/local/bin/uvx
+# uv (binarios oficiales) + Python 3.12 gestionado por uv (glibc → wheels manylinux,
+# sin compilar desde source). Lo necesita el workspace backend/ (agno-agent, workers).
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+RUN uv python install 3.12
 
-# Bun
+# Bun — lo usa apps/mcp (`bun --watch src/index.ts`)
 RUN curl -fsSL https://bun.sh/install | bash && \
     ln -s /root/.bun/bin/bun /usr/local/bin/bun && \
     ln -s /root/.bun/bin/bunx /usr/local/bin/bunx
 
-# pnpm via corepack (--force needed on Node 25 due to yarn conflicts)
-RUN npm install -g corepack --force && \
-    corepack enable && \
+# pnpm via corepack (Node 24 ya incluye corepack → sin --force)
+RUN corepack enable && \
     corepack prepare pnpm@10.14.0 --activate
 
 WORKDIR /workspace

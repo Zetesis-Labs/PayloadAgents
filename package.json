@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "turbo run build --continue",
+    "dev": "turbo run dev",
     "lint": "biome check packages/*/src --no-errors-on-unmatched",
     "lint:fix": "biome check --write packages/*/src --no-errors-on-unmatched",
     "format": "biome format --write packages/*/src --no-errors-on-unmatched",

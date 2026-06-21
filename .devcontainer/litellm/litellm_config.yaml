@@ -1,0 +1,40 @@
+# LiteLLM gateway para el devcontainer de PayloadAgents en modo DB.
+# Los agentes referencian el NOMBRE del preset; el gateway lo resuelve. La clave
+# del proveedor del agente viaja por request (BYOK via extra_body.api_key).
+# Payload lee el catálogo vivo via GET /model/info y las virtual keys por agente
+# se gestionan con la Admin API.
+#
+# El catálogo inicial se siembra de forma idempotente desde
+# bootstrap_catalog.py. Después manda LiteLLM DB/Admin UI.
+
+litellm_settings:
+  # Reporting de coste a Langfuse — OPT-IN. El devcontainer no provee Langfuse:
+  # define LANGFUSE_PUBLIC_KEY/LANGFUSE_SECRET_KEY/LANGFUSE_HOST en
+  # devcontainer.env.local (apuntando a tu instancia).
+  #
+  # Callback clásico `langfuse` (coste real calculado por LiteLLM) + pre-call
+  # hook (custom_callbacks.py) que copia el trace-id del header W3C
+  # `traceparent` a metadata.existing_trace_id → la generation del proxy se
+  # anida bajo el MISMO trace OTel que emite Agno.
+  #
+  # Descartados: `langfuse_otel` ignora el traceparent a propósito en v1.82.0
+  # (cada llamada = traza raíz suelta); el `otel` genérico sí anida pero emite
+  # el ALIAS como modelo (Langfuse no puede calcular coste en no-streaming) y
+  # añade spans internos de ruido (auth/router/proxy_pre_call) a cada traza.
+  success_callback: ["langfuse"]
+  callbacks: custom_callbacks.proxy_handler_instance
+  #
+  # Permite que el cliente sobreescriba api_key por request (BYOK).
+  drop_params: true
+  #
+  # Inyecta el coste real (calculado por LiteLLM) en el `usage` del chunk de
+  # streaming. Agno lo lee como `usage.cost` → RunMetrics.cost → el evento
+  # `agno_run_completed` → payload-agents-metrics lo persiste como costUsd real
+  # (costSource: gateway) en vez de estimarlo con su tabla de precios estática.
+  include_cost_in_streaming_usage: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  store_model_in_db: true
+  supported_db_objects: ["models"]
+  allow_client_side_credentials: true
