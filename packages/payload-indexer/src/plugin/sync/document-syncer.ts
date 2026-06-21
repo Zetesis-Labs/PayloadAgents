@@ -207,11 +207,16 @@ export class DocumentSyncer {
       return
     }
 
-    if (operation === 'update') {
-      await this.adapter.deleteDocumentsByFilter(this.tableName, { parent_doc_id: String(doc.id) })
+    if (operation === 'update' && this.adapter.replaceDocumentsByFilter) {
+      // Atomic path (app-side embedding adapters): embed → tx{delete+insert}, so a
+      // failed reindex never wipes the existing chunks.
+      await this.adapter.replaceDocumentsByFilter(this.tableName, { parent_doc_id: String(doc.id) }, chunkDocs)
+    } else {
+      if (operation === 'update') {
+        await this.adapter.deleteDocumentsByFilter(this.tableName, { parent_doc_id: String(doc.id) })
+      }
+      await this.adapter.upsertDocuments(this.tableName, chunkDocs)
     }
-
-    await this.adapter.upsertDocuments(this.tableName, chunkDocs)
 
     recordSyncSuccess(this.collectionSlug, String(doc.id), chunkDocs.length)
     logger.info(`Synced ${chunkDocs.length} chunks for document ${doc.id} to ${this.tableName}`)

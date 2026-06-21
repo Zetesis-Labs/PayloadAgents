@@ -131,6 +131,20 @@ export interface IndexerAdapter<TSchema extends BaseCollectionSchema = BaseColle
    */
   deleteDocumentsByFilter(collectionName: string, filter: Record<string, unknown>): Promise<number>
 
+  /**
+   * Atomically replace the documents matching `filter` with `documents`.
+   * Optional: adapters that embed app-side (e.g. pgvector) implement this so a
+   * reindex computes embeddings BEFORE deleting and runs delete+insert in one
+   * transaction — a mid-reindex failure then leaves the old index intact instead
+   * of wiping it. Adapters whose backend auto-embeds (e.g. Typesense) can omit it;
+   * the syncer falls back to delete-then-upsert.
+   */
+  replaceDocumentsByFilter?(
+    collectionName: string,
+    filter: Record<string, unknown>,
+    documents: IndexDocument[]
+  ): Promise<void>
+
   // === Optional: Vector Search ===
 
   /**
@@ -152,7 +166,7 @@ export interface IndexerAdapter<TSchema extends BaseCollectionSchema = BaseColle
   searchDocumentsByFilter?<TDoc = Record<string, unknown>>(
     collectionName: string,
     filter: Record<string, unknown>,
-    options?: { includeFields?: string[]; limit?: number }
+    options?: { includeFields?: string[]; limit?: number; orderBy?: string }
   ): Promise<TDoc[]>
 
   /**
