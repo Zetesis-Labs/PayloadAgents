@@ -15,6 +15,12 @@ export interface PgvectorAdapterOptions {
    * unmanaged and DROPs them.
    */
   schema: string
+  /**
+   * Whether this adapter owns the pool and may end it on close(). True when the
+   * adapter created the pool itself; false (default) when an external pool was
+   * passed in (e.g. Payload's), so close() leaves it alone.
+   */
+  ownsPool?: boolean
 }
 
 /** Map our PgFieldType to a concrete SQL column type. */
@@ -77,6 +83,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
   private readonly pool: Pool
   private readonly embeddingProvider?: EmbeddingProvider
   private readonly schema: string
+  private readonly ownsPool: boolean
   /** Per-collection embedding metadata, captured during ensureCollection. */
   private readonly embedInfo = new Map<string, CollectionEmbedInfo>()
 
@@ -87,6 +94,12 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     this.pool = pool
     this.embeddingProvider = options.embeddingProvider
     this.schema = options.schema
+    this.ownsPool = options.ownsPool ?? false
+  }
+
+  /** Release the connection pool when this adapter owns it (no-op for an external pool). */
+  async close(): Promise<void> {
+    if (this.ownsPool) await this.pool.end()
   }
 
   /** Schema-qualified, quoted table reference: `"schema"."table"`. */

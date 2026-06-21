@@ -39,7 +39,8 @@ export const createPgvectorAdapter = (options: CreatePgvectorAdapterOptions): Pg
     options.embeddingProvider ??
     (options.embedding ? new OpenAICompatibleEmbeddingProvider(options.embedding) : undefined)
 
-  return new PgvectorAdapter(pool, { embeddingProvider, schema: options.schema })
+  // This adapter created the pool, so it owns it and may end it on close().
+  return new PgvectorAdapter(pool, { embeddingProvider, schema: options.schema, ownsPool: true })
 }
 
 /**
