@@ -86,7 +86,10 @@ export type {
   RawBookDoc,
   // Taxonomy
   RawTaxonomyDoc,
+  ResolvedRetrievalScope,
   ResourcesConfig,
+  // Retrieval profiles
+  RetrievalProfileResolver,
   ServerInfoConfig,
   TaxonomyConfig,
   TaxonomySource,

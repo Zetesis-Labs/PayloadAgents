@@ -212,6 +212,12 @@ export interface McpAuthContext {
    */
   availableProfiles?: Array<{ slug: string; name: string; description: string }>
   /**
+   * Slug of the caller's default retrieval profile. Applied (resolved by slug
+   * server-side) when no `retrieval_profile` is chosen — e.g. single-profile
+   * agents that don't go through the selection guard.
+   */
+  defaultProfileSlug?: string
+  /**
    * Fully-resolved scope+retrieval config (filters + lente weights) for every
    * profile referenced in THIS request, keyed by slug. Sent by the proxy only
    * when a request uses more than one profile (e.g. `compare_perspectives` with
@@ -230,6 +236,21 @@ export interface ResolvedRetrievalScope {
   taxonomySlugs?: string[]
   folderSlugs?: string[]
   retrieval?: McpAuthContext['retrieval']
+}
+
+/**
+ * On-demand resolver for a retrieval profile's scope (filters + reranker + lente
+ * weights) by slug. When provided, `search_collections`/`compare_perspectives`
+ * resolve the caller-chosen `retrieval_profile` through this — fetching the lente
+ * weights server-side — instead of expecting them pre-resolved in headers. This
+ * keeps multi-profile callers (e.g. the Agno agent) from ever shipping ~5 KB of
+ * weights per lente over the wire; only the slug + tenant cross the boundary.
+ */
+export interface RetrievalProfileResolver {
+  /** Fetch a profile's scope by tenant + slug. Returns null when not found. */
+  resolve: (params: { tenantSlug: string; profileSlug: string }) => Promise<ResolvedRetrievalScope | null>
+  /** Cache TTL in milliseconds. Default: 5 minutes. */
+  cacheTtlMs?: number
 }
 
 // ============================================================================
@@ -315,6 +336,12 @@ export interface McpServerConfig {
   reranker?: {
     factory: (input: CreateRerankerInput) => Reranker
   }
+  /**
+   * Resolve a chosen retrieval profile's scope by slug on demand (server-side),
+   * so lente weights are never forwarded to the caller. Without this, search
+   * tools rely solely on header-provided `groupProfiles` (the token route).
+   */
+  retrievalProfiles?: RetrievalProfileResolver
   resources?: ResourcesConfig
   features?: FeaturesConfig
   toolNames?: ToolNameOverrides

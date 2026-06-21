@@ -168,10 +168,12 @@ export function registerTools(opts: RegisterToolsOptions): void {
       const auth = getCurrentAuth()
       const guard = requireProfileSelection(auth, input.retrieval_profile)
       if (guard) return toolResult(guard, input.format as OutputFormat)
-      // Resolve the chosen profile's lente+filters from the group catalog when
-      // present (Agno route: full catalog forwarded as fixed headers). No-op on
-      // the token route, where the proxy already resolved `auth.retrieval`.
-      const scoped = applyProfileScope(auth, input.retrieval_profile)
+      // Resolve the chosen profile's lente+filters. The agent sends only the
+      // slug; the resolver fetches the weights server-side (Agno route). Falls
+      // back to the caller's default profile when none was chosen. No-op on the
+      // token route, where the proxy already resolved `auth.retrieval`.
+      const chosen = input.retrieval_profile ?? auth?.defaultProfileSlug
+      const scoped = await applyProfileScope(auth, chosen, ctx.resolveProfileScope)
       const result = await searchCollections(input, ctx, scoped)
       return toolResult(result, input.format as OutputFormat)
     }
