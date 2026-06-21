@@ -24,6 +24,7 @@
     "@zetesis/payload-documents": "workspace:*",
     "@zetesis/payload-indexer": "workspace:*",
     "@zetesis/payload-lexical-blocks-builder": "workspace:*",
+    "@zetesis/payload-pgvector": "workspace:*",
     "@zetesis/payload-taxonomies": "workspace:*",
     "@zetesis/payload-typesense": "workspace:*",
     "@toon-format/toon": "^2.1.0",

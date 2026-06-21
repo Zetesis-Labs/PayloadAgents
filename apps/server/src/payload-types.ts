@@ -220,7 +220,8 @@ export interface Post {
    */
   text_transforms?: ('strip-urls' | 'strip-mentions' | 'normalize-whitespace')[] | null;
   categories?: (number | Taxonomy)[] | null;
-  _syncStatus?: ('synced' | 'outdated' | 'not-indexed' | 'error') | null;
+  _syncStatus_typesense?: ('synced' | 'outdated' | 'not-indexed' | 'error') | null;
+  _syncStatus_pgvector?: ('synced' | 'outdated' | 'not-indexed' | 'error') | null;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
@@ -770,7 +771,8 @@ export interface PostsSelect<T extends boolean = true> {
   content?: T;
   text_transforms?: T;
   categories?: T;
-  _syncStatus?: T;
+  _syncStatus_typesense?: T;
+  _syncStatus_pgvector?: T;
   folder?: T;
   updatedAt?: T;
   createdAt?: T;

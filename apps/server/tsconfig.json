@@ -13,6 +13,7 @@
     { "path": "../../packages/chat-agent" },
     { "path": "../../packages/payload-indexer" },
     { "path": "../../packages/payload-lexical-blocks-builder" },
+    { "path": "../../packages/payload-pgvector" },
     { "path": "../../packages/payload-taxonomies" },
     { "path": "../../packages/payload-typesense" }
   ]

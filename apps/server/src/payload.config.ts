@@ -14,6 +14,7 @@ import { Posts } from './collections/Posts'
 import { Taxonomies } from './collections/Taxonomies'
 import { Users } from './collections/Users'
 import { defaultLocale, locales } from './i18n/locales'
+import { pgvectorPlugin } from './plugins/pgvector'
 import { typesensePlugin } from './plugins/typesense'
 
 const filename = fileURLToPath(import.meta.url)
@@ -57,6 +58,7 @@ export default buildConfig({
     const metrics = metricsPlugin({ multiTenant: false, basePath: '/metrics' })
     return [
       typesensePlugin,
+      pgvectorPlugin,
       agentPlugin({
         runtimeUrl: process.env.AGENT_RUNTIME_URL || 'http://localhost:8000',
         runtimeSecret: process.env.INTERNAL_SECRET,

@@ -17,7 +17,7 @@ const { plugin: indexerPlugin } = createIndexerPlugin({
   features: {
     sync: {
       enabled: true,
-      defaultColumns: ['title', '_syncStatus', 'slug']
+      defaultColumns: ['title', '_syncStatus_typesense', '_syncStatus_pgvector', 'slug']
     }
   },
   collections
