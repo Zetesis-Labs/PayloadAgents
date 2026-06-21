@@ -45,7 +45,17 @@ const descStyle: React.CSSProperties = {
   opacity: 0.7
 }
 
-export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
+/**
+ * Custom client props injected by the plugin, namespaced per adapter
+ * (e.g. basePath `/api/sync-status-pgvector`, instanceLabel `Pgvector Sync`).
+ */
+type SyncStatusFieldProps = Parameters<SelectFieldClientComponent>[0] & {
+  basePath?: string
+  instanceLabel?: string
+}
+
+export const SyncStatusField = (props: SyncStatusFieldProps) => {
+  const { path, basePath, instanceLabel = 'Sync' } = props
   const { value, setValue } = useField<string>({ path })
   const { id, collectionSlug } = useDocumentInfo()
   const [syncing, setSyncing] = useState(false)
@@ -56,7 +66,7 @@ export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
 
     setSyncing(true)
     try {
-      const res = await fetch(`/api/sync-status/${collectionSlug}/${id}/sync`, { method: 'POST' })
+      const res = await fetch(`${basePath}/${collectionSlug}/${id}/sync`, { method: 'POST' })
       const data = (await res.json()) as { success?: boolean; status?: string; error?: string }
 
       if (data.success) {
@@ -72,12 +82,12 @@ export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
     } finally {
       setSyncing(false)
     }
-  }, [id, collectionSlug, syncing, setValue])
+  }, [id, collectionSlug, syncing, setValue, basePath])
 
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <strong>Typesense Sync</strong>
+        <strong>{instanceLabel}</strong>
         <Pill pillStyle={pillStyle[status]} size="small">
           {labels[status]}
         </Pill>
