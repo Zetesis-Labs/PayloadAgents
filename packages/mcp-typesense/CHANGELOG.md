@@ -1,5 +1,13 @@
 # @zetesis/mcp-typesense
 
+## [0.6.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.2...mcp-typesense-v0.6.3) (2026-06-21)
+
+
+### Features
+
+* **mcp-typesense:** resolve retrieval profiles by slug server-side ([edea051](https://github.com/Zetesis-Labs/PayloadAgents/commit/edea051792f93bea746342c8b9f5385d067f69e8))
+* resolve lente weights server-side by slug (fix 431) ([5729235](https://github.com/Zetesis-Labs/PayloadAgents/commit/5729235778a6fd9b4eb609e0104e187104816c89))
+
 ## [0.6.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.1...mcp-typesense-v0.6.2) (2026-06-20)
 
 

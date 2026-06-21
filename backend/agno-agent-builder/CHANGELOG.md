@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.14](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.13...agno-agent-builder-v0.1.14) (2026-06-21)
+
+
+### Features
+
+* resolve lente weights server-side by slug (fix 431) ([5729235](https://github.com/Zetesis-Labs/PayloadAgents/commit/5729235778a6fd9b4eb609e0104e187104816c89))
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** stop forwarding lente weights as headers ([2032b02](https://github.com/Zetesis-Labs/PayloadAgents/commit/2032b02e391b357981017259aaa3046324779759))
+
 ## [0.1.13](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.12...agno-agent-builder-v0.1.13) (2026-06-20)
 
 
