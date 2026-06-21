@@ -75,6 +75,9 @@ importers:
       '@zetesis/payload-lexical-blocks-builder':
         specifier: workspace:*
         version: link:../../packages/payload-lexical-blocks-builder
+      '@zetesis/payload-pgvector':
+        specifier: workspace:*
+        version: link:../../packages/payload-pgvector
       '@zetesis/payload-taxonomies':
         specifier: workspace:*
         version: link:../../packages/payload-taxonomies
@@ -210,6 +213,37 @@ importers:
         specifier: ^5.0.0
         version: 5.7.3
 
+  packages/mcp-pgvector:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.12.0
+        version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
+      '@zetesis/payload-pgvector':
+        specifier: workspace:*
+        version: link:../payload-pgvector
+      pg:
+        specifier: ^8.13.1
+        version: 8.16.3
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.5.4
+        version: 22.19.13
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.20.0
+      rimraf:
+        specifier: 3.0.2
+        version: 3.0.2
+      tsdown:
+        specifier: ^0.16.5
+        version: 0.16.8(typescript@5.7.3)
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   packages/mcp-typesense:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -263,7 +297,7 @@ importers:
         version: 2.1.0
       drizzle-orm:
         specifier: '>=0.36'
-        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.10.2)(bun-types@1.3.11)(pg@8.16.3)
+        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(pg@8.16.3)
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -303,7 +337,7 @@ importers:
         version: 2.1.1
       drizzle-orm:
         specifier: '>=0.36'
-        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.10.2)(bun-types@1.3.11)(pg@8.16.3)
+        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(pg@8.16.3)
       tailwind-merge:
         specifier: ^3.0.0
         version: 3.5.0
@@ -451,6 +485,37 @@ importers:
         version: 0.16.8(typescript@5.7.3)
       typescript:
         specifier: ^5.0.0
+        version: 5.7.3
+
+  packages/payload-pgvector:
+    dependencies:
+      '@zetesis/payload-indexer':
+        specifier: workspace:*
+        version: link:../payload-indexer
+      payload:
+        specifier: ^3.81.0
+        version: 3.81.0(graphql@16.13.1)(typescript@5.7.3)
+      pg:
+        specifier: ^8.13.1
+        version: 8.16.3
+      zod:
+        specifier: ^4.1.11
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^22.5.4
+        version: 22.19.13
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.20.0
+      rimraf:
+        specifier: 3.0.2
+        version: 3.0.2
+      tsdown:
+        specifier: ^0.16.5
+        version: 0.16.8(typescript@5.7.3)
+      typescript:
+        specifier: 5.7.3
         version: 5.7.3
 
   packages/payload-taxonomies:
@@ -3605,6 +3670,9 @@ packages:
 
   '@types/pg@8.10.2':
     resolution: {integrity: sha512-MKFs9P6nJ+LAeHLU3V0cODEOgyThJ3OAnmOlsZsxux6sfQs3HRXR5bBn7xG5DjckEFhTAxsXi7k7cd0pCMxpJw==}
+
+  '@types/pg@8.20.0':
+    resolution: {integrity: sha512-bEPFOaMAHTEP1EzpvHTbmwR8UsFyHSKsRisLIHVMXnpNefSbGA1bD6CVy+qKjGSqmZqNqBDV2azOBo8TgkcVow==}
 
   '@types/react-dom@19.1.6':
     resolution: {integrity: sha512-4hOiT/dwO8Ko0gV1m/TJZYk3y0KBnY9vzDh7W+DH17b2HFSOGgdj33dhihPeuy3l0q23+4e+hoXHV6hCC4dCXw==}
@@ -10831,6 +10899,12 @@ snapshots:
       pg-protocol: 1.13.0
       pg-types: 4.1.0
 
+  '@types/pg@8.20.0':
+    dependencies:
+      '@types/node': 22.19.13
+      pg-protocol: 1.13.0
+      pg-types: 2.2.0
+
   '@types/react-dom@19.1.6(@types/react@19.1.8)':
     dependencies:
       '@types/react': 19.1.8
@@ -11714,6 +11788,13 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.10.2
+      bun-types: 1.3.11
+      pg: 8.16.3
+
+  drizzle-orm@0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(pg@8.16.3):
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
+      '@types/pg': 8.20.0
       bun-types: 1.3.11
       pg: 8.16.3
 

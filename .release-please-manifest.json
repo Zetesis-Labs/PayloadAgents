@@ -7,6 +7,7 @@
   "packages/payload-documents": "0.5.4",
   "packages/payload-indexer": "0.4.1",
   "packages/payload-lexical-blocks-builder": "0.2.2",
+  "packages/payload-pgvector": "0.0.0",
   "packages/payload-taxonomies": "0.2.2",
   "packages/payload-typesense": "0.4.1",
   "backend/agno-agent-builder": "0.1.14",
