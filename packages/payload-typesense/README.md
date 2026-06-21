@@ -285,7 +285,7 @@ We are actively working to improve the modularity and flexibility of the plugin.
 *   **LLMs:** Add support for Anthropic (Claude), Mistral, and local LLMs.
 
 ### 4. Admin UI
-*   ~~Dashboard within Payload Admin to view Typesense collection status.~~ **Done** -- `_syncStatus` virtual field via `payload-indexer`
+*   ~~Dashboard within Payload Admin to view Typesense collection status.~~ **Done** -- `_syncStatus_typesense` virtual field via `payload-indexer`
 *   ~~Buttons to manually trigger re-sync or re-indexing.~~ **Done** -- "Sync Now" button in document sidebar
 *   Visual management of RAG agents.
 

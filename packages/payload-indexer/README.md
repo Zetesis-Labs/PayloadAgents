@@ -99,11 +99,11 @@ createSummarizeLexicalTransform
 
 When `features.sync.enabled` is `true`, the plugin automatically:
 
-1. **Injects a `_syncStatus` virtual field** into every indexed collection. This field appears in the admin sidebar and list view.
-2. **Registers REST endpoints** for sync status checks:
-   - `GET /api/sync-status/:collection` -- Batch check all documents in a collection (supports `page`, `limit`, `ids`, `where` params)
-   - `GET /api/sync-status/:collection/:id` -- Check a single document
-   - `POST /api/sync-status/:collection/:id/sync` -- Trigger re-indexing of a single document
+1. **Injects a `_syncStatus_<adapter>` virtual field** into every indexed collection (namespaced by `adapter.name`, e.g. `_syncStatus_typesense`, so multiple adapters can index the same collection in parallel). This field appears in the admin sidebar and list view.
+2. **Registers REST endpoints** for sync status checks (also namespaced by adapter, e.g. `/api/sync-status-typesense`):
+   - `GET /api/sync-status-<adapter>/:collection` -- Batch check all documents in a collection (supports `page`, `limit`, `ids`, `where` params)
+   - `GET /api/sync-status-<adapter>/:collection/:id` -- Check a single document
+   - `POST /api/sync-status-<adapter>/:collection/:id/sync` -- Trigger re-indexing of a single document
 
 The sync status is computed by comparing content hashes (SHA-256) between the Payload document and its indexed counterpart. Possible values: `synced`, `outdated`, `not-indexed`, `error`.
 
