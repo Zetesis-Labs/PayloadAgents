@@ -41,6 +41,8 @@ export interface PgvectorMcpConfig {
   transport?: { port?: number; host?: string }
   /** Postgres connection string. */
   connectionString: string
+  /** Required dedicated Postgres schema the tables live in (e.g. `pgvector`). Must match how they were indexed. */
+  schema: string
   /** Embedding config (OpenAI-compatible, e.g. a LiteLLM gateway). */
   embedding: OpenAICompatibleEmbeddingConfig
   collections: PgvectorMcpCollection[]
@@ -146,6 +148,7 @@ function registerTools(server: McpServer, adapter: PgvectorAdapter, collections:
 export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpHandle {
   const adapter = createPgvectorAdapter({
     connectionString: config.connectionString,
+    schema: config.schema,
     embedding: config.embedding
   })
   // Register metadata (no DDL) so filters + vectorSearch resolve correctly.

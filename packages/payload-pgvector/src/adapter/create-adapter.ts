@@ -19,6 +19,8 @@ export interface CreatePgvectorAdapterOptions {
    */
   embeddingProvider?: EmbeddingProvider
   embedding?: OpenAICompatibleEmbeddingConfig
+  /** Required dedicated Postgres schema (e.g. `pgvector`). Never `public` — keeps these raw tables out of the ORM-managed schema. */
+  schema: string
 }
 
 /**
@@ -37,12 +39,14 @@ export const createPgvectorAdapter = (options: CreatePgvectorAdapterOptions): Pg
     options.embeddingProvider ??
     (options.embedding ? new OpenAICompatibleEmbeddingProvider(options.embedding) : undefined)
 
-  return new PgvectorAdapter(pool, { embeddingProvider })
+  return new PgvectorAdapter(pool, { embeddingProvider, schema: options.schema })
 }
 
 /**
  * Build a PgvectorAdapter from an existing node-pg Pool. Use when the app already
  * owns the connection (e.g. sharing Payload's pool).
  */
-export const createPgvectorAdapterFromPool = (pool: Pool, embeddingProvider?: EmbeddingProvider): PgvectorAdapter =>
-  new PgvectorAdapter(pool, { embeddingProvider })
+export const createPgvectorAdapterFromPool = (
+  pool: Pool,
+  options: { embeddingProvider?: EmbeddingProvider; schema: string }
+): PgvectorAdapter => new PgvectorAdapter(pool, options)

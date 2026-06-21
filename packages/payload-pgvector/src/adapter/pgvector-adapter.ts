@@ -8,6 +8,13 @@ export interface PgvectorAdapterOptions {
   /** Embedding provider used to vectorize text at upsert time. Optional: if a */
   /** document already carries a precomputed vector, no provider is needed. */
   embeddingProvider?: EmbeddingProvider
+  /**
+   * Postgres schema to create/query the tables in (e.g. `pgvector`). Required and
+   * never `public`: these tables are raw (not ORM-managed), so they MUST live in
+   * a dedicated schema — otherwise a Payload/Drizzle schema push sees them as
+   * unmanaged and DROPs them.
+   */
+  schema: string
 }
 
 /** Map our PgFieldType to a concrete SQL column type. */
@@ -69,12 +76,22 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
   readonly name = 'pgvector'
   private readonly pool: Pool
   private readonly embeddingProvider?: EmbeddingProvider
+  private readonly schema: string
   /** Per-collection embedding metadata, captured during ensureCollection. */
   private readonly embedInfo = new Map<string, CollectionEmbedInfo>()
 
-  constructor(pool: Pool, options: PgvectorAdapterOptions = {}) {
+  constructor(pool: Pool, options: PgvectorAdapterOptions) {
+    if (!options.schema || options.schema === 'public') {
+      throw new Error('PgvectorAdapter requires a dedicated `schema` (not "public")')
+    }
     this.pool = pool
     this.embeddingProvider = options.embeddingProvider
+    this.schema = options.schema
+  }
+
+  /** Schema-qualified, quoted table reference: `"schema"."table"`. */
+  private relName(table: string): string {
+    return `${ident(this.schema)}.${ident(table)}`
   }
 
   async testConnection(): Promise<boolean> {
@@ -98,6 +115,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     const client = await this.pool.connect()
     try {
       await client.query('CREATE EXTENSION IF NOT EXISTS vector')
+      await client.query(`CREATE SCHEMA IF NOT EXISTS ${ident(this.schema)}`)
       await this.createTable(client, schema, idField)
       await this.ensureIndexes(client, schema, embeddingField, Boolean(embeddingFieldSchema), distance)
     } finally {
@@ -147,11 +165,11 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
       const pk = field.name === idField ? ' PRIMARY KEY' : ''
       columnDefs.push(`${ident(field.name)} ${sqlColumnType(field)}${pk}${nullable}`)
     }
-    await client.query(`CREATE TABLE IF NOT EXISTS ${ident(schema.name)} (\n  ${columnDefs.join(',\n  ')}\n)`)
+    await client.query(`CREATE TABLE IF NOT EXISTS ${this.relName(schema.name)} (\n  ${columnDefs.join(',\n  ')}\n)`)
 
     for (const field of schema.fields) {
       await client.query(
-        `ALTER TABLE ${ident(schema.name)} ADD COLUMN IF NOT EXISTS ${ident(field.name)} ${sqlColumnType(field)}`
+        `ALTER TABLE ${this.relName(schema.name)} ADD COLUMN IF NOT EXISTS ${ident(field.name)} ${sqlColumnType(field)}`
       )
     }
   }
@@ -170,7 +188,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
       const efc = schema.hnsw?.efConstruction ?? 64
       const indexName = `${schema.name}_${embeddingField}_hnsw`
       await client.query(
-        `CREATE INDEX IF NOT EXISTS ${ident(indexName)} ON ${ident(schema.name)} ` +
+        `CREATE INDEX IF NOT EXISTS ${ident(indexName)} ON ${this.relName(schema.name)} ` +
           `USING hnsw (${ident(embeddingField)} ${opclass}) WITH (m = ${m}, ef_construction = ${efc})`
       )
     }
@@ -180,20 +198,20 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
       const indexName = `${schema.name}_${field.name}_idx`
       const method = field.type === 'text[]' ? 'gin' : 'btree'
       await client.query(
-        `CREATE INDEX IF NOT EXISTS ${ident(indexName)} ON ${ident(schema.name)} USING ${method} (${ident(field.name)})`
+        `CREATE INDEX IF NOT EXISTS ${ident(indexName)} ON ${this.relName(schema.name)} USING ${method} (${ident(field.name)})`
       )
     }
   }
 
   async collectionExists(collectionName: string): Promise<boolean> {
     const result = await this.pool.query<{ exists: boolean }>('SELECT to_regclass($1) IS NOT NULL AS exists', [
-      collectionName
+      `${this.schema}.${collectionName}`
     ])
     return result.rows[0]?.exists ?? false
   }
 
   async deleteCollection(collectionName: string): Promise<void> {
-    await this.pool.query(`DROP TABLE IF EXISTS ${ident(collectionName)} CASCADE`)
+    await this.pool.query(`DROP TABLE IF EXISTS ${this.relName(collectionName)} CASCADE`)
     this.embedInfo.delete(collectionName)
     logger.info(`Deleted collection (table): ${collectionName}`)
   }
@@ -228,13 +246,13 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
 
   async deleteDocument(collectionName: string, documentId: string): Promise<void> {
     const idField = this.embedInfo.get(collectionName)?.idField ?? 'id'
-    await this.pool.query(`DELETE FROM ${ident(collectionName)} WHERE ${ident(idField)} = $1`, [documentId])
+    await this.pool.query(`DELETE FROM ${this.relName(collectionName)} WHERE ${ident(idField)} = $1`, [documentId])
   }
 
   async deleteDocumentsByFilter(collectionName: string, filter: Record<string, unknown>): Promise<number> {
     const columnTypes = this.embedInfo.get(collectionName)?.columnTypes
     const { clause, params } = this.buildWhere(filter, columnTypes)
-    const sql = `DELETE FROM ${ident(collectionName)}${clause}`
+    const sql = `DELETE FROM ${this.relName(collectionName)}${clause}`
     const result = await this.pool.query(sql, params)
     return result.rowCount ?? 0
   }
@@ -258,7 +276,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
 
     const sql =
       `SELECT *, ${ident(embeddingField)} ${op} $1::vector AS _distance ` +
-      `FROM ${ident(collectionName)}${clause} ` +
+      `FROM ${this.relName(collectionName)}${clause} ` +
       `ORDER BY ${ident(embeddingField)} ${op} $1::vector ` +
       `LIMIT $${params.length}`
 
@@ -303,7 +321,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     const { clause, params } = this.buildWhere(filter, info?.columnTypes)
     const limit = options?.limit ?? 250
     params.push(limit)
-    const sql = `SELECT * FROM ${ident(collectionName)}${clause} LIMIT $${params.length}`
+    const sql = `SELECT * FROM ${this.relName(collectionName)}${clause} LIMIT $${params.length}`
     const result = await this.pool.query(sql, params)
     return result.rows.map(row => this.projectRow(row, embeddingField, options?.includeFields) as TDoc)
   }
@@ -316,7 +334,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     const sets = keys.map((key, i) => `${ident(key)} = $${i + 1}`)
     const params = keys.map(key => this.toParam(partialDoc[key]))
     params.push(documentId)
-    const sql = `UPDATE ${ident(collectionName)} SET ${sets.join(', ')} WHERE ${ident(idField)} = $${params.length}`
+    const sql = `UPDATE ${this.relName(collectionName)} SET ${sets.join(', ')} WHERE ${ident(idField)} = $${params.length}`
     await this.pool.query(sql, params)
   }
 
@@ -333,7 +351,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
     const columnTypes = this.embedInfo.get(collectionName)?.columnTypes
     const { clause, params: whereParams } = this.buildWhere(filter, columnTypes, params.length)
     params.push(...whereParams)
-    const sql = `UPDATE ${ident(collectionName)} SET ${sets.join(', ')}${clause}`
+    const sql = `UPDATE ${this.relName(collectionName)} SET ${sets.join(', ')}${clause}`
     const result = await this.pool.query(sql, params)
     return result.rowCount ?? 0
   }
@@ -414,7 +432,7 @@ export class PgvectorAdapter implements IndexerAdapter<PgvectorCollectionSchema>
         : `ON CONFLICT (${ident(idField)}) DO NOTHING`
 
     const sql =
-      `INSERT INTO ${ident(collectionName)} (${columns.join(', ')}) ` +
+      `INSERT INTO ${this.relName(collectionName)} (${columns.join(', ')}) ` +
       `VALUES (${placeholders.join(', ')}) ${conflict}`
 
     await client.query(sql, params)

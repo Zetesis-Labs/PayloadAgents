@@ -2,7 +2,7 @@ import { createIndexerPlugin } from '@zetesis/payload-indexer'
 import { createPgvectorAdapter, createPgvectorPlugin } from '@zetesis/payload-pgvector'
 import type { Config } from 'payload'
 import { pgvectorCollections } from './collections'
-import { pgvectorConnectionString, pgvectorEmbedding } from './config'
+import { pgvectorConnectionString, pgvectorEmbedding, pgvectorSchema } from './config'
 
 export { pgvectorCollections } from './collections'
 
@@ -10,7 +10,8 @@ export { pgvectorCollections } from './collections'
 // createPgvectorPlugin uses it for schema sync (onInit ensureCollection).
 const adapter = createPgvectorAdapter({
   connectionString: pgvectorConnectionString,
-  embedding: pgvectorEmbedding
+  embedding: pgvectorEmbedding,
+  schema: pgvectorSchema
 })
 
 const { plugin: indexerPlugin } = createIndexerPlugin({

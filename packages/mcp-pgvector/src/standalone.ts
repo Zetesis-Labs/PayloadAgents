@@ -19,6 +19,7 @@ const mcp = createPgvectorMcpServer({
   },
   transport: { port: PORT },
   connectionString: process.env.DATABASE_URL || '',
+  schema: process.env.MCP_PGVECTOR_SCHEMA || 'pgvector',
   embedding: {
     baseUrl: process.env.LITELLM_PROXY_URL || 'http://litellm:4000/v1',
     apiKey: process.env.LITELLM_MASTER_KEY || '',
