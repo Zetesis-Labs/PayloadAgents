@@ -121,17 +121,29 @@ def build_mcp_toolset(
     """
     if not cfg.mcp_servers:
         return [build_mcp_tools(mcp_url, cfg)]
+    # Multiple backends expose tools with identical names (search_collections, …);
+    # per-alias /{alias}/mcp routing does NOT namespace them, so Agno would collide
+    # and silently keep one. Prefix each toolset by its alias to disambiguate.
+    multi = len(cfg.mcp_servers) > 1
     return [
-        build_mcp_tools(f"{gateway_base}/{alias}/mcp", cfg, proxy_key=proxy_key)
+        build_mcp_tools(
+            f"{gateway_base}/{alias}/mcp",
+            cfg,
+            proxy_key=proxy_key,
+            tool_name_prefix=alias if multi else None,
+        )
         for alias in cfg.mcp_servers
     ]
 
 
-def build_mcp_tools(mcp_url: str, cfg: AgentConfig, *, proxy_key: str | None = None) -> MCPTools:
+def build_mcp_tools(
+    mcp_url: str, cfg: AgentConfig, *, proxy_key: str | None = None, tool_name_prefix: str | None = None
+) -> MCPTools:
     """Build an MCPTools instance, forwarding the agent's SearchProfile config as headers.
 
     When ``proxy_key`` is set the endpoint is the LiteLLM gateway, so the
-    per-agent virtual key authenticates the connection.
+    per-agent virtual key authenticates the connection. ``tool_name_prefix``
+    namespaces the tool names so multiple backends don't collide in one agent.
     """
     headers: dict[str, str] = {}
     if proxy_key:
@@ -161,5 +173,5 @@ def build_mcp_tools(mcp_url: str, cfg: AgentConfig, *, proxy_key: str | None = N
     headers.update(build_retrieval_profile_headers(cfg.retrieval_profiles))
     if headers:
         params = StreamableHTTPClientParams(url=mcp_url, headers=headers)
-        return MCPTools(server_params=params, transport="streamable-http")
-    return MCPTools(url=mcp_url, transport="streamable-http")
+        return MCPTools(server_params=params, transport="streamable-http", tool_name_prefix=tool_name_prefix)
+    return MCPTools(url=mcp_url, transport="streamable-http", tool_name_prefix=tool_name_prefix)

@@ -120,7 +120,7 @@ class TestBuildAgent:
         # pure unit of build_agent's wiring.
         monkeypatch.setattr(
             "agno_agent_builder.builder.build_mcp_tools",
-            lambda mcp_url, cfg, proxy_key=None: MagicMock(),
+            lambda mcp_url, cfg, proxy_key=None, tool_name_prefix=None: MagicMock(),
         )
 
         agent = self._build(self._cfg())
@@ -151,10 +151,11 @@ class TestBuildMcpToolset:
         assert gateway_base_url("http://litellm:4000/") == "http://litellm:4000"
 
     def test_no_selection_uses_single_direct_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        seen: list[str] = []
+        seen: list[tuple[str, str | None]] = []
         monkeypatch.setattr(
             "agno_agent_builder.builder.build_mcp_tools",
-            lambda mcp_url, cfg, proxy_key=None: seen.append(mcp_url) or MagicMock(),
+            lambda mcp_url, cfg, proxy_key=None, tool_name_prefix=None: seen.append((mcp_url, tool_name_prefix))
+            or MagicMock(),
         )
         tools = build_mcp_toolset(
             self._cfg([]),
@@ -163,13 +164,30 @@ class TestBuildMcpToolset:
             proxy_key="sk-virtual",
         )
         assert len(tools) == 1
-        assert seen == ["http://mcp:9000"]
+        assert seen == [("http://mcp:9000", None)]
 
-    def test_selection_routes_each_through_gateway(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        seen: list[str] = []
+    def test_single_selection_routes_through_gateway_unprefixed(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[tuple[str, str | None]] = []
         monkeypatch.setattr(
             "agno_agent_builder.builder.build_mcp_tools",
-            lambda mcp_url, cfg, proxy_key=None: seen.append(mcp_url) or MagicMock(),
+            lambda mcp_url, cfg, proxy_key=None, tool_name_prefix=None: seen.append((mcp_url, tool_name_prefix))
+            or MagicMock(),
+        )
+        build_mcp_toolset(
+            self._cfg(["typesense_search"]),
+            mcp_url="http://mcp:9000",
+            gateway_base="http://litellm:4000",
+            proxy_key="sk-virtual",
+        )
+        # A single backend keeps tool names unchanged (no collision to disambiguate).
+        assert seen == [("http://litellm:4000/typesense_search/mcp", None)]
+
+    def test_multi_selection_prefixes_each_by_alias(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[tuple[str, str | None]] = []
+        monkeypatch.setattr(
+            "agno_agent_builder.builder.build_mcp_tools",
+            lambda mcp_url, cfg, proxy_key=None, tool_name_prefix=None: seen.append((mcp_url, tool_name_prefix))
+            or MagicMock(),
         )
         tools = build_mcp_toolset(
             self._cfg(["typesense_search", "pgvector_search"]),
@@ -178,7 +196,9 @@ class TestBuildMcpToolset:
             proxy_key="sk-virtual",
         )
         assert len(tools) == 2
+        # Each toolset is prefixed by its alias so the two backends' identically
+        # named tools (search_collections, …) don't collide in one agent.
         assert seen == [
-            "http://litellm:4000/typesense_search/mcp",
-            "http://litellm:4000/pgvector_search/mcp",
+            ("http://litellm:4000/typesense_search/mcp", "typesense_search"),
+            ("http://litellm:4000/pgvector_search/mcp", "pgvector_search"),
         ]
