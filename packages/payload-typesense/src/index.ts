@@ -99,3 +99,10 @@ export {
   DEFAULT_SEARCH_LIMIT,
   DEFAULT_SESSION_TTL_SEC
 } from './core/config/constants'
+
+// ============================================================================
+// MCP DESCRIPTOR
+// ============================================================================
+
+export type { TypesenseMcpDescriptorOptions } from './mcp/descriptor'
+export { createTypesenseMcpDescriptor } from './mcp/descriptor'
