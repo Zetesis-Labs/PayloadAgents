@@ -40,7 +40,7 @@ export const McpSearchTokens: CollectionConfig = {
       hasMany: true,
       admin: {
         description:
-          'Optional. If set, every search made with this token is auto-scoped to these taxonomy slugs (forwarded as `x-taxonomy-slugs` to the MCP server).',
+          'Optional. If set, every search made with this token is auto-scoped to these taxonomy slugs (forwarded as `x-taxonomy-slugs` to the MCP server). Left empty, the token reads the whole corpus (within its tenant).',
       },
     },
     {

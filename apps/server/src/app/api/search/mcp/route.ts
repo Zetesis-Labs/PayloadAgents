@@ -122,18 +122,9 @@ async function proxyToMcp(request: Request): Promise<Response> {
   const auth = await authenticateRequest(hdrs, request)
   if (auth instanceof NextResponse) return auth
 
-  // Deny-by-default: a token with no taxonomy scope must NOT read the whole
-  // corpus. Scope is injected downstream only when non-empty (and the MCP applies
-  // no taxonomy filter without it), so an unscoped token would fail open. Refuse
-  // here — the proxy is the single source of truth for token permissions. A
-  // deliberately broad token would need an explicit opt-in field, not the absence
-  // of a scope.
-  if (auth.taxonomySlugs.length === 0) {
-    return NextResponse.json(
-      { error: 'Token has no taxonomy scope; refusing to serve (assign at least one taxonomy to the token)' },
-      { status: 403 }
-    )
-  }
+  // A token without taxonomies is intentionally broad: it reads the whole corpus
+  // (within its tenant). Scope is forwarded only when present, so the MCP simply
+  // applies no taxonomy filter. No deny-by-default here — broad tokens are allowed.
 
   const target = resolveUpstream(auth)
   if ('notReady' in target) {
