@@ -11,6 +11,7 @@ import { createSyncLiteLlmVirtualKeyTask } from './collections/jobs/sync-litellm
 import { createAgentsInternalListHandler } from './endpoints/agents-internal-list'
 import { createAgentsListHandler } from './endpoints/agents-list'
 import { createChatHandler } from './endpoints/chat'
+import { createMcpServersListHandler } from './endpoints/mcp-servers'
 import { createModelsListHandler } from './endpoints/models'
 import { createSessionDeleteHandler, createSessionGetHandler, createSessionPatchHandler } from './endpoints/session'
 import { createSessionsListHandler } from './endpoints/sessions'
@@ -177,6 +178,12 @@ export function agentPlugin(userConfig: AgentPluginConfig): Plugin {
       path: `${basePath}/models`,
       method: 'get' as const,
       handler: createModelsListHandler(config)
+    })
+
+    endpoints.push({
+      path: `${basePath}/mcp-servers`,
+      method: 'get' as const,
+      handler: createMcpServersListHandler(config)
     })
 
     return {

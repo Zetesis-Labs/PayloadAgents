@@ -18,13 +18,6 @@ import {
 import { createModelCatalogValidateHook } from './hooks/validate-model'
 
 export function createAgentsCollection(config: ResolvedPluginConfig): CollectionConfig {
-  // Options for the agent's MCP-server multi-select, derived from the MCP
-  // servers registered in the gateway (so the picker lists exactly what exists).
-  const mcpServerOptions = config.mcpServers.map(server => ({
-    label: server.description ?? server.alias,
-    value: server.alias
-  }))
-
   const base: CollectionConfig = {
     slug: config.collectionSlug,
     access: {
@@ -132,12 +125,15 @@ export function createAgentsCollection(config: ResolvedPluginConfig): Collection
               },
               {
                 name: 'mcpServers',
-                type: 'select',
+                type: 'text',
                 hasMany: true,
-                options: mcpServerOptions,
                 admin: {
-                  description:
-                    'Search backends (MCP servers) this agent can use, routed through the LiteLLM gateway. Empty = none.'
+                  components: {
+                    Field: {
+                      path: '@zetesis/payload-agents-core/client#McpServerSelectField',
+                      clientProps: { listPath: `/api${config.basePath}/mcp-servers` }
+                    }
+                  }
                 }
               },
               {
