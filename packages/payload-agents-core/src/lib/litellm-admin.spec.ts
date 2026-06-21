@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { LiteLlmAdminClient, type LiteLlmVirtualKeyPayload } from './litellm-admin'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { LiteLlmAdminClient, type LiteLlmMcpServer, type LiteLlmVirtualKeyPayload } from './litellm-admin'
 
 const PAYLOAD: LiteLlmVirtualKeyPayload = {
   keyAlias: 'agent/bastos',
@@ -227,5 +227,92 @@ describe('LiteLlmAdminClient', () => {
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toMatchObject({
       model_name: 'economico'
     })
+  })
+})
+
+describe('LiteLlmAdminClient.syncMcpServers', () => {
+  let calls: { method: string; url: string; body?: Record<string, unknown> }[]
+  let existing: LiteLlmMcpServer[]
+
+  beforeEach(() => {
+    calls = []
+    existing = [
+      { server_id: 's1', alias: 'typesense_search', mcp_info: { source: 'payload' } },
+      { server_id: 's3', alias: 'old_payload', mcp_info: { source: 'payload' } },
+      { server_id: 's9', alias: 'context7', mcp_info: { source: 'admin' } }
+    ]
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: { method?: string; body?: string }) => {
+        const method = init?.method ?? 'GET'
+        calls.push({ method, url, body: init?.body ? JSON.parse(init.body) : undefined })
+        const json = method === 'GET' && url.endsWith('/v1/mcp/server') ? existing : {}
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(json) } as unknown as Response)
+      })
+    )
+  })
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('creates missing, updates by alias, prunes payload orphans, leaves admin servers untouched', async () => {
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://gw', masterKey: 'k' })
+
+    const result = await client.syncMcpServers(
+      [
+        { alias: 'typesense_search', serverName: 'typesense_search', transport: 'http', url: 'u1' },
+        { alias: 'pgvector_search', serverName: 'pgvector_search', transport: 'http', url: 'u2' }
+      ],
+      { prune: true }
+    )
+
+    expect(result).toEqual({ created: 1, updated: 1, deleted: 1 })
+
+    // existing payload server updated in place by its server_id
+    const put = calls.find(c => c.method === 'PUT')
+    expect(put?.body).toMatchObject({ server_id: 's1', alias: 'typesense_search' })
+
+    // new server created, tagged source=payload so future syncs recognise it
+    const post = calls.find(c => c.method === 'POST')
+    expect(post?.body).toMatchObject({ alias: 'pgvector_search', mcp_info: { source: 'payload' } })
+
+    // the payload-managed orphan (not in the desired set) is pruned
+    expect(calls.some(c => c.method === 'DELETE' && c.url.endsWith('/v1/mcp/server/s3'))).toBe(true)
+
+    // the admin-added server is never touched
+    expect(calls.some(c => c.url.includes('s9'))).toBe(false)
+  })
+
+  it('never prunes when prune is not requested', async () => {
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://gw', masterKey: 'k' })
+
+    const result = await client.syncMcpServers(
+      [{ alias: 'typesense_search', serverName: 'x', transport: 'http', url: 'u' }],
+      {}
+    )
+
+    expect(result.deleted).toBe(0)
+    expect(calls.some(c => c.method === 'DELETE')).toBe(false)
+  })
+
+  it('scopes prune to its environment and leaves other environments alone', async () => {
+    existing = [
+      { server_id: 's1', alias: 'typesense_search', mcp_info: { source: 'payload', env: 'prod' } },
+      { server_id: 's2', alias: 'staging_only', mcp_info: { source: 'payload', env: 'staging' } },
+      { server_id: 's3', alias: 'legacy_untagged', mcp_info: { source: 'payload' } }
+    ]
+    const client = new LiteLlmAdminClient({ gatewayUrl: 'http://gw', masterKey: 'k' })
+
+    const result = await client.syncMcpServers(
+      [{ alias: 'typesense_search', serverName: 'typesense_search', transport: 'http', url: 'u1' }],
+      { prune: true, environment: 'prod' }
+    )
+
+    // typesense_search (prod) updated and re-tagged with env; legacy_untagged adopted+pruned;
+    // staging_only (other env) is neither updated nor deleted.
+    expect(result).toEqual({ created: 0, updated: 1, deleted: 1 })
+    const put = calls.find(c => c.method === 'PUT')
+    expect(put?.body).toMatchObject({ server_id: 's1', mcp_info: { source: 'payload', env: 'prod' } })
+    expect(calls.some(c => c.method === 'DELETE' && c.url.endsWith('/v1/mcp/server/s3'))).toBe(true)
+    expect(calls.some(c => c.url.includes('s2'))).toBe(false)
   })
 })

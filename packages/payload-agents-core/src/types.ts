@@ -190,6 +190,14 @@ export interface AgentPluginConfig {
    * granted access to them; admin-added servers in LiteLLM are left untouched.
    */
   mcpServers?: LiteLlmMcpServerPayload[]
+
+  /**
+   * How `mcpServers` are reconciled into LiteLLM on startup. `environment` tags
+   * the managed servers so several deployments sharing one gateway don't prune
+   * each other's; `prune` (default true) deletes only THIS environment's managed
+   * orphans. Set `prune: false` to never delete. Reconciliation runs every boot.
+   */
+  mcpServerSync?: { prune?: boolean; environment?: string }
 }
 
 // ── Run completed callback ────────────────────────────────────────────────
@@ -277,4 +285,5 @@ export interface ResolvedPluginConfig {
   onRunCompleted: OnRunCompleted | undefined
   modelCatalog: { gatewayUrl: string; masterKey: string; cacheTtlMs: number }
   mcpServers: LiteLlmMcpServerPayload[]
+  mcpServerSync: { prune: boolean; environment: string | undefined }
 }

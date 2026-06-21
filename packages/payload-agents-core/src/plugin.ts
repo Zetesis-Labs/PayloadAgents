@@ -78,7 +78,11 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
       masterKey,
       cacheTtlMs: userConfig.modelCatalog.cacheTtlMs ?? 60_000
     },
-    mcpServers: userConfig.mcpServers ?? []
+    mcpServers: userConfig.mcpServers ?? [],
+    mcpServerSync: {
+      prune: userConfig.mcpServerSync?.prune ?? true,
+      environment: userConfig.mcpServerSync?.environment
+    }
   }
 }
 
@@ -88,13 +92,21 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
  * virtual-key sync is the hard path; MCP registration is additive).
  */
 async function syncMcpServersOnInit(config: ResolvedPluginConfig): Promise<void> {
-  if (config.mcpServers.length === 0) return
+  const { prune, environment } = config.mcpServerSync
+  // Skip only when there is nothing to register AND nothing to prune. With prune
+  // on, an empty desired list still runs so orphaned managed servers get removed.
+  if (config.mcpServers.length === 0 && !prune) return
   const client = new LiteLlmAdminClient({
     gatewayUrl: config.modelCatalog.gatewayUrl,
     masterKey: config.modelCatalog.masterKey
   })
+  if (prune && !environment) {
+    console.warn(
+      "[agent-plugin] MCP prune is on without mcpServerSync.environment — on a LiteLLM shared across deployments this can delete another deployment's managed servers. Set an environment to scope it."
+    )
+  }
   try {
-    const { created, updated, deleted } = await client.syncMcpServers(config.mcpServers, { prune: true })
+    const { created, updated, deleted } = await client.syncMcpServers(config.mcpServers, { prune, environment })
     console.info(`[agent-plugin] MCP servers synced to LiteLLM: +${created} ~${updated} -${deleted}`)
   } catch (error) {
     console.warn('[agent-plugin] MCP server sync failed:', error instanceof Error ? error.message : error)
