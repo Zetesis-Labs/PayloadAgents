@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { agentPlugin } from '@zetesis/payload-agents-core'
 import { metricsPlugin } from '@zetesis/payload-agents-metrics'
 import { createDocumentsPlugin } from '@zetesis/payload-documents'
+import type { McpDescriptor } from '@zetesis/payload-indexer'
+import { createPgvectorMcpDescriptor } from '@zetesis/payload-pgvector'
+import { createTypesenseMcpDescriptor } from '@zetesis/payload-typesense'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import type { Payload } from 'payload'
@@ -24,6 +27,25 @@ const dirname = path.dirname(filename)
 async function getDailyLimit(_payload: Payload, _userId: string | number): Promise<number> {
   return 500_000_000
 }
+
+/**
+ * MCP descriptors for the configured search backends. The app supplies the
+ * deployment URLs; agentPlugin registers them in LiteLLM on boot so agents can
+ * select them. Both backends index in parallel, so both MCPs are exposed.
+ */
+const mcpDescriptors: McpDescriptor[] = [
+  createTypesenseMcpDescriptor({ url: process.env.MCP_TYPESENSE_URL || 'http://app:3030/mcp' }),
+  createPgvectorMcpDescriptor({ url: process.env.MCP_PGVECTOR_URL || 'http://app:3041/mcp' })
+]
+const mcpServers = mcpDescriptors.map(descriptor => ({
+  alias: descriptor.id,
+  serverName: descriptor.id,
+  description: descriptor.displayName,
+  transport: descriptor.transport,
+  url: descriptor.url,
+  extraHeaders: descriptor.forwardHeaders,
+  allowAllKeys: true
+}))
 
 export default buildConfig({
   folders: {},
@@ -69,6 +91,7 @@ export default buildConfig({
           gatewayUrl: process.env.LITELLM_GATEWAY_URL || 'http://litellm:4000',
           masterKey: process.env.LITELLM_MASTER_KEY
         },
+        mcpServers,
         getDailyLimit,
         encryptionKey: process.env.PAYLOAD_SECRET,
         basePath: '/chat',
