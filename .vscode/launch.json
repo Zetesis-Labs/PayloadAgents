@@ -16,6 +16,13 @@
       "cwd": "${workspaceFolder}/apps/mcp"
     },
     {
+      "name": "MCP pgvector",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "MCP_PGVECTOR_PORT=3041 bun --watch src/standalone.ts",
+      "cwd": "${workspaceFolder}/packages/mcp-pgvector"
+    },
+    {
       "name": "Agent Runtime",
       "type": "node-terminal",
       "request": "launch",
@@ -61,7 +68,7 @@
   "compounds": [
     {
       "name": "Launch",
-      "configurations": ["Server", "MCP", "Agent Runtime", "Worker (kicker)", "Worker (taskiq)"],
+      "configurations": ["Server", "MCP", "MCP pgvector", "Agent Runtime", "Worker (kicker)", "Worker (taskiq)"],
       "stopAll": true
     },
     {
