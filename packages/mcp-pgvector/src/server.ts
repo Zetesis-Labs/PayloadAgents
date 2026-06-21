@@ -306,6 +306,7 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
       })
       httpServer = null
       sessions.clear()
+      await adapter.close()
     }
   }
 }
