@@ -28,11 +28,10 @@ const mcp = createPgvectorMcpServer({
     // text-embedding-3-* honour dimensionality reduction; must match index-time.
     sendDimensions: process.env.MCP_PGVECTOR_SEND_DIMS === 'true'
   },
-  // Secure by default at the deployment boundary: a request reaching the MCP
-  // without a taxonomy scope reads nothing (the constructor defaults this OFF to
-  // keep the package generic; the runner is deployment-facing, so it opts IN).
-  // Set MCP_PGVECTOR_REQUIRE_SCOPE=false to allow deliberately unscoped callers.
-  requireScope: process.env.MCP_PGVECTOR_REQUIRE_SCOPE !== 'false',
+  // Off by default: unscoped requests are allowed (a token without taxonomies is
+  // a deliberately broad reader). Set MCP_PGVECTOR_REQUIRE_SCOPE=true to deny
+  // unscoped requests where every caller is expected to be tenant-scoped.
+  requireScope: process.env.MCP_PGVECTOR_REQUIRE_SCOPE === 'true',
   collections: [
     {
       name: 'posts_pgvector_chunk',
