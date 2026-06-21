@@ -1,3 +1,4 @@
+import { decrypt } from '@zetesis/payload-agents-core'
 import { headers as nextHeaders } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { BasePayload } from 'payload'
@@ -9,6 +10,32 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const MCP_INTERNAL_URL = process.env.MCP_INTERNAL_URL || 'http://localhost:3030/mcp'
+const LITELLM_GATEWAY_URL = (process.env.LITELLM_GATEWAY_URL || 'http://litellm:4000').replace(/\/$/, '')
+
+/**
+ * Resolve the upstream MCP URL + auth headers for a token. When the token has a
+ * synced LiteLLM virtual key, route through the gateway at `/{alias}/mcp` with
+ * that key (traceability + backend access control enforced by LiteLLM). Without
+ * a key, fall back to the direct MCP URL (legacy, non-breaking).
+ */
+function resolveUpstream(auth: TokenAuth): { url: string; authHeaders: Record<string, string> } {
+  if (auth.virtualKey && auth.mcpAlias) {
+    return {
+      url: `${LITELLM_GATEWAY_URL}/${auth.mcpAlias}/mcp`,
+      authHeaders: {
+        'x-litellm-api-key': `Bearer ${auth.virtualKey}`,
+        Authorization: `Bearer ${auth.virtualKey}`,
+      },
+    }
+  }
+  return { url: MCP_INTERNAL_URL, authHeaders: {} }
+}
+
+interface TokenAuth {
+  taxonomySlugs: string[]
+  mcpAlias: string | null
+  virtualKey: string | null
+}
 
 async function findTokenByHash(payload: BasePayload, tokenHash: string) {
   const { docs } = await payload.find({
@@ -31,10 +58,7 @@ function updateTokenLastUsed(payload: BasePayload, tokenId: number | string): vo
     .catch(() => {})
 }
 
-async function authenticateRequest(
-  hdrs: Headers,
-  request: Request
-): Promise<{ taxonomySlugs: string[] } | NextResponse> {
+async function authenticateRequest(hdrs: Headers, request: Request): Promise<TokenAuth | NextResponse> {
   const authorization = hdrs.get('authorization')
   const url = new URL(request.url)
   const queryToken = url.searchParams.get('token')
@@ -50,15 +74,27 @@ async function authenticateRequest(
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  const rawTaxonomies = (tokenDoc as unknown as { taxonomies?: unknown }).taxonomies
+  const doc = tokenDoc as unknown as {
+    taxonomies?: unknown
+    mcpServer?: unknown
+    litellmVirtualKey?: unknown
+  }
+
+  const rawTaxonomies = doc.taxonomies
   const taxonomySlugs: string[] = Array.isArray(rawTaxonomies)
     ? rawTaxonomies
         .map(t => (typeof t === 'object' && t !== null ? (t as { slug?: unknown }).slug : null))
         .filter((s): s is string => typeof s === 'string' && s.length > 0)
     : []
 
+  // Decrypt the internal per-token LiteLLM key (set by the collection sync hook).
+  const encKey = process.env.PAYLOAD_SECRET
+  const stored = typeof doc.litellmVirtualKey === 'string' ? doc.litellmVirtualKey : null
+  const virtualKey = stored && encKey ? decrypt(stored, encKey) : null
+  const mcpAlias = typeof doc.mcpServer === 'string' ? doc.mcpServer : null
+
   updateTokenLastUsed(payload, tokenDoc.id as number | string)
-  return { taxonomySlugs }
+  return { taxonomySlugs, mcpAlias, virtualKey }
 }
 
 async function proxyToMcp(request: Request): Promise<Response> {
@@ -66,10 +102,14 @@ async function proxyToMcp(request: Request): Promise<Response> {
   const auth = await authenticateRequest(hdrs, request)
   if (auth instanceof NextResponse) return auth
 
+  const { url: upstreamUrl, authHeaders } = resolveUpstream(auth)
+
   const forwardHeaders: Record<string, string> = {
     'Content-Type': hdrs.get('content-type') || 'application/json',
     Accept: 'application/json, text/event-stream',
+    ...authHeaders,
   }
+  // Scope is injected here (trusted): the client cannot set it themselves.
   if (auth.taxonomySlugs.length > 0) {
     forwardHeaders['x-taxonomy-slugs'] = auth.taxonomySlugs.join(',')
   }
@@ -81,7 +121,7 @@ async function proxyToMcp(request: Request): Promise<Response> {
 
   let upstream: globalThis.Response
   try {
-    upstream = await fetch(MCP_INTERNAL_URL, {
+    upstream = await fetch(upstreamUrl, {
       method: request.method,
       headers: forwardHeaders,
       body,

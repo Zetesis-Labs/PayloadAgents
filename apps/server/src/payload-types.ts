@@ -300,9 +300,21 @@ export interface McpSearchToken {
    */
   tokenPrefix: string;
   /**
+   * Which search backend (MCP server) this token reaches, enforced via LiteLLM.
+   */
+  mcpServer: 'typesense_search' | 'pgvector_search';
+  /**
    * Last time this token authenticated a request.
    */
   lastUsedAt?: string | null;
+  litellmVirtualKey?: string | null;
+  /**
+   * Internal per-token key alias in LiteLLM.
+   */
+  litellmVirtualKeyAlias?: string | null;
+  litellmVirtualKeyFingerprint?: string | null;
+  litellmVirtualKeySyncStatus?: ('synced' | 'error') | null;
+  litellmVirtualKeySyncError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -803,7 +815,13 @@ export interface McpSearchTokensSelect<T extends boolean = true> {
   label?: T;
   tokenHash?: T;
   tokenPrefix?: T;
+  mcpServer?: T;
   lastUsedAt?: T;
+  litellmVirtualKey?: T;
+  litellmVirtualKeyAlias?: T;
+  litellmVirtualKeyFingerprint?: T;
+  litellmVirtualKeySyncStatus?: T;
+  litellmVirtualKeySyncError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
