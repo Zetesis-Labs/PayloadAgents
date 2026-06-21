@@ -1,35 +1,24 @@
-"""Encode multi-profile retrieval state into MCP forward headers.
+"""Encode the agent's retrieval-profile selection into MCP forward headers.
 
-Mirrors the ZetesisPortal token proxy (`apps/server/.../api/search/mcp/route.ts`):
-the agent connects to the MCP server with FIXED connection headers (it can't
-peek each request like the proxy), so when an agent exposes more than one
-retrieval profile we forward the WHOLE catalog up front:
+Only **references** cross to the MCP — never lente weights. The MCP resolves a
+profile's filters + reranker + weights server-side from Payload by slug, so the
+agent (and the LLM) never sees an embedding:
 
-- ``x-learned-head``     — the default profile's lente (base64 Float32LE [...w, b]).
-- ``x-retrieval-profiles`` — base64 JSON catalog (slug/name/description, no weights)
-  powering ``list_retrieval_profiles`` and the profile-selection guard.
-- ``x-group-profiles``   — base64 JSON map slug → {filters, retrieval(+lente)} so the
-  MCP ``search_collections``/``compare_perspectives`` tools resolve whichever
-  profile the LLM picks per query.
+- ``x-retrieval-profile``  — the default profile's slug (used when the agent
+  doesn't pick one explicitly, e.g. single-profile agents).
+- ``x-retrieval-profiles`` — base64 JSON catalog (slug/name/description) for the
+  ``list_retrieval_profiles`` tool and the profile-selection guard, sent only
+  when there's a real choice (2+ profiles).
 
-Decoded MCP-side by ``auth/resolve.ts`` (``readAvailableProfiles`` /
-``readGroupProfiles`` / ``decodeLearnedHead``).
+Decoded MCP-side by ``auth/resolve.ts``.
 """
 
 from __future__ import annotations
 
 import base64
 import json
-import struct
 
-from agno_agent_builder.sources.types import LearnedHead, RetrievalProfile
-
-
-def encode_learned_head(head: LearnedHead) -> str:
-    """Base64 of a little-endian Float32 ``[...w, b]`` blob (compact, binary)."""
-    floats = [*head.w, head.b]
-    packed = struct.pack(f"<{len(floats)}f", *floats)
-    return base64.b64encode(packed).decode("ascii")
+from agno_agent_builder.sources.types import RetrievalProfile
 
 
 def _encode_b64_json(value: object) -> str:
@@ -38,49 +27,25 @@ def _encode_b64_json(value: object) -> str:
     )
 
 
-def _retrieval_payload(p: RetrievalProfile) -> dict[str, object]:
-    return {
-        "rerankerKind": p.reranker_kind,
-        "rerankerModel": p.reranker_model,
-        "inputK": p.input_k,
-        "topK": p.top_k,
-        "hybridAlpha": p.hybrid_alpha,
-        "rewriteTemplate": p.rewrite_template,
-        "learnedHead": encode_learned_head(p.learned_head) if p.learned_head else None,
-    }
-
-
 def build_retrieval_profile_headers(profiles: list[RetrievalProfile]) -> dict[str, str]:
-    """Headers carrying the agent's multi-profile retrieval catalog.
+    """Headers carrying the agent's profile *references* (no weights).
 
-    - 0 profiles → ``{}`` (legacy single-profile fields, set by the caller, stand).
-    - 1 profile  → just its lente (``x-learned-head``); no catalog, so the MCP
-      profile-selection guard stays off and the agent searches as before.
-    - 2+ profiles → full catalog + per-profile config, so the agent must pick one
-      per query and each pick applies its own lente/filters.
+    - 0 profiles  → ``{}``.
+    - 1 profile   → just ``x-retrieval-profile`` (the default); the MCP resolves
+      and applies it to every search. No catalog, so the selection guard stays off.
+    - 2+ profiles → default slug + the catalog, so the agent must pick one per
+      query and the MCP resolves whichever it picks.
     """
-    headers: dict[str, str] = {}
     if not profiles:
-        return headers
+        return {}
 
+    headers: dict[str, str] = {}
     default = profiles[0]
-    if default.learned_head:
-        headers["x-learned-head"] = encode_learned_head(default.learned_head)
+    if default.slug:
+        headers["x-retrieval-profile"] = default.slug
 
-    if len(profiles) < 2:
-        return headers
+    if len(profiles) >= 2:
+        catalog = [{"slug": p.slug, "name": p.name, "description": p.description} for p in profiles]
+        headers["x-retrieval-profiles"] = _encode_b64_json(catalog)
 
-    catalog = [{"slug": p.slug, "name": p.name, "description": p.description} for p in profiles]
-    headers["x-retrieval-profiles"] = _encode_b64_json(catalog)
-
-    group = {
-        p.slug: {
-            "taxonomySlugs": p.taxonomy_slugs,
-            "folderSlugs": p.folder_slugs,
-            "retrieval": _retrieval_payload(p),
-        }
-        for p in profiles
-        if p.slug
-    }
-    headers["x-group-profiles"] = _encode_b64_json(group)
     return headers
