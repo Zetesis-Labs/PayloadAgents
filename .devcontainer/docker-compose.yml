@@ -1,6 +1,10 @@
 services:
+  # Imagen pgvector (Debian/glibc) en vez de postgres:17-alpine: provee la
+  # extensión `vector` para probar payload-pgvector. Sigue siendo un Postgres
+  # normal — el `litellm_db` convive sin cambios. La extensión se habilita por
+  # base via migración (`CREATE EXTENSION vector`), aquí solo queda disponible.
   db:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -134,7 +138,7 @@ services:
     environment:
       LITELLM_URL: http://litellm:4000
       LITELLM_CATALOG_JSON: >-
-        [{"name":"chat-estandar","model":"openai/gpt-4o-mini","description":"Chat general — rápido y económico","requiresKey":"openai","tier":"standard"},{"name":"chat-premium","model":"anthropic/claude-sonnet-4-6","description":"Máxima calidad para agentes de cara al cliente","requiresKey":"anthropic","tier":"premium"},{"name":"razonador","model":"openai/o4-mini","description":"Razonamiento y análisis","requiresKey":"openai","tier":"standard"},{"name":"economico","model":"gemini/gemini-2.5-flash","description":"Volúmenes altos a mínimo coste","requiresKey":"google","tier":"economy"}]
+        [{"name":"chat-estandar","model":"openai/gpt-4o-mini","description":"Chat general — rápido y económico","requiresKey":"openai","tier":"standard"},{"name":"chat-premium","model":"anthropic/claude-sonnet-4-6","description":"Máxima calidad para agentes de cara al cliente","requiresKey":"anthropic","tier":"premium"},{"name":"razonador","model":"openai/o4-mini","description":"Razonamiento y análisis","requiresKey":"openai","tier":"standard"},{"name":"economico","model":"gemini/gemini-2.5-flash","description":"Volúmenes altos a mínimo coste","requiresKey":"google","tier":"economy"},{"name":"embeddings-dev","model":"openai/text-embedding-3-small","description":"Embeddings para retrieval vectorial (payload-pgvector). Alias estable: pinéalo en index y query","requiresKey":"openai","tier":"standard"}]
     entrypoint: ["python"]
     command: ["/app/bootstrap_catalog.py"]
     volumes:
