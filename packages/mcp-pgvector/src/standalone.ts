@@ -25,8 +25,11 @@ const mcp = createPgvectorMcpServer({
     apiKey: process.env.LITELLM_MASTER_KEY || '',
     model: process.env.MCP_PGVECTOR_EMBED_MODEL || 'embeddings-dev',
     dimensions: Number.parseInt(process.env.MCP_PGVECTOR_EMBED_DIMS || '1536', 10),
-    // text-embedding-3-* honour dimensionality reduction; must match index-time.
-    sendDimensions: process.env.MCP_PGVECTOR_SEND_DIMS === 'true'
+    // MUST match index-time: query and index embeddings have to use the same
+    // model + dimensions or similarity is garbage. Defaults ON to match the
+    // app-side indexer default (text-embedding-3-*); set MCP_PGVECTOR_SEND_DIMS=false
+    // for models that reject the param (e.g. BGE-M3) — and keep the indexer in sync.
+    sendDimensions: process.env.MCP_PGVECTOR_SEND_DIMS !== 'false'
   },
   // Off by default: unscoped requests are allowed (a token without taxonomies is
   // a deliberately broad reader). Set MCP_PGVECTOR_REQUIRE_SCOPE=true to deny
