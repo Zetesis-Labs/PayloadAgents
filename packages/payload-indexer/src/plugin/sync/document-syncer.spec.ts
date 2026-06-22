@@ -144,6 +144,21 @@ describe('DocumentSyncer (autoEmbed-only)', () => {
       expect(adapter.updateDocumentsByFilter).not.toHaveBeenCalled()
     })
 
+    it('uses the adapter atomic replace path on update when implemented', async () => {
+      const replaceDocumentsByFilter = vi.fn().mockResolvedValue(undefined)
+      const atomic = createMockAdapter({ replaceDocumentsByFilter })
+      vi.mocked(
+        atomic.searchDocumentsByFilter as NonNullable<typeof atomic.searchDocumentsByFilter>
+      ).mockResolvedValue([{ content_hash: 'different-hash' }])
+
+      await syncDocumentToIndex(atomic, 'posts', createMockDocument(), 'update', createMockChunkedTableConfig())
+
+      // Atomic path: one replace call, NOT the legacy delete-then-upsert.
+      expect(replaceDocumentsByFilter).toHaveBeenCalledOnce()
+      expect(atomic.deleteDocumentsByFilter).not.toHaveBeenCalled()
+      expect(atomic.upsertDocuments).not.toHaveBeenCalled()
+    })
+
     it('forces full re-sync via forceReindex even when content unchanged', async () => {
       const doc = createMockDocument()
       const config = createMockChunkedTableConfig()
