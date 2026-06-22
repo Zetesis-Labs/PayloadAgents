@@ -27,8 +27,10 @@ results against the Typesense MCP for the same queries.
 
 ## Security
 
-- The trusted `x-taxonomy-slugs` header scopes every query as a **non-overridable**
-  `taxonomy_slugs` filter (a client cannot widen it).
+- Trusted headers scope every query as **non-overridable** filters (a client cannot
+  widen them): `x-tenant-slug` → a hard `tenant` boundary, `x-taxonomy-slugs` → an
+  optional `taxonomy_slugs` refinement. For a multi-tenant deployment the table must
+  have a `tenant` column and the proxy must always inject `x-tenant-slug`.
 - `MCP_PGVECTOR_REQUIRE_SCOPE=true` denies unscoped requests (deny-by-default) where
   every caller is expected to be tenant-scoped.
 - Collection names are **allowlisted** to the configured tables; the SQL identifier

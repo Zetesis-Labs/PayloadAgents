@@ -21,7 +21,7 @@ import {
   type PgvectorCollectionSchema
 } from '@zetesis/payload-pgvector'
 import { z } from 'zod'
-import { parseScopeHeader, scopeDenied, scopeFilter } from './scope'
+import { parseScopeHeader, parseTenantHeader, type RequestScope, scopeDenied, scopeFilter } from './scope'
 
 /** A searchable pgvector table exposed by the MCP. */
 export interface PgvectorMcpCollection {
@@ -87,24 +87,25 @@ const buildSchema = (c: PgvectorMcpCollection, dimensions: number): PgvectorColl
 const text = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] })
 
 /**
- * Per-request taxonomy scope, read from the trusted `x-taxonomy-slugs` header
- * (injected by the Payload proxy / forwarded by LiteLLM). The MCP applies it as a
- * NON-overridable filter so a scoped caller cannot read outside it; `requireScope`
- * additionally denies unscoped requests (see scope.ts).
+ * Per-request trusted scope, read from the `x-tenant-slug` (hard boundary) and
+ * `x-taxonomy-slugs` (optional refinement) headers — injected by the Payload
+ * proxy / forwarded by LiteLLM. The MCP applies both as NON-overridable filters
+ * so a caller cannot read outside its scope; `requireScope` additionally denies
+ * fully-unscoped requests (see scope.ts).
  */
-const scopeStore = new AsyncLocalStorage<{ taxonomySlugs: string[]; requireScope: boolean }>()
-const currentScope = (): { taxonomySlugs: string[]; requireScope: boolean } =>
-  scopeStore.getStore() ?? { taxonomySlugs: [], requireScope: false }
+const scopeStore = new AsyncLocalStorage<{ scope: RequestScope; requireScope: boolean }>()
+const current = (): { scope: RequestScope; requireScope: boolean } =>
+  scopeStore.getStore() ?? { scope: { tenant: null, taxonomySlugs: [] }, requireScope: false }
 
-/** Force the scope onto a filter object — the scope always wins over client input. */
+/** Force the trusted scope (tenant + taxonomy) onto a filter — it always wins over client input. */
 function applyScope(filter: Record<string, unknown>): Record<string, unknown> {
-  return scopeFilter(filter, currentScope().taxonomySlugs)
+  return scopeFilter(filter, current().scope)
 }
 
-/** Deny-by-default: true when this request must read nothing (no scope, scope required). */
+/** Deny-by-default: true when this request must read nothing (no scope at all, scope required). */
 function denied(): boolean {
-  const { taxonomySlugs, requireScope } = currentScope()
-  return scopeDenied(taxonomySlugs, requireScope)
+  const { scope, requireScope } = current()
+  return scopeDenied(scope, requireScope)
 }
 
 function registerTools(server: McpServer, adapter: PgvectorAdapter, collections: PgvectorMcpCollection[]): void {
@@ -249,9 +250,13 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
       return
     }
 
-    // Trusted scope from the header, applied to every tool call this request makes.
-    const taxonomySlugs = parseScopeHeader(req.headers['x-taxonomy-slugs'])
-    const scope = { taxonomySlugs, requireScope }
+    // Trusted scope from the headers (tenant boundary + optional taxonomy),
+    // applied to every tool call this request makes.
+    const scope: RequestScope = {
+      tenant: parseTenantHeader(req.headers['x-tenant-slug']),
+      taxonomySlugs: parseScopeHeader(req.headers['x-taxonomy-slugs'])
+    }
+    const ctx = { scope, requireScope }
 
     const sessionId = req.headers['mcp-session-id'] as string | undefined
     if (sessionId) {
@@ -262,11 +267,11 @@ export function createPgvectorMcpServer(config: PgvectorMcpConfig): PgvectorMcpH
           .end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: 'Session not found' }, id: null }))
         return
       }
-      await scopeStore.run(scope, () => transport.handleRequest(req, res))
+      await scopeStore.run(ctx, () => transport.handleRequest(req, res))
       return
     }
     const transport = await createSession()
-    await scopeStore.run(scope, () => transport.handleRequest(req, res))
+    await scopeStore.run(ctx, () => transport.handleRequest(req, res))
   }
 
   let httpServer: HttpServer | null = null
