@@ -93,17 +93,18 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
  */
 async function syncMcpServersOnInit(config: ResolvedPluginConfig): Promise<void> {
   const { environment } = config.mcpServerSync
+  // Nothing to register → do nothing. We NEVER prune to an empty desired set: an
+  // empty list means "not managing MCP servers" (or a misconfig), not "delete
+  // everything", so reconciliation (incl. prune) only runs with ≥1 desired server.
+  if (config.mcpServers.length === 0) return
   // Pruning is destructive and only safe when scoped to an environment, so it
-  // requires BOTH prune:true and a non-empty environment. Without the env we
-  // refuse to delete (a default/empty config must never wipe a shared gateway).
+  // requires BOTH prune:true and a non-empty environment.
   const prune = config.mcpServerSync.prune && Boolean(environment)
   if (config.mcpServerSync.prune && !environment) {
     console.warn(
       '[agent-plugin] MCP prune requested without mcpServerSync.environment — skipping prune; deleting unscoped would be unsafe on a shared gateway.'
     )
   }
-  // Nothing to register and nothing to (safely) prune.
-  if (config.mcpServers.length === 0 && !prune) return
   const client = new LiteLlmAdminClient({
     gatewayUrl: config.modelCatalog.gatewayUrl,
     masterKey: config.modelCatalog.masterKey
