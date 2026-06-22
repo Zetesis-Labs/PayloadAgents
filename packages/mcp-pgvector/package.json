@@ -1,0 +1,42 @@
+{
+  "name": "@zetesis/mcp-pgvector",
+  "version": "0.0.0",
+  "description": "Thin MCP server over a pgvector-backed index (@zetesis/payload-pgvector). Built for A/B comparison against mcp-typesense — deliberately minimal, no shared search contract.",
+  "license": "MIT",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./dist/index.d.mts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "clean": "rimraf -g {dist,*.tsbuildinfo}",
+    "start": "node dist/standalone.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@zetesis/payload-pgvector": "workspace:*",
+    "pg": "^8.13.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "@types/pg": "^8.11.10",
+    "rimraf": "3.0.2",
+    "tsdown": "^0.16.5",
+    "typescript": "5.7.3"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": "^9 || ^10"
+  }
+}

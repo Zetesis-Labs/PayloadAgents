@@ -56,6 +56,12 @@
       "changelog-path": "CHANGELOG.md",
       "release-type": "node"
     },
+    "packages/payload-pgvector": {
+      "package-name": "@zetesis/payload-pgvector",
+      "component": "payload-pgvector",
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "node"
+    },
     "packages/payload-taxonomies": {
       "package-name": "@zetesis/payload-taxonomies",
       "component": "payload-taxonomies",
