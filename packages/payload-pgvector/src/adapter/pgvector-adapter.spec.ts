@@ -116,9 +116,7 @@ describe('PgvectorAdapter', () => {
       vi.mocked(logger.warn).mockClear()
       pool.rows = [{ dim: 1024 }] // pg_attribute reports the existing column as vector(1024)
       await adapter.ensureCollection(schema) // schema declares vector(3)
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('vector(1024) but config wants vector(3)')
-      )
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('vector(1024) but config wants vector(3)'))
     })
 
     it('does not warn when the dimension matches (no existing column)', async () => {

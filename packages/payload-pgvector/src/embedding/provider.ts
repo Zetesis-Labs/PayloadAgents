@@ -97,9 +97,7 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
     // position, so a short/over-long response would mispair text↔vector (or push
     // an `undefined` vector downstream). Require one embedding per input.
     if (!Array.isArray(json.data) || json.data.length !== texts.length) {
-      throw new Error(
-        `Embedding response count mismatch: requested ${texts.length}, got ${json.data?.length ?? 0}`
-      )
+      throw new Error(`Embedding response count mismatch: requested ${texts.length}, got ${json.data?.length ?? 0}`)
     }
     // Preserve request order — some gateways return out-of-order by `index`.
     return [...json.data].sort((a, b) => a.index - b.index).map(item => item.embedding)
