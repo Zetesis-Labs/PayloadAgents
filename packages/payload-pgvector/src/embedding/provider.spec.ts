@@ -67,4 +67,18 @@ describe('OpenAICompatibleEmbeddingProvider', () => {
 
     await expect(provider.embed(['a', 'b'])).resolves.toEqual([[1], [2]])
   })
+
+  it('throws on a misaligned batch (fewer embeddings than inputs)', async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: [{ embedding: [0.1], index: 0 }] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    )
+    const provider = new OpenAICompatibleEmbeddingProvider({ ...base, fetchImpl })
+
+    // Two inputs, one vector back → must fail loudly, not mispair text↔vector.
+    await expect(provider.embed(['a', 'b'])).rejects.toThrow(/count mismatch/)
+  })
 })

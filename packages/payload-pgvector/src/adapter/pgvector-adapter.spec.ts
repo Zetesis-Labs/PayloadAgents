@@ -147,6 +147,27 @@ describe('PgvectorAdapter', () => {
       expect(texts[del]).toContain('DELETE FROM "pgvector"."chunks"')
       expect(texts[del]).toContain('"parent_doc_id" =')
     })
+
+    it('rolls back when an insert fails (old chunks are not lost)', async () => {
+      const failPool = new FakePool()
+      failPool.query = async (text: string, params?: unknown[]) => {
+        failPool.queries.push({ text, params })
+        if (text.includes('INSERT INTO')) throw new Error('insert boom')
+        return { rows: failPool.rows, rowCount: failPool.rows.length }
+      }
+      const a = new PgvectorAdapter(failPool as never, { schema: 'pgvector' })
+      a.registerCollection(schema)
+
+      await expect(
+        a.replaceDocumentsByFilter('chunks', { parent_doc_id: 'd1' }, [
+          { id: '1', parent_doc_id: 'd1', chunk_text: 'a', embedding: [0.1, 0.2, 0.3] }
+        ])
+      ).rejects.toThrow('insert boom')
+
+      const texts = failPool.queries.map(q => q.text)
+      expect(texts.some(t => t.includes('ROLLBACK'))).toBe(true)
+      expect(texts.some(t => t.includes('COMMIT'))).toBe(false)
+    })
   })
 
   describe('upsert', () => {
