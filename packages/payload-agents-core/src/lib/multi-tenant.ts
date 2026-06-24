@@ -45,6 +45,11 @@ export interface MultiTenantSessionStrategy {
   buildSessionId: BuildSessionId
   validateSessionOwnership: ValidateSessionOwnership
   /**
+   * Resolves the active tenant id for the current request. Passed through to
+   * `agentPlugin` so the session-list endpoint can scope results to the tenant.
+   */
+  extractTenantId: (user: TypedUser, req: PayloadRequest) => string | number | null | undefined
+  /**
    * Forwards the current tenant id as `X-Tenant-Id` to the agent-runtime
    * so it can persist it into the Agno session's `metadata` JSONB.
    * Pass this into `agentPlugin({ getRuntimeHeaders })`.
@@ -162,5 +167,5 @@ export function multiTenantSessionStrategy(options: MultiTenantSessionStrategyOp
     return { 'X-Tenant-Id': String(tenantId) }
   }
 
-  return { buildSessionId, validateSessionOwnership, getRuntimeHeaders }
+  return { buildSessionId, validateSessionOwnership, extractTenantId: options.extractTenantId, getRuntimeHeaders }
 }

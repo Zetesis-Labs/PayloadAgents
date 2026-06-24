@@ -100,6 +100,15 @@ export interface AgentPluginConfig {
   }) => Record<string, string> | Promise<Record<string, string>>
 
   /**
+   * Resolve the active tenant id for the current request. Used to scope the
+   * session list (`GET {basePath}/sessions`) to the current tenant so a
+   * multi-tenant user doesn't see sessions from their other tenants. When
+   * omitted the list is not tenant-filtered (single-tenant deployments).
+   * Provided automatically by `multiTenantSessionStrategy`.
+   */
+  extractTenantId?: (user: TypedUser, req: PayloadRequest) => string | number | null | undefined
+
+  /**
    * Override the Payload collection slug. Default: `'agents'`.
    */
   collectionSlug?: string
@@ -253,6 +262,7 @@ export interface ResolvedPluginConfig {
   getDailyLimit: (payload: Payload, userId: string | number) => Promise<number>
   buildSessionId: BuildSessionId
   validateSessionOwnership: ValidateSessionOwnership
+  extractTenantId: ((user: TypedUser, req: PayloadRequest) => string | number | null | undefined) | undefined
   getRuntimeHeaders:
     | ((ctx: {
         user: TypedUser
