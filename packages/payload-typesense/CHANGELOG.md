@@ -1,5 +1,14 @@
 # @zetesis/payload-typesense
 
+## [0.4.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-typesense-v0.4.1...payload-typesense-v0.4.2) (2026-06-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @zetesis/payload-indexer bumped to 0.4.2
+
 ## [0.4.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-typesense-v0.4.0...payload-typesense-v0.4.1) (2026-05-17)
 
 

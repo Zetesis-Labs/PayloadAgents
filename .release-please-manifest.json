@@ -5,12 +5,13 @@
   "packages/payload-agents-core": "0.6.5",
   "packages/payload-agents-metrics": "1.3.3",
   "packages/payload-documents": "0.5.4",
-  "packages/payload-indexer": "0.4.1",
+  "packages/payload-indexer": "0.4.2",
   "packages/payload-lexical-blocks-builder": "0.2.2",
   "packages/payload-taxonomies": "0.2.2",
-  "packages/payload-typesense": "0.4.1",
+  "packages/payload-typesense": "0.4.2",
   "backend/agno-agent-builder": "0.1.14",
   "backend/agno-microsoft-teams": "0.1.2",
   "backend/nexus-queue": "0.1.4",
-  "backend/payload-documents-worker-builder": "0.1.5"
+  "backend/payload-documents-worker-builder": "0.1.5",
+  "packages/payload-pgvector": "0.1.0"
 }
