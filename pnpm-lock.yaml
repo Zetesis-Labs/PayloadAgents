@@ -29,6 +29,9 @@ importers:
 
   apps/mcp:
     dependencies:
+      '@zetesis/mcp-pgvector':
+        specifier: workspace:*
+        version: link:../../packages/mcp-pgvector
       '@zetesis/mcp-typesense':
         specifier: workspace:*
         version: link:../../packages/mcp-typesense
@@ -75,6 +78,9 @@ importers:
       '@zetesis/payload-lexical-blocks-builder':
         specifier: workspace:*
         version: link:../../packages/payload-lexical-blocks-builder
+      '@zetesis/payload-pgvector':
+        specifier: workspace:*
+        version: link:../../packages/payload-pgvector
       '@zetesis/payload-taxonomies':
         specifier: workspace:*
         version: link:../../packages/payload-taxonomies
