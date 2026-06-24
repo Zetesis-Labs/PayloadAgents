@@ -1,5 +1,12 @@
 # @zetesis/payload-agents-core
 
+## [0.6.6](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.5...payload-agents-core-v0.6.6) (2026-06-24)
+
+
+### Bug Fixes
+
+* tenant-isolate agno chat sessions (stamp tenant at creation, filter list, deny null) ([#120](https://github.com/Zetesis-Labs/PayloadAgents/issues/120)) ([488a1cf](https://github.com/Zetesis-Labs/PayloadAgents/commit/488a1cf9f670ea64f4e7ac5fb51b66b8ae14e604))
+
 ## [0.6.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.4...payload-agents-core-v0.6.5) (2026-06-20)
 
 

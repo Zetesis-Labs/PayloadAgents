@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.15](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.14...agno-agent-builder-v0.1.15) (2026-06-24)
+
+
+### Bug Fixes
+
+* tenant-isolate agno chat sessions (stamp tenant at creation, filter list, deny null) ([#120](https://github.com/Zetesis-Labs/PayloadAgents/issues/120)) ([488a1cf](https://github.com/Zetesis-Labs/PayloadAgents/commit/488a1cf9f670ea64f4e7ac5fb51b66b8ae14e604))
+
 ## [0.1.14](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.13...agno-agent-builder-v0.1.14) (2026-06-21)
 
 
