@@ -60,8 +60,7 @@
       "package-name": "@zetesis/payload-pgvector",
       "component": "payload-pgvector",
       "changelog-path": "CHANGELOG.md",
-      "release-type": "node",
-      "release-as": "0.1.0"
+      "release-type": "node"
     },
     "packages/payload-taxonomies": {
       "package-name": "@zetesis/payload-taxonomies",
