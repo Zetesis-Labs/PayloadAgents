@@ -78,7 +78,6 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
 
     tenant = doc.get("tenant")
     tenant_slug = tenant.get("slug") if isinstance(tenant, dict) else None
-    tenant_id = tenant.get("id") if isinstance(tenant, dict) else None
 
     # The agent can carry several retrieval profiles (`retrievalProfiles`, the
     # multi-lente catalog). Fall back to a legacy single `defaultRetrievalProfile`
@@ -149,7 +148,6 @@ def payload_doc_to_agent_config(doc: dict[str, Any]) -> AgentConfig:
         if isinstance(doc.get("systemPrompt"), str)
         else None,
         tenant_slug=tenant_slug,
-        tenant_id=tenant_id,
         taxonomy_slugs=taxonomy_slugs,
         folder_slugs=folder_slugs,
         search_collections=search_collections,

@@ -113,15 +113,14 @@ describe('multiTenantSessionStrategy — validateSessionOwnership', () => {
     expect(warn).toHaveBeenCalledOnce()
   })
 
-  it('denies and returns false when stored tenant_id is null, even if user_id matches', async () => {
+  it('back-fills tenant_id and returns true when stored tenant_id is null but user_id matches', async () => {
     const strategy = multiTenantSessionStrategy({ extractTenantId: () => 1 })
     const { payload, execute, warn } = makePayload([{ user_id: '42', tenant_id: null }])
     const ok = await strategy.validateSessionOwnership('s', { user: alice, payload, req: makeReq() })
-    expect(ok).toBe(false)
-    expect(warn).toHaveBeenCalledOnce()
-    // Only the SELECT runs — no first-touch back-fill UPDATE (a tenant-less session
-    // is an anomaly now that the runtime stamps tenant_id at creation).
-    expect(execute).toHaveBeenCalledOnce()
+    expect(ok).toBe(true)
+    expect(warn).not.toHaveBeenCalled()
+    // Two queries: SELECT to read the row, UPDATE to back-fill metadata.tenant_id.
+    expect(execute).toHaveBeenCalledTimes(2)
   })
 
   it('does not back-fill and returns false when stored tenant_id is null but user_id differs', async () => {

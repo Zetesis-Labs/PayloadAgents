@@ -57,10 +57,6 @@ class AgentConfig(BaseModel):
     litellm_virtual_key: SecretStr | None = None
     instructions_extra: str | None = None
     tenant_slug: str | None = None
-    # Numeric tenant id (Payload relationship id). Stamped into the Agno session
-    # `metadata.tenant_id` at creation so session ownership is tenant-scoped from
-    # the start instead of relying on a lazy first-touch back-fill.
-    tenant_id: int | str | None = None
     taxonomy_slugs: list[str] = []
     folder_slugs: list[str] = []
     search_collections: list[str] = []
