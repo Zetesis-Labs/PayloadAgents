@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-pgvector",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A Payload CMS search adapter backed by Postgres + pgvector. Sibling of @zetesis/payload-typesense: implements the payload-indexer IndexerAdapter contract over pgvector, with app-side embeddings via any OpenAI-compatible endpoint (e.g. a LiteLLM gateway).",
   "license": "MIT",
   "sideEffects": false,
@@ -14,7 +14,9 @@
   },
   "main": "./src/index.ts",
   "types": "./dist/index.d.mts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",

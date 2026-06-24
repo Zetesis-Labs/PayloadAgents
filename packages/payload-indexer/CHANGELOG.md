@@ -1,5 +1,12 @@
 # @zetesis/payload-indexer
 
+## [0.4.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.1...payload-indexer-v0.4.2) (2026-06-24)
+
+
+### Features
+
+* pgvector adapter + thin MCP server (A/B vs Typesense) ([#116](https://github.com/Zetesis-Labs/PayloadAgents/issues/116)) ([e66d963](https://github.com/Zetesis-Labs/PayloadAgents/commit/e66d9630ee2bb6d44951dd27092b83ecad46e031))
+
 ## [0.4.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.0...payload-indexer-v0.4.1) (2026-05-17)
 
 
