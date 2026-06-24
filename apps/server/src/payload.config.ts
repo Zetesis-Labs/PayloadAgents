@@ -14,6 +14,7 @@ import { Posts } from './collections/Posts'
 import { Taxonomies } from './collections/Taxonomies'
 import { Users } from './collections/Users'
 import { defaultLocale, locales } from './i18n/locales'
+import { pgvectorPlugin } from './plugins/pgvector'
 import { typesensePlugin } from './plugins/typesense'
 
 const filename = fileURLToPath(import.meta.url)
@@ -55,8 +56,11 @@ export default buildConfig({
   },
   plugins: (() => {
     const metrics = metricsPlugin({ multiTenant: false, basePath: '/metrics' })
+    // Single active search backend, selected by the same env var apps/mcp reads,
+    // so the write side (this indexer) and the read side (the MCP) never desync.
+    const searchPlugin = process.env.SEARCH_BACKEND === 'pgvector' ? pgvectorPlugin : typesensePlugin
     return [
-      typesensePlugin,
+      searchPlugin,
       agentPlugin({
         runtimeUrl: process.env.AGENT_RUNTIME_URL || 'http://localhost:8000',
         runtimeSecret: process.env.INTERNAL_SECRET,

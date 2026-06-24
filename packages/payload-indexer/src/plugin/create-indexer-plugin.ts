@@ -65,6 +65,16 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping>(
   const { adapter, features, collections } = config
   const logger = new Logger({ enabled: true, prefix: '[payload-indexer]' })
 
+  // Only one indexer backend is active at a time (selected upstream), so the
+  // field name and endpoint path stay stable (`_syncStatus`, `/sync-status`) —
+  // there's no parallel indexer to collide with. The label still reflects the
+  // active adapter so the admin shows e.g. "Pgvector Sync" vs "Typesense Sync".
+  const namespacing: SyncStatusNamespacing = {
+    fieldName: '_syncStatus',
+    label: `${capitalize(adapter.name)} Sync`,
+    endpointBasePath: '/sync-status'
+  }
+
   const plugin = (payloadConfig: Config): Config => {
     if (payloadConfig.collections && features.sync?.enabled) {
       payloadConfig.collections = applySyncHooks(payloadConfig.collections, config, adapter)
@@ -75,7 +85,11 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping>(
     }
 
     if (features.sync?.enabled) {
-      const syncStatusEndpoints = createSyncStatusEndpoints({ adapter, collections })
+      const syncStatusEndpoints = createSyncStatusEndpoints({
+        adapter,
+        collections,
+        basePath: namespacing.endpointBasePath
+      })
       payloadConfig.endpoints = [...(payloadConfig.endpoints || []), ...syncStatusEndpoints]
 
       if (payloadConfig.collections) {
@@ -83,7 +97,8 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping>(
           payloadConfig.collections,
           collections,
           adapter,
-          features.sync
+          features.sync,
+          namespacing
         )
       }
 
@@ -95,6 +110,16 @@ export function createIndexerPlugin<TFieldMapping extends FieldMapping>(
 
   return { plugin, adapter }
 }
+
+/** Per-instance naming for the sync-status field and endpoints. */
+interface SyncStatusNamespacing {
+  fieldName: string
+  label: string
+  endpointBasePath: string
+}
+
+const capitalize = (value: string): string =>
+  value.length === 0 ? value : `${value[0].toUpperCase()}${value.slice(1)}`
 
 /**
  * Creates an afterRead hook that computes sync status by comparing content hashes with the index
@@ -121,13 +146,15 @@ function createSyncStatusAfterRead(adapter: IndexerAdapter, collectionSlug: stri
 }
 
 /**
- * Injects the _syncStatus virtual field into collections that have indexer tables configured
+ * Injects the adapter-namespaced sync-status virtual field (`_syncStatus_<adapter>`)
+ * into collections that have indexer tables configured.
  */
 function injectSyncStatusField(
   payloadCollections: CollectionConfig[],
   indexedCollections: Record<string, TableConfig[]>,
   adapter: IndexerAdapter,
-  syncConfig?: SyncFeatureConfig
+  syncConfig: SyncFeatureConfig | undefined,
+  namespacing: SyncStatusNamespacing
 ): CollectionConfig[] {
   return payloadCollections.map(collection => {
     const tableConfigs = indexedCollections[collection.slug]
@@ -148,8 +175,8 @@ function injectSyncStatusField(
       fields: [
         ...(collection.fields || []),
         {
-          name: '_syncStatus',
-          label: 'Typesense Sync',
+          name: namespacing.fieldName,
+          label: namespacing.label,
           type: 'select' as const,
           virtual: true,
           options: [
@@ -164,7 +191,13 @@ function injectSyncStatusField(
           admin: {
             position: 'sidebar',
             components: {
-              Field: '@zetesis/payload-indexer/client#SyncStatusField',
+              Field: {
+                path: '@zetesis/payload-indexer/client#SyncStatusField',
+                clientProps: {
+                  basePath: `/api${namespacing.endpointBasePath}`,
+                  instanceLabel: namespacing.label
+                }
+              },
               Cell: '@zetesis/payload-indexer/client#SyncStatusCell'
             }
           }

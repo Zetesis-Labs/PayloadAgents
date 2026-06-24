@@ -12,6 +12,12 @@ import { checkBatchSyncStatus, checkSyncStatus } from './sync-status-service'
 interface SyncStatusEndpointConfig {
   adapter: IndexerAdapter
   collections: Record<string, TableConfig[]>
+  /**
+   * Path prefix for the registered endpoints (e.g. `/sync-status-typesense`).
+   * Namespaced per adapter so multiple indexer plugins don't collide on the
+   * same REST path. Must match the `basePath` the client field component uses.
+   */
+  basePath: string
 }
 
 /**
@@ -58,12 +64,12 @@ const findDocumentWithAccessCheck = async (
  * - ids (comma-separated doc IDs)
  */
 export const createSyncStatusEndpoints = (config: SyncStatusEndpointConfig): Endpoint[] => {
-  const { adapter, collections } = config
+  const { adapter, collections, basePath } = config
 
   return [
     // Single document sync status
     {
-      path: '/sync-status/:collection/:id',
+      path: `${basePath}/:collection/:id`,
       method: 'get',
       handler: async (req: PayloadRequest) => {
         if (!req.user) {
@@ -100,7 +106,7 @@ export const createSyncStatusEndpoints = (config: SyncStatusEndpointConfig): End
     },
     // Batch sync status for collection
     {
-      path: '/sync-status/:collection',
+      path: `${basePath}/:collection`,
       method: 'get',
       handler: async (req: PayloadRequest) => {
         if (!req.user) {
@@ -172,7 +178,7 @@ export const createSyncStatusEndpoints = (config: SyncStatusEndpointConfig): End
     },
     // Trigger sync for a single document
     {
-      path: '/sync-status/:collection/:id/sync',
+      path: `${basePath}/:collection/:id/sync`,
       method: 'post',
       handler: async (req: PayloadRequest) => {
         if (!req.user) {
