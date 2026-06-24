@@ -6,6 +6,16 @@ import { useCallback, useState } from 'react'
 
 type SyncStatus = 'synced' | 'outdated' | 'not-indexed' | 'error'
 
+/**
+ * Injected via `admin.components.Field.clientProps` by the indexer plugin.
+ * Both are namespaced per adapter so Typesense and pgvector render distinct
+ * headings and call distinct REST endpoints.
+ */
+type SyncStatusFieldClientProps = {
+  basePath?: string
+  instanceLabel?: string
+}
+
 const pillStyle: Record<SyncStatus, 'success' | 'error' | 'warning' | undefined> = {
   synced: 'success',
   outdated: 'warning',
@@ -45,7 +55,10 @@ const descStyle: React.CSSProperties = {
   opacity: 0.7
 }
 
-export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
+export const SyncStatusField: SelectFieldClientComponent = props => {
+  const { path } = props
+  const { basePath = '/api/sync-status', instanceLabel = 'Search Sync' } =
+    props as unknown as SyncStatusFieldClientProps
   const { value, setValue } = useField<string>({ path })
   const { id, collectionSlug } = useDocumentInfo()
   const [syncing, setSyncing] = useState(false)
@@ -56,7 +69,7 @@ export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
 
     setSyncing(true)
     try {
-      const res = await fetch(`/api/sync-status/${collectionSlug}/${id}/sync`, { method: 'POST' })
+      const res = await fetch(`${basePath}/${collectionSlug}/${id}/sync`, { method: 'POST' })
       const data = (await res.json()) as { success?: boolean; status?: string; error?: string }
 
       if (data.success) {
@@ -72,12 +85,12 @@ export const SyncStatusField: SelectFieldClientComponent = ({ path }) => {
     } finally {
       setSyncing(false)
     }
-  }, [id, collectionSlug, syncing, setValue])
+  }, [id, collectionSlug, syncing, setValue, basePath])
 
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <strong>Typesense Sync</strong>
+        <strong>{instanceLabel}</strong>
         <Pill pillStyle={pillStyle[status]} size="small">
           {labels[status]}
         </Pill>
