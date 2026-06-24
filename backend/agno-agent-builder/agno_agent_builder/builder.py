@@ -34,9 +34,17 @@ def build_agent(
 
     proxy_key = resolve_litellm_proxy_key(cfg)
 
+    # Stamp the agent's tenant into every session it creates. Agno persists the
+    # agent's static `metadata` onto the session row at creation, so ownership is
+    # tenant-scoped from the start (see multiTenantSessionStrategy in
+    # payload-agents-core) instead of relying on a lazy first-touch back-fill.
+    # Stored as a string to match the `metadata->>'tenant_id'` text comparison.
+    session_metadata = {"tenant_id": str(cfg.tenant_id)} if cfg.tenant_id is not None else None
+
     return Agent(
         name=cfg.name,
         id=cfg.slug,
+        metadata=session_metadata,
         model=build_model(
             llm_model,
             cfg.api_key.get_secret_value(),

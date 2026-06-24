@@ -64,6 +64,7 @@ function resolveConfig(userConfig: AgentPluginConfig): ResolvedPluginConfig {
     getDailyLimit: userConfig.getDailyLimit,
     buildSessionId: userConfig.buildSessionId ?? defaultBuildSessionId,
     validateSessionOwnership: userConfig.validateSessionOwnership ?? defaultValidateSessionOwnership,
+    extractTenantId: userConfig.extractTenantId,
     getRuntimeHeaders: userConfig.getRuntimeHeaders,
     collectionSlug: userConfig.collectionSlug ?? 'agents',
     basePath: userConfig.basePath ?? '/agents',

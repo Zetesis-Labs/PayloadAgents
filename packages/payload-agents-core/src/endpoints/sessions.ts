@@ -4,6 +4,7 @@
  * Proxies to Agno `GET /sessions?type=agent&user_id=…`.
  */
 
+import { sql } from 'drizzle-orm'
 import type { PayloadHandler } from 'payload'
 import { runtimeFetch } from '../lib/runtime-client'
 import { getUserId } from '../lib/user'
@@ -53,7 +54,29 @@ export function createSessionsListHandler(config: ResolvedPluginConfig): Payload
         }>
       }
 
-      const sessions = (body.data || []).map(s => ({
+      let rows = body.data || []
+
+      // Tenant-scope the list: a multi-tenant user must not see sessions that
+      // belong to their *other* tenants. The runtime stamps `metadata.tenant_id`
+      // on each session at creation, so we post-filter this user's sessions to
+      // those matching the active tenant. Sessions without a tenant are excluded.
+      // (No tenant resolver configured = single-tenant deployment = no filter.)
+      const tenantId = config.extractTenantId?.(user, req)
+      if (tenantId !== undefined && tenantId !== null && tenantId !== '' && rows.length > 0) {
+        const drizzle = (
+          req.payload.db as unknown as {
+            drizzle: { execute: (q: unknown) => Promise<{ rows: Record<string, unknown>[] }> }
+          }
+        ).drizzle
+        const { rows: owned } = await drizzle.execute(sql`
+          SELECT session_id FROM agno.agno_sessions
+          WHERE user_id = ${String(userId)} AND metadata->>'tenant_id' = ${String(tenantId)}
+        `)
+        const allowed = new Set(owned.map(r => r.session_id as string))
+        rows = rows.filter(s => allowed.has(s.session_id))
+      }
+
+      const sessions = rows.map(s => ({
         conversation_id: s.session_id,
         title: s.session_name || undefined,
         last_activity: s.updated_at || s.created_at || '',

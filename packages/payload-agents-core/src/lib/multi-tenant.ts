@@ -7,13 +7,14 @@
  *   `user_id` (native column) and `metadata->>'tenant_id'` (back-filled by
  *   this strategy on the first validate; see below).
  *
- * Tenant back-fill: Agno (>=2.5) only writes the agent's static `metadata`
- * to the session row, ignoring the per-run `metadata=` kwarg the runtime
- * forwards from `X-Tenant-Id`. To keep `metadata.tenant_id` accurate without
- * patching Agno, `validateSessionOwnership` updates the column the first
- * time it sees a row with `metadata.tenant_id IS NULL` and a matching
- * `user_id`. An expression index on `(metadata->>'tenant_id')` is
- * recommended for query performance.
+ * Tenant stamping: the agent-runtime sets the agent's static `metadata` to
+ * `{ tenant_id }`, and Agno persists that onto every session row it creates,
+ * so `metadata.tenant_id` is populated from creation. `validateSessionOwnership`
+ * fails closed: it rejects a session whose stored tenant doesn't match the
+ * active tenant, and rejects a tenant-less session outright (no first-touch
+ * back-fill — that would let a session be pulled into whichever tenant reaches
+ * it first). An expression index on `(metadata->>'tenant_id')` is recommended
+ * for query performance.
  */
 
 import { sql } from 'drizzle-orm'
@@ -44,6 +45,11 @@ export interface MultiTenantSessionStrategyOptions {
 export interface MultiTenantSessionStrategy {
   buildSessionId: BuildSessionId
   validateSessionOwnership: ValidateSessionOwnership
+  /**
+   * Resolves the active tenant id for the current request. Passed through to
+   * `agentPlugin` so the session-list endpoint can scope results to the tenant.
+   */
+  extractTenantId: (user: TypedUser, req: PayloadRequest) => string | number | null | undefined
   /**
    * Forwards the current tenant id as `X-Tenant-Id` to the agent-runtime
    * so it can persist it into the Agno session's `metadata` JSONB.
@@ -121,21 +127,15 @@ export function multiTenantSessionStrategy(options: MultiTenantSessionStrategyOp
     }
 
     if (storedTenantId === null) {
-      // Two pitfalls in this UPDATE:
-      //   1. pg can't infer the type of jsonb_build_object's anyelement arg, so
-      //      the parameter needs an explicit ::text cast (else 42P18).
-      //   2. Postgres's `||` on non-object operands wraps both into an array
-      //      (e.g. 'null'::jsonb || {} → [null, {}]). COALESCE only catches SQL
-      //      NULL, not JSONB null/scalars/arrays — so we normalize via
-      //      jsonb_typeof before merging.
-      await db.execute(sql`
-        UPDATE agno.agno_sessions
-        SET metadata = (
-          CASE WHEN jsonb_typeof(metadata) = 'object' THEN metadata ELSE '{}'::jsonb END
-        ) || jsonb_build_object('tenant_id', ${String(tenantId)}::text)
-        WHERE session_id = ${sessionId}
-      `)
-      return true
+      // Fail closed. The runtime stamps `metadata.tenant_id` at session creation
+      // (Agent static metadata in agno-agent-builder), so a tenant-less session is
+      // an anomaly — not an unclaimed row to back-fill. Claiming it for whoever
+      // validates first would let a session be pulled into the wrong tenant.
+      payload.logger.warn(
+        { sessionId, expectedTenantId: String(tenantId) },
+        '[multi-tenant] session ownership denied: session has no tenant_id'
+      )
+      return false
     }
 
     if (storedTenantId !== String(tenantId)) {
@@ -162,5 +162,5 @@ export function multiTenantSessionStrategy(options: MultiTenantSessionStrategyOp
     return { 'X-Tenant-Id': String(tenantId) }
   }
 
-  return { buildSessionId, validateSessionOwnership, getRuntimeHeaders }
+  return { buildSessionId, validateSessionOwnership, extractTenantId: options.extractTenantId, getRuntimeHeaders }
 }
