@@ -131,7 +131,7 @@ El consumidor que instala el paquete recibe estos tipos genericos. Su propia app
 | payload-indexer | `["dist"]` | Solo artefactos compilados |
 | payload-typesense | `["dist"]` | Solo artefactos compilados |
 | payload-betterauth-stripe | `["dist", "README.md"]` | + documentacion |
-| chat-agent | `["dist", "src", "README.md"]` | + source (para CSS/Tailwind) |
+| agent-ui | `["dist", "src", "README.md"]` | + source (para CSS/Tailwind) |
 
 **Regla general**: Solo incluir `dist/`. El source (`src/`) solo se incluye si el consumidor lo necesita (e.g. CSS con Tailwind que necesita escanear source para purge).
 
@@ -566,7 +566,7 @@ grep -r "from '\.\." dist/*.d.mts  # No debe haber imports relativos que salgan 
 | payload-betterauth-stripe | `.`, `./server`, `./client`, `./rsc` | 4 entry points |
 | payload-lexical-blocks-builder | `.`, `./builder`, `./renderer` | 3 entry points |
 | payload-taxonomies | `.`, `./constants` | 2 entry points |
-| chat-agent | `.`, `./styles.css` | 1 TS + 1 CSS |
+| agent-ui | `.`, `./styles.css` | 1 TS + 1 CSS |
 
 ---
 

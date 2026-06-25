@@ -148,14 +148,14 @@ const user = (await payload.findByID({
 ### Grafo de dependencias
 
 ```
-chat-agent                      (leaf - sin deps Payload)
+agent-ui                      (leaf - sin deps Payload)
 payload-indexer                 (leaf)
 payload-taxonomies              (leaf)
 payload-lexical-blocks-builder  (leaf)
 payload-betterauth-stripe       (leaf)
 payload-typesense               -> payload-indexer
 
-apps/server -> chat-agent, payload-betterauth-stripe,
+apps/server -> agent-ui, payload-betterauth-stripe,
                payload-indexer, payload-taxonomies,
                payload-typesense
 ```
