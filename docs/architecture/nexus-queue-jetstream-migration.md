@@ -1,8 +1,9 @@
 # Nexus-Queue: migración del transporte a NATS JetStream + visión contract-first
 
 > **Estado**: propuesta consolidada (2026-07-03), pendiente de ratificar.
-> **Fuentes**: informes Nexus-Queue 1/3, 2/3, 3/3 y anexo "Si migrásemos de Redis" + discusión posterior.
-> **Decisión central**: reemplazar Redis Streams por NATS JetStream como transporte de cola **antes** de construir la capa de plataforma (chart, KEDA, CLI), y evolucionar el estándar hacia un modelo contract-first ("OpenAPI de colas").
+> **Evaluación de realismo ejecutada** (mismo día): banco reproducible en `backend/nexus-queue/spike-jetstream/` (veredicto completo en su `EVALUATION.md`). Todas las claims a nivel de broker verificadas en vivo (E2–E7 PASS, incluida la central de scale-to-zero); un supuesto de implementación resultó falso y queda enmendado aquí (D7 resuelta, D14 nueva, M1 ejecutada, M3 redefinida).
+> **Fuentes**: informes Nexus-Queue 1/3, 2/3, 3/3 y anexo "Si migrásemos de Redis" + discusión posterior + spike.
+> **Decisión central**: reemplazar Redis Streams por NATS JetStream como transporte de cola **antes** de construir la capa de plataforma (chart, KEDA, CLI), y evolucionar el estándar hacia un modelo contract-first ("OpenAPI de colas") con un **runtime v2 sin taskiq** (D14).
 
 ---
 
@@ -12,7 +13,8 @@
 2. **La secuencia del informe 3/3 se invierte**: la migración va **antes** de F4–F6 (chart, KEDA, CLI). Construir la plataforma sobre Redis y migrar después es pagar dos veces: la alineación `XAUTOCLAIM`/idle-timeout/cooldown, el tooling alrededor del `DelayedRetryPoller` y el trigger de KEDA para Redis Streams son coste hundido garantizado.
 3. **La suite de conformidad mínima (F7-mínimo) se adelanta a primera posición**: es a la vez el guardián del estándar mientras dura la obra y el **test de aceptación del cutover**. Un estándar sin verificación automática se erosiona con el primer deadline — y una migración sin test de aceptación es una afirmación, no un estado verificado.
 4. **El estándar evoluciona a contract-first**: un contrato YAML por cola (estilo AsyncAPI) del que se generan tipos TS, modelos pydantic, CRDs de NACK, ScaledObjects de KEDA, tests de conformidad y documentación. El contrato *es* el sistema; runtime e infra son proyecciones.
-5. **El wire contract v1 sobrevive intacto** — esa es la validación de que el estándar hizo bien su trabajo: los labels `nq_*` viajan en el mensaje, no en el transporte; `nq:{p}:{q}` mapea mecánicamente a `nq.{p}.{q}`; el swap vive detrás de `create_broker()`; la DLQ es middleware y se porta tal cual.
+5. **El wire contract v1 sobrevive intacto** (verificado en vivo, spike E1/E5) — los labels `nq_*` viajan en el mensaje, no en el transporte; `nq:{p}:{q}` mapea mecánicamente a `nq.{p}.{q}`. El formato le sobrevive a la librería que lo inspiró: desde v1.1 su forma la define **nuestra spec**, no taskiq.
+6. **taskiq sale del runtime (D14)**: el spike demostró que su modelo de acks no puede expresar la semántica JetStream (NAK/term/in_progress) — el "swap contenido detrás de `create_broker()`" era falso en el lado worker. El contrato asume el rol de definición de tasks; un receiver propio sobre `nats-py` (semánticas ya validadas en vivo) asume el runtime; la DLQ pasa de middleware a listener de advisories + clasificación en el receiver.
 
 ---
 
@@ -146,13 +148,14 @@ Se mantiene la decisión del informe 2/3: CloudEvents describe el sobre de *un* 
 | D4 | `nq_idem` sigue siendo el muro de carga; `Nats-Msg-Id` es conveniencia publish-side | Ventana de 2 min, no cubre redeliveries. Ver §2.2. |
 | D5 | Bloque scaler del chart como **sección swappable de values** (adapter por transporte), aunque nazca NATS | Si el trigger se hornea en el template principal, la promesa transport-agnostic se rompe en la pieza que más cuesta migrar. |
 | D6 | **Sin accounts/leaf nodes el día uno**; single-node + file storage, sin RAFT/HA | La federación es dividendo futuro con trigger propio (inspector cross-proyecto como uso diario). HA de 3 nodos solo cuando haya SLA que lo pida. No regalar complejidad. |
-| D7 | Spike de `taskiq-nats` timeboxed **con gate de decisión explícito** antes de comprometerse | Es el riesgo nº 1: menos rodado que `taskiq_redis`. Fallback: broker fino propio sobre `nats-py` detrás de `create_broker()`. |
+| D7 | ~~Spike de `taskiq-nats` timeboxed con gate de decisión~~ **RESUELTA (spike 2026-07-03)**: `taskiq-nats` descartado | Semi-abandonado (1 release de tooling en 19 meses, PRs de comunidad ignorados) y, peor, el blocker es **taskiq core**: `AckableMessage` solo modela `ack` y el receiver ackea incluso tasks fallidas (verificado en fuente y en vivo, E1). Superada por D14. |
 | D8 | El spike incluye **prototipo contrato→codegen** de una cola real | Forma más barata de saber si la abstracción contract-first aguanta antes de comprometerse con ella. |
 | D9 | Formalizar en la spec el patrón productor: **job en `CREATED` antes de enqueue + sweep de huérfanos** | Es un outbox de facto (endurecido en #237); cubre el dual-write con independencia del transporte. Outbox real solo si un flujo lo exige. |
 | D10 | Cola piloto: **batch tolerante a latencia** (transcripción o reindexado) | Riesgo bajo, y es donde el scale-to-zero paga primero. |
 | D11 | Regla del dos intacta: **el SDK no crece** durante la migración | Los cuatro puertos (`JobState`, `BlobStore`, `Index`, `StatusEvent`) bastan; ningún puerto nuevo sin segundo consumidor real. |
 | D12 | Claim-check vía `BlobStore` pasa de recomendación a **obligación** para payloads grandes | NATS limita el payload a 1 MB por defecto. El publisher valida y rechaza con error tipado. |
-| D13 | El contrato adopta la **descomposición de AsyncAPI** (channels/operations/messages/servers/bindings): `policy` semántica transport-agnostic, transporte solo en `bindings`, servers/credenciales fuera (GitOps). El formato literal (AsyncAPI 3.0 con `x-nq-*` vs YAML propio exportable) se decide en M1 | La separación semántica/binding hace estructural la promesa de D5: un swap de transporte reescribe solo `bindings`. `operations` alimenta el manifest del worker y el tooling de flota. Ver §3.3. |
+| D13 | El contrato adopta la **descomposición de AsyncAPI** (channels/operations/messages/servers/bindings): `policy` semántica transport-agnostic, transporte solo en `bindings`, servers/credenciales fuera (GitOps). El formato literal (AsyncAPI 3.0 con `x-nq-*` vs YAML propio exportable) se decide en M1 | La separación semántica/binding hace estructural la promesa de D5: un swap de transporte reescribe solo `bindings`. `operations` alimenta el manifest del worker y el tooling de flota. Ver §3.3. Prototipo validado en el spike (E7: 5 proyecciones coherentes de un contrato real). |
+| D14 | **Runtime v2 sin taskiq.** El contrato asume el rol de definición de tasks (`channel`/`operations`); un **receiver propio sobre `nats-py`** asume el runtime (fetch loop con semáforo, dispatch por `HandlerSpec`, `NexusRetryableError`→NAK, `NexusPermanentError`→TERM+DLQ, heartbeat `in_progress`, listener de advisories→DLQ); el publisher publica el envelope directamente (`js.publish`). taskiq sigue en el lado Redis hasta drenar (M5) y sale de las dependencias al cierre | taskiq no puede expresar la semántica JetStream (E1) y su valor residual era un fetch loop + binder de kwargs: lo valioso del runtime (envelope, naming, idempotencia, puertos, handlers tipados, métricas, tracing) **ya es nuestro** — `handlers.py` ya puenteaba taskiq para el around-scope. Las semánticas del receiver están todas validadas en vivo (E2/E3/E4/E6). El scheduler de taskiq no lo usa nadie (verificado). |
 
 ---
 
@@ -165,7 +168,7 @@ Se mantiene la decisión del informe 2/3: CloudEvents describe el sobre de *un* 
 | `XACK` | `ack()` explícito | |
 | `XAUTOCLAIM` + idle timeout | `ack_wait` + redelivery automática del broker | Desaparece el reclaim manual y su alineación fina |
 | ZSET `nq:*:delayed` + `DelayedRetryPoller` | `NAK` con delay / `backoff` declarativo del consumer | **`delayed.py` se elimina** |
-| `nq:{p}:{q}:dlq` | Subject `nq.{p}.{q}.dlq` (middleware portado tal cual) | Señal de agotamiento: `max_deliver` / advisory |
+| `nq:{p}:{q}:dlq` | Subject `nq.{p}.{q}.dlq` (clasificación en el receiver + listener de advisories, D14) | Señal de agotamiento: `max_deliver` → advisory `MAX_DELIVERIES` (validado E4; el mensaje agotado es invisible para KEDA → el listener no es opcional) |
 | `nq:{p}:status` | Subject `nq.{p}.status` | |
 | Dedup solo aplicación (`nq_idem`) | `Nats-Msg-Id` = `nq_idem` al publicar **+** `nq_idem` en consumer | Broker = conveniencia; aplicación = muro de carga |
 | Labels `nq_v`, `nq_task`, `nq_tenant`, `nq_idem`, `nq_trace`, `nq_enqueued_at`, `nq_priority` | **Intactos** (headers NATS) | El wire contract v1 sobrevive; bump a v1.1 documentando el binding NATS |
@@ -187,29 +190,24 @@ Se mantiene la decisión del informe 2/3: CloudEvents describe el sobre de *un* 
 
 **Gate**: suite verde contra Redis en los tres CI. **Estimación**: 2–4 días.
 
-### M1 — Spike NATS + prototipo contract-first *(timeboxed: 3–5 días, hard stop)*
+### M1 — Spike NATS + prototipo contract-first — **EJECUTADA (2026-07-03)**
 
-**Objetivo**: retirar el riesgo nº 1 (`taskiq-nats`) y validar la abstracción del contrato con un caso real.
+Banco reproducible en `backend/nexus-queue/spike-jetstream/` (`./run_all.sh`); veredicto completo en su `EVALUATION.md`. Resultados:
 
-**Checklist del spike** (contra `nats -js` en docker):
-- [ ] Pull consumers con flow control (backpressure real).
-- [ ] `NAK` con delay por mensaje **y** `backoff` declarativo en el consumer — cuál usa el runtime y cómo conviven.
-- [ ] `ack_wait` vencido → redelivery; comportamiento con handler aún corriendo.
-- [ ] `in_progress()` (extensión de ack) para handlers largos — patrón para transcripción de 20+ min.
-- [ ] `max_deliver` agotado → cómo lo intercepta el DLQ middleware (delivery count en metadata vs advisory `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES`).
-- [ ] `Nats-Msg-Id` = `nq_idem` al publicar; verificar ventana de dedup.
-- [ ] Headers custom (labels `nq_*`) viajan íntegros TS → Python.
+| Verificación | Resultado |
+|---|---|
+| NAK con delay → redelivery sin poller | **PASS** — redelivery a los 10.0s exactos, headers intactos |
+| `backoff` declarativo del consumer | **PASS** — timeline [0s, 2s, 7s] clavado a la config |
+| **Scale-to-zero: retry diferido visible para KEDA con flota a cero** | **PASS** — `num_ack_pending=1` visible toda la ventana NAK en `/jsz` con el worker desconectado; redelivery al reconectar. Corroborado en el código fuente de KEDA (lag = `num_pending + num_ack_pending`, ≥ v2.9) y de nats-server (`o.pending` es estado del servidor) |
+| `max_deliver` agotado → advisory + mensaje completo recuperable para DLQ | **PASS** (aprendizaje: el mensaje agotado se vuelve **invisible** para KEDA — el listener de advisories no es opcional) |
+| `in_progress()` para handlers largos | **PASS** — con heartbeat: 1 delivery; control sin él: redelivery espuria (riesgo real, mitigación válida) |
+| Headers `nq_*` íntegros TS→Python + dedup `Nats-Msg-Id` | **PASS** |
+| Contrato→codegen (E7) | **PASS** — 5 proyecciones coherentes (pydantic, zod, stream/consumer JSON, ScaledObject) de un contrato real |
+| ¿Cabe NAK en taskiq? | **NO (confirmado)** — `AckableMessage={data, ack}`; labels sí viajan íntegros en el body |
 
-**Prototipo contrato→codegen**: script (~200 líneas, no la herramienta final) que desde un `*.contract.yaml` real genere pydantic + tipos TS + JSON de Stream/Consumer. Objetivo: validar que la abstracción aguanta casos reales, no pulir tooling. En paralelo, evaluar el tooling AsyncAPI sobre el mismo caso: validación con AsyncAPI CLI y modelos con Modelina, para alimentar la decisión de formato (D13).
+**Gate resuelto**: ni (a) ni (b) ni (c)-como-broker-taskiq — la respuesta es **D14** (runtime v2 sin taskiq). Codegen: viable, proyecciones completas para el subset real. Formato: default confirmado (YAML propio exportable a AsyncAPI); revisar solo si Modelina/AsyncAPI CLI aportan más que su verbosidad.
 
-**Gate — decisión documentada entre**:
-- (a) `taskiq-nats` sirve tal cual;
-- (b) `taskiq-nats` con parches upstream;
-- (c) broker fino propio sobre `nats-py` detrás de `create_broker()`.
-
-Más dos veredictos sobre el contrato:
-- **Codegen**: ¿proyecciones completas, parciales, o el contrato queda como documentación ejecutable + validación CI sin generación total?
-- **Formato (D13)**: ¿AsyncAPI 3.0 literal con extensiones `x-nq-*`, o YAML propio con export mecánico a AsyncAPI? Default: YAML propio exportable, salvo que el tooling heredado compense la verbosidad (ver §3.3).
+**Pendiente heredado a M3** (no bloqueante para ratificar el plan): prototipo del receiver propio consumiendo un `HandlerSpec` real, y prueba e2e de KEDA con HPA en un cluster de verdad (el comportamiento del scaler está verificado en fuente + señal en vivo, pero no el ciclo HPA completo).
 
 ### M2 — Infra GitOps: JetStream en ambos clusters
 
@@ -222,20 +220,22 @@ Más dos veredictos sobre el contrato:
 
 **Gate**: crear/borrar un Stream vía CRD sincronizado por ArgoCD; métricas visibles en Prometheus; `nats bench` básico OK.
 
-### M3 — Runtime: rama NATS en nexus-queue (Python + TS)
+### M3 — Runtime v2 sin taskiq (Python + TS) *(redefinida por D14)*
 
 **Trabajo**:
-- `create_broker()`: branch por config (`NQ_TRANSPORT=redis|nats` + URL/durable). El código de handlers **no cambia**.
+- **`receiver.py` nuevo** (~300 líneas; los scripts E2/E3/E4/E6 del spike son el esqueleto): fetch loop con semáforo de concurrencia, dispatch por `HandlerSpec` (que ya existe y no cambia), clasificación de errores — `NexusRetryableError` → NAK (schedule = `backoff` declarativo del consumer, del contrato), `NexusPermanentError` → `TERM` + registro DLQ —, heartbeat `in_progress()` derivado del `processing_budget` del contrato, listener de advisories `MAX_DELIVERIES` → DLQ, y drain de SIGTERM (dejar de hacer fetch, terminar en vuelo, ack, salir).
+- **Guardarraíl anti-framework**: el receiver es una librería fina cuya config viene del contrato (`consumer.json` generado); cero hooks genéricos — regla del dos.
+- `handlers.py`: conserva su lógica (idempotencia, tracing, latencia) sin imports de taskiq — el around-scope que taskiq no daba ahora es el flujo natural del receiver.
+- Publisher Python + kicker HTTP: `js.publish` directo del envelope v1 (body) + headers + `Nats-Msg-Id` = `nq_idem`. Validación de tamaño → claim-check `BlobStore` obligatorio (D12).
+- Entrypoint propio (`asyncio.run`) — el "entrypoint estándar" que M6 ya pedía; muere el runner CLI de taskiq.
+- **Mueren**: `delayed.py`, `RetryDlqMiddleware`, `broker.py`/`create_broker()` como seam de taskiq (el seam pasa a ser el receiver + el contrato).
 - `naming.py`: mapping `nq:{p}:{q}` ↔ `nq.{p}.{q}` (+ `.dlq`, subject de status).
-- **`delayed.py` eliminado** en la rama NATS (y a la larga del repo, tras M5).
-- Retry middleware: conserva la clasificación `NexusRetryableError`/`NexusPermanentError` (permanente → `TERM` + DLQ directo); el *schedule* se delega al `backoff` declarativo del consumer.
-- DLQ middleware: portado; fuente de agotamiento según lo decidido en M1.
-- Idempotencia: **intacta** (Redis sigue como idempotency store).
-- Publisher Python + kicker HTTP: publish con headers + `Nats-Msg-Id` = `nq_idem`. Validación de tamaño de payload → claim-check `BlobStore` obligatorio por encima del umbral (D12).
+- Idempotencia: **intacta** (Redis sigue como idempotency store; el muro de carga no se toca — D4).
 - Producer TS `@zetesis/nexus-queue`: cliente `nats.js` detrás de la **misma interfaz pública** (los exports del paquete no cambian).
-- Spec bump a **v1.1**: binding NATS documentado; wire contract v1 intacto.
+- Spec bump a **v1.1**: binding NATS documentado; el wire contract v1 pasa a estar definido por nuestra spec (la forma sobrevive a taskiq).
+- **Transición**: el lado Redis conserva taskiq tal cual hasta drenar (M5); taskiq sale de `pyproject.toml` al cierre.
 
-**Gate**: suite M0 parametrizada verde contra **ambos** transportes en CI.
+**Gate**: suite M0 parametrizada verde contra **ambos** transportes en CI (lado Redis con el runtime actual, lado NATS con el v2).
 
 ### M4 — Piloto: dual-consume en una cola batch
 
@@ -272,13 +272,16 @@ Más dos veredictos sobre el contrato:
 ### M7 — KEDA sobre lag de JetStream *(era F5)*
 
 **Trabajo**:
-- Instalar KEDA por GitOps en ambos clusters.
-- Trigger `nats-jetstream` (consume el monitoring endpoint de M2). Defaults por perfil desde el contrato (`scaling.profile`): `lagThreshold`/`activationThreshold`, `cooldownPeriod` anti-flapeo.
+- Instalar KEDA por GitOps en ambos clusters. **Suelo de versión: ≥ 2.15.1, ideal ≥ 2.20** (en < 2.9 la claim central era literalmente falsa — issue #3787; 2.15.1 arregla leader-change en clúster; 2.20 convierte "consumer inexistente" en error en vez de escalar a max).
+- Trigger `nats-jetstream` (consume el monitoring endpoint de M2; lag = `num_pending + num_ack_pending`, verificado en fuente). El endpoint **no tiene auth** → NetworkPolicy que restrinja :8222 al operator de KEDA.
+- Defaults por perfil desde el contrato (`scaling.profile`): `lagThreshold`/`activationLagThreshold`, `cooldownPeriod` anti-flapeo.
 - `minReplicas: 1` como default en latencia-sensibles (el cold start se paga en p99); **scale-to-zero opt-in explícito en el contrato**.
+- **Matiz económico verificado**: con `activationLagThreshold: 0`, un retry en ventana de backoff mantiene 1 réplica idle (el lag es >0 durante todo el delay) — garantía mejor de lo prometido, ahorro menor. Subir el threshold recupera el ahorro pero reabre el riesgo para ese único mensaje: decisión por perfil, explícita en el contrato.
+- El consumer durable debe **existir independientemente de los workers** (sin `InactiveThreshold` menor que la ventana a cero) — los CRDs de NACK (M2) lo dan por diseño.
 - Alineación `ack_wait` / grace period / cooldown para que un scale-down no deje mensajes en limbo.
 - Empezar por la cola batch piloto, medir, extender.
 
-**Gate / criterio falsable**: la prueba de la grieta — **un retry diferido con la flota a cero se procesa sin intervención humana** (KEDA despierta al worker porque el lag del consumer lo ve). Esto era imposible sobre Redis sin parches.
+**Gate / criterio falsable**: la prueba de la grieta — **un retry diferido con la flota a cero se procesa sin intervención humana** (KEDA despierta al worker porque el lag del consumer lo ve). Esto era imposible sobre Redis sin parches. La señal está verificada en vivo (spike E3) y en el código fuente de KEDA/nats-server; este gate cierra el ciclo con el HPA real en cluster.
 
 ### M8 — Tooling de flota + observabilidad *(era F6)*
 
@@ -299,7 +302,8 @@ Más dos veredictos sobre el contrato:
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| `taskiq-nats` inmaduro (riesgo nº 1) | Bloquea M3 | Spike M1 con gate explícito; fallback: broker fino propio sobre `nats-py` detrás de `create_broker()` — el estándar ya aisló exactamente esa pieza |
+| ~~`taskiq-nats` inmaduro~~ **RESUELTO**: eliminado del diseño (D14) | — | El spike confirmó que ni parcheado servía (blocker en taskiq core). Sustituido por el riesgo siguiente. |
+| **Receiver propio**: asumimos la propiedad de concurrencia, reconexión y drain | Bugs de runtime que antes "regalaba" el framework | Alcance acotado (~300 líneas); semánticas ya validadas en vivo (E2/E3/E4/E6, esqueleto reutilizable); suite M0 como red; guardarraíl anti-framework (config desde el contrato, cero hooks genéricos) |
 | Pérdida de mensajes en cutover | Datos | Dual-consume + drain con contabilidad por `nq_idem` + suite M0 como aceptación; batch primero |
 | Payload > 1 MB (límite NATS) | Publishes rechazados | Claim-check `BlobStore` obligatorio (D12); validación en publisher con error tipado |
 | Handlers largos vs `ack_wait` (transcripción 20+ min) | Redeliveries espurias, efectos duplicados aparentes | `in_progress()` heartbeat en el runtime (patrón decidido en M1, no en producción); `ack_wait` por perfil en el contrato |
@@ -323,11 +327,12 @@ Heredados del informe 3/3:
 
 Nuevos, propios de esta migración:
 
-5. **Un retry diferido con la flota a cero se procesa solo** — la prueba directa de la grieta que motivó la migración.
+5. **Un retry diferido con la flota a cero se procesa solo** — la prueba directa de la grieta que motivó la migración. *(Señal verificada en el spike E3; pendiente el ciclo HPA completo en cluster. Matiz: la garantía es mejor de lo prometido, el ahorro menor — ver M7.)*
 6. De un `*.contract.yaml` se generan tipos TS + pydantic + CRDs + ScaledObject **sin edición manual** (o, si M1 degradó la ambición: el contrato valida en CI y ninguna proyección diverge de él).
 7. Suite de conformidad **verde contra NATS en el CI de los tres repos**.
 8. `delayed.py` eliminado del repo; **cero pollers en producción**.
 9. Redis en producción solo como cache + idempotency store; ningún stream `nq:*` activo.
+10. **taskiq fuera del `pyproject.toml` de nexus-queue** al cierre de M5 (D14) — el runtime v2 no depende de ningún framework de tasks.
 
 ---
 
@@ -339,6 +344,7 @@ Nuevos, propios de esta migración:
 - **No colas compartidas entre proyectos** — nunca. Interop de operaciones sí; si un proyecto necesita invocar trabajo en otro: kicker HTTP con HMAC en el borde (y, post-migración, import/export de subjects como opción futura).
 - **No construir F4–F6 sobre Redis en paralelo** "por si acaso" — no pagar las dos facturas.
 - **No relajar la idempotencia de handlers** porque el broker tenga dedup (D4).
+- **No reconstruir un framework de tasks** (D14) — el receiver es una librería fina cuya config viene del contrato; si le crecen hooks genéricos o abstracciones "por si acaso", regla del dos.
 - **No desmantelar Redis** — cambia de papel, no desaparece.
 - **No mover handlers entre proyectos preventivamente** — movilidad oportunista: cuando la duplicación duela de verdad.
 
