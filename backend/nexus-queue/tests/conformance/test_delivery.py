@@ -9,7 +9,7 @@ from nexus_queue import HandlerSpec
 from nexus_queue.lifecycle import IdempotencyStore
 from pydantic import BaseModel
 
-from .harness import Scratch, TransportHarness, make_config, running_worker
+from .harness import Scratch, TransportHarness
 
 
 class EchoPayload(BaseModel):
@@ -17,7 +17,7 @@ class EchoPayload(BaseModel):
 
 
 async def test_idempotency_store_claims(harness: TransportHarness) -> None:
-    store = IdempotencyStore(make_config("q3"))
+    store = IdempotencyStore(harness.make_config("q3"))
     await store.startup()
     try:
         # First claim wins; a concurrent re-delivery of the same key is skipped.
@@ -35,13 +35,13 @@ async def test_idempotency_store_claims(harness: TransportHarness) -> None:
 async def test_roundtrip_and_idempotent_consume(
     harness: TransportHarness, scratch: Scratch
 ) -> None:
-    config = make_config("q5")
+    config = harness.make_config("q5")
 
     async def echo(payload: EchoPayload, deps: Scratch) -> None:
         deps.incr(f"runs:{payload.id}")
         deps.done(payload.id)
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.echo", echo, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.echo", EchoPayload(id="rt1"), idempotency_key="test-rt1")
@@ -58,14 +58,14 @@ async def test_transient_failure_retries_with_idempotency_key(
     """A transient failure must not let the idempotency key suppress the retry:
     the redelivered message carries the same nq_idem, so dedup that claimed the
     key up front would skip the retry and silently drop the job."""
-    config = make_config("q7")  # max_retries=2
+    config = harness.make_config("q7")  # max_retries=2
 
     async def flaky(payload: EchoPayload, deps: Scratch) -> None:
         if deps.incr(f"attempts:{payload.id}") < 2:
             raise RuntimeError("transient")
         deps.done(payload.id)
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.flaky", flaky, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.flaky", EchoPayload(id="fk1"), idempotency_key="test-fk1")
@@ -77,7 +77,7 @@ async def test_retry_waits_for_backoff(harness: TransportHarness, scratch: Scrat
     """The redelivery must be deferred by the backoff delay, not eager: the gap
     between the failing attempt and the retry must be at least the base delay."""
     base_delay = 0.5
-    config = make_config("q9", max_retries=3, retry_base_delay_s=base_delay)
+    config = harness.make_config("q9", max_retries=3, retry_base_delay_s=base_delay)
     stamps: list[float] = []
 
     async def flaky(payload: EchoPayload, deps: Scratch) -> None:
@@ -86,7 +86,7 @@ async def test_retry_waits_for_backoff(harness: TransportHarness, scratch: Scrat
             raise RuntimeError("transient")
         deps.done(payload.id)
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.bk", flaky, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.bk", EchoPayload(id="bk1"), idempotency_key="test-bk1")

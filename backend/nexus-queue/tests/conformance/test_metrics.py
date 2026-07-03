@@ -7,7 +7,7 @@ from nexus_queue import HandlerSpec
 from prometheus_client import REGISTRY, generate_latest
 from pydantic import BaseModel
 
-from .harness import Scratch, TransportHarness, make_config, running_worker
+from .harness import Scratch, TransportHarness
 
 STANDARD_COUNTERS = (
     "nexus_queue_received_total",
@@ -23,12 +23,12 @@ class EchoPayload(BaseModel):
 async def test_standard_metric_names_after_consume(
     harness: TransportHarness, scratch: Scratch
 ) -> None:
-    config = make_config("qm")
+    config = harness.make_config("qm")
 
     async def echo(payload: EchoPayload, deps: Scratch) -> None:
         deps.done(payload.id)
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.echo", echo, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.echo", EchoPayload(id="m1"), idempotency_key="test-m1")

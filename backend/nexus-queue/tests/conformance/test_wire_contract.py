@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import redis as redis_sync
 from fastapi.testclient import TestClient
-from nexus_queue import Publisher, create_broker, create_kicker
+from nexus_queue import create_broker, create_kicker
 from nexus_queue.naming import REQUIRED_LABELS, work_stream
 from pydantic import BaseModel
 
@@ -18,11 +18,9 @@ class EchoPayload(BaseModel):
 
 
 async def test_publisher_stamps_envelope(harness: TransportHarness) -> None:
-    config = make_config("q1")
-    broker = create_broker(config)
-    await broker.startup()
-    try:
-        await Publisher(broker, config).enqueue(
+    config = harness.make_config("q1")
+    async with harness.publisher(config) as publisher:
+        await publisher.enqueue(
             "test.echo",
             EchoPayload(id="abc"),
             tenant="t1",
@@ -46,23 +44,15 @@ async def test_publisher_stamps_envelope(harness: TransportHarness) -> None:
         assert "nq_enqueued_at" in labels
         missing = [key for key in REQUIRED_LABELS if not labels.get(key)]
         assert not missing, f"required labels missing from the wire: {missing}"
-    finally:
-        await broker.shutdown()
 
 
 async def test_default_stream_never_used(harness: TransportHarness) -> None:
     """Spec §4.2: the transport's default/global queue name is prohibited."""
-    config = make_config("q1")
-    broker = create_broker(config)
-    await broker.startup()
-    try:
-        await Publisher(broker, config).enqueue(
-            "test.echo", EchoPayload(id="ns1"), idempotency_key="test-ns1"
-        )
+    config = harness.make_config("q1")
+    async with harness.publisher(config) as publisher:
+        await publisher.enqueue("test.echo", EchoPayload(id="ns1"), idempotency_key="test-ns1")
         assert len(await harness.read_work_messages("test", "q1")) == 1
         await harness.assert_default_stream_unused()
-    finally:
-        await broker.shutdown()
 
 
 def test_kicker_auth_and_enqueue() -> None:

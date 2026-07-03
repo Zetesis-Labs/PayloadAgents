@@ -45,6 +45,8 @@ needs_dist = pytest.mark.skipif(
 async def test_ts_producer_to_python_worker_roundtrip(
     harness: TransportHarness, scratch: Scratch
 ) -> None:
+    if harness.transport != "redis":
+        pytest.skip("kicker sobre transporte NATS llega con M3 final")
     config = make_config("qx")
 
     consumed: dict[str, str] = {}
@@ -104,6 +106,8 @@ async def test_ts_producer_to_python_worker_roundtrip(
 async def test_ts_producer_envelope_on_the_wire(harness: TransportHarness) -> None:
     """Same enqueue, but asserting the raw wire message: the kicker must stamp
     the full envelope for a TS-originated task exactly like the Python producer."""
+    if harness.transport != "redis":
+        pytest.skip("kicker sobre transporte NATS llega con M3 final")
     config = make_config("qy")
     kicker_broker = create_broker(config)
     server = uvicorn.Server(

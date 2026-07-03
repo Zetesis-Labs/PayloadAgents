@@ -6,7 +6,7 @@ from __future__ import annotations
 from nexus_queue import HandlerSpec, NexusPermanentError
 from pydantic import BaseModel
 
-from .harness import Scratch, TransportHarness, make_config, running_worker
+from .harness import Scratch, TransportHarness
 
 
 class EchoPayload(BaseModel):
@@ -18,13 +18,13 @@ async def test_transient_failure_exhausts_to_dlq(
 ) -> None:
     """A transient error that never recovers must exhaust max_retries and land
     in the DLQ (permanent=False), not loop forever nor get ack-and-dropped."""
-    config = make_config("q8")  # max_retries=2
+    config = harness.make_config("q8")  # max_retries=2
 
     async def always_fails(payload: EchoPayload, deps: Scratch) -> None:
         deps.incr(f"tries:{payload.id}")
         raise RuntimeError("still broken")
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.fail", always_fails, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.fail", EchoPayload(id="x1"), idempotency_key="test-x1")
@@ -39,13 +39,13 @@ async def test_transient_failure_exhausts_to_dlq(
 async def test_permanent_error_dead_letters_without_retry(
     harness: TransportHarness, scratch: Scratch
 ) -> None:
-    config = make_config("q6")
+    config = harness.make_config("q6")
 
     async def boom(payload: EchoPayload, deps: Scratch) -> None:
         deps.incr(f"tries:{payload.id}")
         raise NexusPermanentError("nope")
 
-    async with running_worker(
+    async with harness.running_worker(
         config, scratch, [HandlerSpec("test.boom", boom, EchoPayload)]
     ) as publisher:
         await publisher.enqueue("test.boom", EchoPayload(id="b1"), idempotency_key="test-b1")

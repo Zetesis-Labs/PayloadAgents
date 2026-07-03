@@ -4,16 +4,18 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-from .harness import RedisHarness, Scratch, TransportHarness
+from .harness import NatsHarness, RedisHarness, Scratch, TransportHarness
 
-# "nats" joins this list with the v2 runtime (migration plan, phase M3).
-TRANSPORTS = ["redis"]
+TRANSPORTS = ["redis", "nats"]
 
 
 @pytest.fixture(params=TRANSPORTS)
 async def harness(request: pytest.FixtureRequest) -> AsyncIterator[TransportHarness]:
+    instance: TransportHarness
     if request.param == "redis":
-        instance: TransportHarness = RedisHarness()
+        instance = RedisHarness()
+    elif request.param == "nats":
+        instance = NatsHarness()
     else:  # pragma: no cover - guard for future transports
         raise ValueError(f"unknown transport {request.param!r}")
     await instance.wipe()
