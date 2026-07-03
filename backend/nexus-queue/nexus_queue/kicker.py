@@ -1,14 +1,19 @@
-"""Generic HTTP kicker for producers that can't speak Redis directly
-(e.g. a TypeScript/Payload caller). One standard contract for every project:
-``POST /enqueue/{task}`` gated by ``X-Nexus-Secret``, plus ``/health``/``/ready``.
+"""Generic HTTP kicker for producers that can't speak the broker directly
+(e.g. a TypeScript/Payload caller). One standard contract for every project
+and transport: ``POST /enqueue/{task}`` gated by ``X-Nexus-Secret``, plus
+``/health``/``/ready``/``/metrics``.
+
+The HTTP surface is transport-independent; only the publisher wired in the
+lifespan changes: :func:`create_kicker` (taskiq/Redis, v1) vs
+:func:`create_nats_kicker` (JetStream, v2).
 """
 
 from __future__ import annotations
 
 import hmac
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from typing import Any
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import Any, Protocol
 
 import structlog
 from fastapi import FastAPI, Request, Response, status
@@ -32,11 +37,73 @@ class EnqueueRequest(BaseModel):
     trace: str | None = None
 
 
+class _PublisherLike(Protocol):
+    async def enqueue_raw(
+        self,
+        task: str,
+        payload: dict[str, Any],
+        *,
+        tenant: str,
+        idempotency_key: str | None,
+        priority: str,
+        trace: str | None,
+    ) -> str: ...
+
+
 def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
-    """Build the FastAPI kicker the consumer hands to uvicorn."""
+    """Build the FastAPI kicker for the taskiq/Redis transport (v1)."""
 
     @asynccontextmanager
-    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def publisher_ctx() -> AsyncIterator[_PublisherLike]:
+        # The kicker connects the broker; the worker process owns its own lifecycle.
+        if not broker.is_worker_process:
+            await broker.startup()
+        try:
+            yield Publisher(broker, config)
+        finally:
+            if not broker.is_worker_process:
+                await broker.shutdown()
+
+    return _build_kicker(config, publisher_ctx)
+
+
+def create_nats_kicker(config: RuntimeConfig, *, ensure_topology: bool = True) -> FastAPI:
+    """Build the FastAPI kicker for the JetStream transport (v2, D14).
+
+    Owns its NATS connection through the app lifespan. ``ensure_topology``
+    creates the work/DLQ streams if absent (tests/local dev; prod = NACK CRDs).
+    """
+    if config.transport != "nats":
+        raise ValueError("create_nats_kicker requires transport='nats'")
+
+    @asynccontextmanager
+    async def publisher_ctx() -> AsyncIterator[_PublisherLike]:
+        import nats
+
+        from nexus_queue.nats_runtime import NatsPublisher, ensure_streams
+
+        if config.nats_url is None:  # unreachable: the config validator enforces it
+            raise RuntimeError("transport='nats' requires nats_url")
+        nc = await nats.connect(config.nats_url)
+        js = nc.jetstream()
+        if ensure_topology:
+            await ensure_streams(js, config)
+        try:
+            yield NatsPublisher(js, config)
+        finally:
+            await nc.close()
+
+    return _build_kicker(config, publisher_ctx)
+
+
+def _build_kicker(
+    config: RuntimeConfig,
+    publisher_ctx: Callable[[], AbstractAsyncContextManager[_PublisherLike]],
+) -> FastAPI:
+    """The transport-independent HTTP surface around a publisher context."""
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Fail-open is allowed (some deploys front the kicker with a mesh), but it
         # must never be silent: an empty secret leaves /enqueue unauthenticated.
         if not config.internal_secret.get_secret_value():
@@ -44,15 +111,11 @@ def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
                 "kicker-auth-disabled",
                 detail="internal_secret is empty; /enqueue is unauthenticated",
             )
-        # The kicker connects the broker; the worker process owns its own lifecycle.
-        if not broker.is_worker_process:
-            await broker.startup()
-        yield
-        if not broker.is_worker_process:
-            await broker.shutdown()
+        async with publisher_ctx() as publisher:
+            app.state.publisher = publisher
+            yield
 
     app = FastAPI(title=config.app_name, lifespan=lifespan)
-    publisher = Publisher(broker, config)
 
     @app.middleware("http")
     async def _auth(request: Request, call_next: Any) -> Any:  # pyright: ignore[reportUnusedFunction]
@@ -84,7 +147,9 @@ def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
     async def enqueue(  # pyright: ignore[reportUnusedFunction]
         task: str,
         body: EnqueueRequest,
+        request: Request,
     ) -> dict[str, str]:
+        publisher: _PublisherLike = request.app.state.publisher
         task_id = await publisher.enqueue_raw(
             task,
             body.payload,

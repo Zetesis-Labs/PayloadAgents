@@ -24,6 +24,8 @@ from nexus_queue import (
     Publisher,
     RuntimeConfig,
     create_broker,
+    create_kicker,
+    create_nats_kicker,
     create_worker,
 )
 from nexus_queue.naming import dlq_stream, nats_dlq_stream_name, nats_stream_name, work_stream
@@ -101,6 +103,10 @@ class TransportHarness(Protocol):
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig: ...
 
+    def make_kicker_app(self, config: RuntimeConfig) -> Any:
+        """The HTTP kicker for this transport, ready for uvicorn (lifespan-managed)."""
+        ...
+
     def publisher(self, config: RuntimeConfig) -> contextlib.AbstractAsyncContextManager[Any]:
         """A producer for the queue, without a worker consuming it."""
         ...
@@ -138,6 +144,9 @@ class RedisHarness:
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
         return make_config(queue, **overrides)
+
+    def make_kicker_app(self, config: RuntimeConfig) -> Any:
+        return create_kicker(create_broker(config), config)
 
     @contextlib.asynccontextmanager
     async def publisher(self, config: RuntimeConfig) -> AsyncIterator[Publisher]:
@@ -214,6 +223,9 @@ class NatsHarness:
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
         return make_config(queue, transport="nats", nats_url=NATS_URL, **overrides)
+
+    def make_kicker_app(self, config: RuntimeConfig) -> Any:
+        return create_nats_kicker(config)
 
     @contextlib.asynccontextmanager
     async def publisher(self, config: RuntimeConfig) -> AsyncIterator[NatsPublisher]:

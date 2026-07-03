@@ -7,7 +7,7 @@ publisher, kicker) are added on top of these and re-exported as they land.
 
 from __future__ import annotations
 
-from nexus_queue.app import WorkerApp, create_worker
+from nexus_queue.app import WorkerApp, create_worker, main_nats_worker, run_nats_worker
 from nexus_queue.broker import create_broker
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.delayed import DelayedRetryPoller
@@ -22,7 +22,7 @@ from nexus_queue.exceptions import (
     NexusRetryableError,
 )
 from nexus_queue.handlers import HandlerSpec, register
-from nexus_queue.kicker import create_kicker
+from nexus_queue.kicker import create_kicker, create_nats_kicker
 from nexus_queue.lifecycle import (
     IdempotencyStore,
     configure_logging,
@@ -79,14 +79,17 @@ __all__ = [
     "consumer_group",
     "create_broker",
     "create_kicker",
+    "create_nats_kicker",
     "create_worker",
     "delayed_set",
     "dlq_stream",
     "dlq_subject",
+    "main_nats_worker",
     "missing_required_labels",
     "register",
     "register_lifecycle",
     "require_supported_version",
+    "run_nats_worker",
     "status_stream",
     "work_stream",
     "work_subject",
