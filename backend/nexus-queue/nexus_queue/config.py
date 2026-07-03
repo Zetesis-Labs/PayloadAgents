@@ -7,7 +7,9 @@ multi-tenant deploy can build several `RuntimeConfig` instances from one env.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, SecretStr, ValidationInfo, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, Field, SecretStr, ValidationInfo, field_validator, model_validator
 
 from nexus_queue import naming
 
@@ -28,8 +30,23 @@ class RuntimeConfig(BaseModel):
     )
 
     # ── Broker ─────────────────────────────────────────────────────────────
+    transport: Literal["redis", "nats"] = Field(
+        default="redis",
+        description=(
+            "Queue transport. 'redis' = taskiq + Redis Streams (v1). 'nats' = "
+            "the taskiq-free JetStream runtime (v2, D14). Redis stays required "
+            "either way: it remains the idempotency store."
+        ),
+    )
     redis_url: str = Field(
-        description="Redis URL for the taskiq-redis stream broker (e.g. redis://redis:6379).",
+        description=(
+            "Redis URL (e.g. redis://redis:6379). Broker for transport='redis'; "
+            "idempotency store for every transport."
+        ),
+    )
+    nats_url: str | None = Field(
+        default=None,
+        description="NATS server URL (e.g. nats://nats:4222). Required when transport='nats'.",
     )
 
     # ── HTTP kicker ────────────────────────────────────────────────────────
@@ -92,6 +109,12 @@ class RuntimeConfig(BaseModel):
     def _validate_slug(cls, value: str, info: ValidationInfo) -> str:
         return naming.validate_slug(value, kind=info.field_name or "slug")
 
+    @model_validator(mode="after")
+    def _require_nats_url(self) -> RuntimeConfig:
+        if self.transport == "nats" and not self.nats_url:
+            raise ValueError("transport='nats' requires nats_url")
+        return self
+
     @property
     def work_stream(self) -> str:
         return naming.work_stream(self.project, self.queue)
@@ -111,3 +134,25 @@ class RuntimeConfig(BaseModel):
     @property
     def status_stream(self) -> str:
         return naming.status_stream(self.project)
+
+    # ── NATS JetStream names (transport v2) ────────────────────────────────
+
+    @property
+    def work_subject(self) -> str:
+        return naming.work_subject(self.project, self.queue)
+
+    @property
+    def dlq_subject(self) -> str:
+        return naming.dlq_subject(self.project, self.queue)
+
+    @property
+    def nats_stream(self) -> str:
+        return naming.nats_stream_name(self.project, self.queue)
+
+    @property
+    def nats_dlq_stream(self) -> str:
+        return naming.nats_dlq_stream_name(self.project, self.queue)
+
+    @property
+    def nats_durable(self) -> str:
+        return naming.nats_durable_name(self.project, self.queue)

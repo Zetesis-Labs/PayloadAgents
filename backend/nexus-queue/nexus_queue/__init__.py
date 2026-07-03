@@ -34,9 +34,12 @@ from nexus_queue.naming import (
     consumer_group,
     delayed_set,
     dlq_stream,
+    dlq_subject,
     status_stream,
     work_stream,
+    work_subject,
 )
+from nexus_queue.nats_runtime import NatsPublisher, NatsWorker
 from nexus_queue.pipeline import PipelineRouter
 from nexus_queue.ports import (
     BlobStorePort,
@@ -60,6 +63,8 @@ __all__ = [
     "IndexPort",
     "JobStatePort",
     "JobStatus",
+    "NatsPublisher",
+    "NatsWorker",
     "NexusPermanentError",
     "NexusQueueError",
     "NexusRetryableError",
@@ -77,10 +82,12 @@ __all__ = [
     "create_worker",
     "delayed_set",
     "dlq_stream",
+    "dlq_subject",
     "missing_required_labels",
     "register",
     "register_lifecycle",
     "require_supported_version",
     "status_stream",
     "work_stream",
+    "work_subject",
 ]

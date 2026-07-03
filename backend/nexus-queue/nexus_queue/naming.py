@@ -67,6 +67,41 @@ def status_stream(project: str) -> str:
     return f"nq:{project}:status"
 
 
+# ── NATS JetStream naming (transport v2) ───────────────────────────────────
+# Mechanical mapping of the Redis names (spec §4.2): `nq:{p}:{q}` ⇄ `nq.{p}.{q}`.
+# Stream/durable names replace hyphens: NATS identifiers reject them less
+# predictably than subjects, and the codegen (contract → CRD) does the same.
+
+
+def _nats_token(part: str) -> str:
+    return part.replace("-", "_")
+
+
+def work_subject(project: str, queue: str) -> str:
+    """JetStream subject that carries work for a queue."""
+    return f"nq.{project}.{queue}"
+
+
+def dlq_subject(project: str, queue: str) -> str:
+    """Dead-letter subject for a queue."""
+    return f"nq.{project}.{queue}.dlq"
+
+
+def nats_stream_name(project: str, queue: str) -> str:
+    """JetStream stream holding the work subject."""
+    return f"NQ_{_nats_token(project)}_{_nats_token(queue)}".upper()
+
+
+def nats_dlq_stream_name(project: str, queue: str) -> str:
+    """JetStream stream holding the dead-letter subject."""
+    return f"{nats_stream_name(project, queue)}_DLQ"
+
+
+def nats_durable_name(project: str, queue: str) -> str:
+    """Durable consumer name for a queue's workers (the `:cg` equivalent)."""
+    return f"nq_{_nats_token(project)}_{_nats_token(queue)}_cg"
+
+
 def idempotency_redis_key(idem: str, *, project: str, tenant: str) -> str:
     """Redis key used by the idempotency middleware to dedup a message.
 
