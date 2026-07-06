@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-lexical-blocks-builder",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Builder y renderer de bloques para Payload CMS Lexical",
   "keywords": [
     "payload-cms",

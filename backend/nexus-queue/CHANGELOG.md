@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.4...nexus-queue-v0.1.5) (2026-07-06)
+
+
+### Documentation
+
+* version the canonical nexus-queue spec next to the runtime ([f459f1e](https://github.com/Zetesis-Labs/PayloadAgents/commit/f459f1eeec302d7d9eeab0295a5cecc84d13c233))
+
 ## [0.1.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/nexus-queue-v0.1.3...nexus-queue-v0.1.4) (2026-06-18)
 
 
