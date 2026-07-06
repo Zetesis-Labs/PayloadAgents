@@ -1,5 +1,12 @@
 # @zetesis/payload-agents-core
 
+## [0.7.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.7.0...payload-agents-core-v0.7.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **payload-agents-core:** tighten payload peer range to ^3.85.2 ([cdea5da](https://github.com/Zetesis-Labs/PayloadAgents/commit/cdea5da826d25935f11c16993c45fe4ed6a84437))
+
 ## [0.7.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.7...payload-agents-core-v0.7.0) (2026-07-06)
 
 
