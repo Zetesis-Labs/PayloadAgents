@@ -270,3 +270,5 @@ jobs:
           [ "${{ needs.publish-agno-microsoft-teams.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.agno_microsoft_teams_tag }}"
           [ "${{ needs.publish-nexus-queue.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.nexus_queue_tag }}"
           [ "${{ needs.publish-payload-documents-worker-builder.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.payload_documents_worker_builder_tag }}"
+
+          exit 0
