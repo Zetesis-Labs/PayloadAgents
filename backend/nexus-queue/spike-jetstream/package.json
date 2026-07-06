@@ -1,8 +1,0 @@
-{
-  "name": "nexus-queue-spike-jetstream",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "nats": "^2.29.2"
-  }
-}
