@@ -29,8 +29,8 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "peerDependencies": {
-    "@payloadcms/ui": "^3.81.0",
-    "payload": "^3.81.0",
+    "@payloadcms/ui": "^3.85.2",
+    "payload": "^3.85.2",
     "react": "^19"
   },
   "peerDependenciesMeta": {

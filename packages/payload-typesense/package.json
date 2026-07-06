@@ -45,9 +45,9 @@
     "vitepress": "^1.6.4"
   },
   "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.81.0",
+    "@payloadcms/richtext-lexical": "^3.85.2",
     "next": "^16",
-    "payload": "^3.81.0",
+    "payload": "^3.85.2",
     "react": "^19",
     "react-dom": "^19"
   },
