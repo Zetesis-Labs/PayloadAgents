@@ -1,5 +1,20 @@
 # @zetesis/payload-lexical-blocks-builder
 
+## [0.2.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-lexical-blocks-builder-v0.2.3...payload-lexical-blocks-builder-v0.2.4) (2026-07-06)
+
+
+### Features
+
+* devcontainer + test server app with chat-agent integration ([#3](https://github.com/Zetesis-Labs/PayloadAgents/issues/3)) ([ee6bd3e](https://github.com/Zetesis-Labs/PayloadAgents/commit/ee6bd3ef11784d315ed65640a144216ef8fd1f5c))
+* initial payload-agents monorepo with 5 packages ([d89ddf4](https://github.com/Zetesis-Labs/PayloadAgents/commit/d89ddf46b914ddf2d9e0664a6ec8bb1e11a577c0))
+* replace chat-agent with AG-UI based @zetesis/agent-ui ([#64](https://github.com/Zetesis-Labs/PayloadAgents/issues/64)) ([adf5acd](https://github.com/Zetesis-Labs/PayloadAgents/commit/adf5acd9cf110bf0339389c215be2075bbf69e5e))
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
+
+### Bug Fixes
+
+* **payload-lexical-blocks-builder:** disable dts external resolution ([1130af1](https://github.com/Zetesis-Labs/PayloadAgents/commit/1130af15d74bd723f5e8a8a3f5af6c699728a35a))
+
 ## [0.2.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-lexical-blocks-builder-v0.2.2...payload-lexical-blocks-builder-v0.2.3) (2026-07-06)
 
 
