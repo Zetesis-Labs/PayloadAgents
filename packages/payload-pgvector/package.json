@@ -3,6 +3,11 @@
   "version": "0.1.3",
   "description": "A Payload CMS search adapter backed by Postgres + pgvector. Sibling of @zetesis/payload-typesense: implements the payload-indexer IndexerAdapter contract over pgvector, with app-side embeddings via any OpenAI-compatible endpoint (e.g. a LiteLLM gateway).",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zetesis-Labs/PayloadAgents",
+    "directory": "packages/payload-pgvector"
+  },
   "sideEffects": false,
   "type": "module",
   "exports": {

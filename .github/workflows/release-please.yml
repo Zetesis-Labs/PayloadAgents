@@ -219,3 +219,54 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: backend/dist
+
+  cleanup-failed-releases:
+    # release-please creates the tag + GitHub Release as part of merging the
+    # release PR, *before* any publish job runs. If a publish job then fails
+    # (build error, registry outage, ...), the tag/release is left pointing at
+    # a version that was never actually published. This job deletes those
+    # orphans so a git tag always means "this is on npm/PyPI".
+    needs:
+      - release-please
+      - publish-npm
+      - publish-agno-agent-builder
+      - publish-agno-microsoft-teams
+      - publish-nexus-queue
+      - publish-payload-documents-worker-builder
+    if: always() && needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete tags/releases for packages that failed to publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          delete_tag() {
+            tag="$1"
+            [ -z "$tag" ] && return 0
+            echo "::warning::publish failed — deleting orphaned release/tag $tag"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          }
+
+          # npm packages (packages/*) are all built + published together in publish-npm
+          if [ "${{ needs.publish-npm.result }}" = "failure" ]; then
+            paths='${{ needs.release-please.outputs.paths_released }}'
+            while IFS= read -r path; do
+              case "$path" in
+                packages/*)
+                  component=$(basename "$path")
+                  version=$(node -p "require('./$path/package.json').version")
+                  delete_tag "${component}-v${version}"
+                  ;;
+              esac
+            done < <(echo "$paths" | jq -r '.[]')
+          fi
+
+          # Python/PyPI packages each have their own job + known tag output
+          [ "${{ needs.publish-agno-agent-builder.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.agno_agent_builder_tag }}"
+          [ "${{ needs.publish-agno-microsoft-teams.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.agno_microsoft_teams_tag }}"
+          [ "${{ needs.publish-nexus-queue.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.nexus_queue_tag }}"
+          [ "${{ needs.publish-payload-documents-worker-builder.result }}" = "failure" ] && delete_tag "${{ needs.release-please.outputs.payload_documents_worker_builder_tag }}"
