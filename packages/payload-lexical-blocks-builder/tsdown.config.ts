@@ -4,7 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts', 'src/builder.ts', 'src/renderer.ts'],
   format: ['esm'],
   dts: {
-    resolve: true
+    resolve: false
   },
   sourcemap: true,
   clean: true,
