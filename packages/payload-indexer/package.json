@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-indexer",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Generic document indexing library for Payload CMS with support for multiple search backends, embedding providers, and chunking strategies.",
   "license": "MIT",
   "sideEffects": false,

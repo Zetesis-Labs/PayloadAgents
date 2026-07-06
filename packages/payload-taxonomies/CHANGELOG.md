@@ -1,5 +1,12 @@
 # @zetesis/payload-taxonomies
 
+## [0.2.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-taxonomies-v0.2.2...payload-taxonomies-v0.2.3) (2026-07-06)
+
+
+### Features
+
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
 ## [0.2.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-taxonomies-v0.2.1...payload-taxonomies-v0.2.2) (2026-05-17)
 
 

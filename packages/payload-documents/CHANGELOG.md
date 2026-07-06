@@ -1,5 +1,12 @@
 # @zetesis/payload-documents
 
+## [0.5.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.4...payload-documents-v0.5.5) (2026-07-06)
+
+
+### Features
+
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
 ## [0.5.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.3...payload-documents-v0.5.4) (2026-06-18)
 
 

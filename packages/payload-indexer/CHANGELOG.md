@@ -1,5 +1,12 @@
 # @zetesis/payload-indexer
 
+## [0.4.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.2...payload-indexer-v0.4.3) (2026-07-06)
+
+
+### Features
+
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
 ## [0.4.2](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.1...payload-indexer-v0.4.2) (2026-06-24)
 
 

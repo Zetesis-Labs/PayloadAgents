@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.16](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.15...agno-agent-builder-v0.1.16) (2026-07-06)
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** stop stamping the agent tenant onto agno sessions ([fbf2068](https://github.com/Zetesis-Labs/PayloadAgents/commit/fbf2068398ec6fe4d0ffb5d2474cc5ddbb60451d))
+* restore chat continuity — back-fill session tenant from the caller, not the agent ([#122](https://github.com/Zetesis-Labs/PayloadAgents/issues/122)) ([63e5774](https://github.com/Zetesis-Labs/PayloadAgents/commit/63e5774a2a91c4333808bf45036a9fcda9a97f24))
+* session tenant continuity (back-fill tenant from caller, not agent) ([331bd38](https://github.com/Zetesis-Labs/PayloadAgents/commit/331bd38035ca8f94dfce8b2b0600f2c4b977d693))
+
 ## [0.1.15](https://github.com/Zetesis-Labs/PayloadAgents/compare/agno-agent-builder-v0.1.14...agno-agent-builder-v0.1.15) (2026-06-24)
 
 

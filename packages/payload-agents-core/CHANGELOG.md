@@ -1,5 +1,15 @@
 # @zetesis/payload-agents-core
 
+## [0.6.7](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.6...payload-agents-core-v0.6.7) (2026-07-06)
+
+
+### Bug Fixes
+
+* **agno-agent-builder:** stop stamping the agent tenant onto agno sessions ([fbf2068](https://github.com/Zetesis-Labs/PayloadAgents/commit/fbf2068398ec6fe4d0ffb5d2474cc5ddbb60451d))
+* **payload-agents-core:** back-fill session tenant from the caller, not the agent ([dd5a340](https://github.com/Zetesis-Labs/PayloadAgents/commit/dd5a3405c42c83c50bd252ad9ccb190247543105))
+* restore chat continuity — back-fill session tenant from the caller, not the agent ([#122](https://github.com/Zetesis-Labs/PayloadAgents/issues/122)) ([63e5774](https://github.com/Zetesis-Labs/PayloadAgents/commit/63e5774a2a91c4333808bf45036a9fcda9a97f24))
+* session tenant continuity (back-fill tenant from caller, not agent) ([331bd38](https://github.com/Zetesis-Labs/PayloadAgents/commit/331bd38035ca8f94dfce8b2b0600f2c4b977d693))
+
 ## [0.6.6](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-core-v0.6.5...payload-agents-core-v0.6.6) (2026-06-24)
 
 
