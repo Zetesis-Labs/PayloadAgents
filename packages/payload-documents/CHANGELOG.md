@@ -1,5 +1,38 @@
 # @zetesis/payload-documents
 
+## [0.6.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.5...payload-documents-v0.6.0) (2026-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **indexer,typesense:** removes EmbeddingProviderConfig, EmbeddingService, EmbeddingResolver and their providers; removes IndexerFeatureConfig.embedding, TypesenseRAGPluginConfig.embeddingConfig, and FeatureFlags.embedding; EmbeddingTableConfig.autoEmbed is now required when embedding is set; removes per-table provider overrides, onEmbeddingFailure, reuseEmbeddingsWhenContentUnchanged. See changeset for full migration notes.
+
+### Features
+
+* **agno-agent-builder:** channel-agnostic loader + WhatsApp + Discord ([#57](https://github.com/Zetesis-Labs/PayloadAgents/issues/57)) ([25766b5](https://github.com/Zetesis-Labs/PayloadAgents/commit/25766b57ed5912d97e3141e8f6d87b2a78c57445))
+* **indexer,typesense:** autoEmbed only + always-on content-hash skip ([#51](https://github.com/Zetesis-Labs/PayloadAgents/issues/51)) ([3ebb6c0](https://github.com/Zetesis-Labs/PayloadAgents/commit/3ebb6c0b297be36973c3c94876a8afdd3ebd9471))
+* introduce the Nexus-Queue standard (runtime + TS client) ([fa0672c](https://github.com/Zetesis-Labs/PayloadAgents/commit/fa0672c17f87ca76c2eaf7dd3295417c560b6d40))
+* introduce the Nexus-Queue standard (runtime + TS client) ([73fce93](https://github.com/Zetesis-Labs/PayloadAgents/commit/73fce93fdc208efed95c573a1c89f69f1fc79d51))
+* **payload-documents:** add plugin with LlamaParse-powered PDF parsing ([15ada08](https://github.com/Zetesis-Labs/PayloadAgents/commit/15ada08c596056c54396a6208c0d427d0b8cd748))
+* **payload-documents:** align mode field with current LlamaParse parse_mode ([f93eb5f](https://github.com/Zetesis-Labs/PayloadAgents/commit/f93eb5fb581e7e5db91a48f20154c09a8d5388a6))
+* **payload-documents:** host-resolved parse-file endpoint for binaries ([23069ae](https://github.com/Zetesis-Labs/PayloadAgents/commit/23069ae0a4be92d5dc04f9a7b7da63d553876abd))
+* **payload-documents:** internal read endpoint to mirror parse-result ([99910e9](https://github.com/Zetesis-Labs/PayloadAgents/commit/99910e9fb4000a18fecec548fa9160d26ac8be2d))
+* **payload-documents:** internal write endpoint for the documents worker ([af819b1](https://github.com/Zetesis-Labs/PayloadAgents/commit/af819b1c48ab1a5d0c422fbba2614d623993f01b))
+* **payload-documents:** new plugin with LlamaParse-powered PDF parsing ([c0e8511](https://github.com/Zetesis-Labs/PayloadAgents/commit/c0e85111bf4d798a56eeea592402ff262247d009))
+* replace chat-agent with AG-UI based @zetesis/agent-ui ([#64](https://github.com/Zetesis-Labs/PayloadAgents/issues/64)) ([adf5acd](https://github.com/Zetesis-Labs/PayloadAgents/commit/adf5acd9cf110bf0339389c215be2075bbf69e5e))
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
+
+### Bug Fixes
+
+* **payload-documents:** address Devin review findings + refresh lockfile ([507dac6](https://github.com/Zetesis-Labs/PayloadAgents/commit/507dac6aac85710adc5790bd82864c362f42b78f))
+* **payload-documents:** always render Parse button at top of form ([277517f](https://github.com/Zetesis-Labs/PayloadAgents/commit/277517fe546daa319b3b1a197c40f52b608bc653))
+* **payload-documents:** constant-time internal-secret comparison ([fab824e](https://github.com/Zetesis-Labs/PayloadAgents/commit/fab824e7caf5e06ae1edefd709b1bbe70c630090))
+* **payload-documents:** mount parse endpoints under the collection and simplify button ([bd86784](https://github.com/Zetesis-Labs/PayloadAgents/commit/bd8678460baf6d095f71ab1f41ec0536f33b9477))
+* **payload-documents:** per-attempt idempotency key for parse ([#104](https://github.com/Zetesis-Labs/PayloadAgents/issues/104)) ([a09c22b](https://github.com/Zetesis-Labs/PayloadAgents/commit/a09c22b1671f37e6127c4982f69b5a144389952e))
+* **payload-documents:** rewrite same-origin absolute doc.url to loopback ([5213061](https://github.com/Zetesis-Labs/PayloadAgents/commit/52130610d96c9cb48f4dbfcfd6627dc373c3ddf7))
+* **payload-documents:** self-fetch uploaded file via localhost, not serverURL ([afb2fa8](https://github.com/Zetesis-Labs/PayloadAgents/commit/afb2fa8503b43fc134879e1dd590c150759dce34))
+
 ## [0.5.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-documents-v0.5.4...payload-documents-v0.5.5) (2026-07-06)
 
 

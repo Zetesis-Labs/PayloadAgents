@@ -1,5 +1,31 @@
 # @zetesis/payload-indexer
 
+## [0.5.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.3...payload-indexer-v0.5.0) (2026-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **indexer,typesense:** removes EmbeddingProviderConfig, EmbeddingService, EmbeddingResolver and their providers; removes IndexerFeatureConfig.embedding, TypesenseRAGPluginConfig.embeddingConfig, and FeatureFlags.embedding; EmbeddingTableConfig.autoEmbed is now required when embedding is set; removes per-table provider overrides, onEmbeddingFailure, reuseEmbeddingsWhenContentUnchanged. See changeset for full migration notes.
+
+### Features
+
+* devcontainer + test server app with chat-agent integration ([#3](https://github.com/Zetesis-Labs/PayloadAgents/issues/3)) ([ee6bd3e](https://github.com/Zetesis-Labs/PayloadAgents/commit/ee6bd3ef11784d315ed65640a144216ef8fd1f5c))
+* **indexer,typesense:** autoEmbed only + always-on content-hash skip ([#51](https://github.com/Zetesis-Labs/PayloadAgents/issues/51)) ([3ebb6c0](https://github.com/Zetesis-Labs/PayloadAgents/commit/3ebb6c0b297be36973c3c94876a8afdd3ebd9471))
+* initial payload-agents monorepo with 5 packages ([d89ddf4](https://github.com/Zetesis-Labs/PayloadAgents/commit/d89ddf46b914ddf2d9e0664a6ec8bb1e11a577c0))
+* pgvector adapter + thin MCP server (A/B vs Typesense) ([#116](https://github.com/Zetesis-Labs/PayloadAgents/issues/116)) ([e66d963](https://github.com/Zetesis-Labs/PayloadAgents/commit/e66d9630ee2bb6d44951dd27092b83ecad46e031))
+* replace chat-agent with AG-UI based @zetesis/agent-ui ([#64](https://github.com/Zetesis-Labs/PayloadAgents/issues/64)) ([adf5acd](https://github.com/Zetesis-Labs/PayloadAgents/commit/adf5acd9cf110bf0339389c215be2075bbf69e5e))
+* updated payload to version 3.85.2 ([0293c78](https://github.com/Zetesis-Labs/PayloadAgents/commit/0293c78f8e07dcc07e0b6f450960a30cf93dfce0))
+
+
+### Bug Fixes
+
+* **indexer:** correct afterChange sync — transaction, populate depth, opt-in metadata-only ([#42](https://github.com/Zetesis-Labs/PayloadAgents/issues/42)) ([f875938](https://github.com/Zetesis-Labs/PayloadAgents/commit/f875938212c0adc3e722aa6d76a2b9de75f0e82d))
+* issue in tsdown at chat-agent and payload-indexer ([c73a899](https://github.com/Zetesis-Labs/PayloadAgents/commit/c73a89959dba50c31f5563bf21978952f7a8e3ce))
+* **payload-indexer:** per-collection defaultColumns wins over global sync default ([305b5df](https://github.com/Zetesis-Labs/PayloadAgents/commit/305b5df7876bb5b61de74c329a714ba90e04181c))
+* **payload-indexer:** per-collection defaultColumns wins over global sync default ([c67fece](https://github.com/Zetesis-Labs/PayloadAgents/commit/c67fecedd3ecd05e500fdbeada5a938bf10be191))
+* **payload-indexer:** report Typesense outages as status=error, not not-indexed ([1a60057](https://github.com/Zetesis-Labs/PayloadAgents/commit/1a600576986aaca58c70001e6144abd8dbf8e1f1))
+* **runtime:** fan out agent reloads via Postgres LISTEN/NOTIFY ([6beb12b](https://github.com/Zetesis-Labs/PayloadAgents/commit/6beb12b1040147b11182911b60ccf876d8ac202c))
+
 ## [0.4.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-indexer-v0.4.2...payload-indexer-v0.4.3) (2026-07-06)
 
 
