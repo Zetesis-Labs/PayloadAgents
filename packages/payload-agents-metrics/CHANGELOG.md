@@ -1,5 +1,21 @@
 # @zetesis/payload-agents-metrics
 
+## [1.4.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.4.0...payload-agents-metrics-v1.4.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **payload-agents-core:** tighten payload peer range to ^3.85.2 ([cdea5da](https://github.com/Zetesis-Labs/PayloadAgents/commit/cdea5da826d25935f11c16993c45fe4ed6a84437))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.1
+  * peerDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.1
+
 ## [1.4.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.3.5...payload-agents-metrics-v1.4.0) (2026-07-06)
 
 
