@@ -1,6 +1,7 @@
 # Nexus-Queue: migración del transporte a NATS JetStream + visión contract-first
 
 > **Estado**: propuesta consolidada (2026-07-03), pendiente de ratificar.
+> **Enmienda 2026-07-08**: el cero-Redis por proyecto queda declarado como estado final con fase propia y diferida (D15 nueva, M10 nueva) — la convivencia Redis+NATS es un estado intermedio de la obra, no el destino.
 > **Evaluación de realismo ejecutada** (mismo día): banco reproducible en `backend/nexus-queue/spike-jetstream/` (veredicto completo en su `EVALUATION.md`). Todas las claims a nivel de broker verificadas en vivo (E2–E7 PASS, incluida la central de scale-to-zero); un supuesto de implementación resultó falso y queda enmendado aquí (D7 resuelta, D14 nueva, M1 ejecutada, M3 redefinida).
 > **Fuentes**: informes Nexus-Queue 1/3, 2/3, 3/3 y anexo "Si migrásemos de Redis" + discusión posterior + spike.
 > **Decisión central**: reemplazar Redis Streams por NATS JetStream como transporte de cola **antes** de construir la capa de plataforma (chart, KEDA, CLI), y evolucionar el estándar hacia un modelo contract-first ("OpenAPI de colas") con un **runtime v2 sin taskiq** (D14).
@@ -9,7 +10,7 @@
 
 ## 0. Resumen ejecutivo
 
-1. **Se migra el transporte de cola** de Redis Streams a NATS JetStream. Redis **no se desmantela**: queda como cache e idempotency store. Lo que se va es Redis como pieza stateful crítica de la cola.
+1. **Se migra el transporte de cola** de Redis Streams a NATS JetStream. Redis **no se desmantela durante la obra**: queda como cache e idempotency store. Lo que se va en el cutover es Redis como pieza stateful crítica de la cola; su retirada total por proyecto es una fase posterior con trigger propio (**M10**, D15) — nunca parte de la migración del transporte.
 2. **La secuencia del informe 3/3 se invierte**: la migración va **antes** de F4–F6 (chart, KEDA, CLI). Construir la plataforma sobre Redis y migrar después es pagar dos veces: la alineación `XAUTOCLAIM`/idle-timeout/cooldown, el tooling alrededor del `DelayedRetryPoller` y el trigger de KEDA para Redis Streams son coste hundido garantizado.
 3. **La suite de conformidad mínima (F7-mínimo) se adelanta a primera posición**: es a la vez el guardián del estándar mientras dura la obra y el **test de aceptación del cutover**. Un estándar sin verificación automática se erosiona con el primer deadline — y una migración sin test de aceptación es una afirmación, no un estado verificado.
 4. **El estándar evoluciona a contract-first**: un contrato YAML por cola (estilo AsyncAPI) del que se generan tipos TS, modelos pydantic, CRDs de NACK, ScaledObjects de KEDA, tests de conformidad y documentación. El contrato *es* el sistema; runtime e infra son proyecciones.
@@ -26,8 +27,8 @@
 |---|---|
 | Redis Streams como transporte (`nq:{p}:{q}`, consumer groups, `XACK`/`XAUTOCLAIM`) | **NATS JetStream** (subjects `nq.{p}.{q}`, durable consumers, ack explícito) |
 | ZSET `nq:*:delayed` + `DelayedRetryPoller` (`delayed.py`) | **Eliminado** — NAK con delay / backoff declarativo del consumer, nativo del broker |
-| Redis como cache | **Se queda** |
-| Redis como idempotency store (dedup `nq_idem`) | **Se queda** |
+| Redis como cache | **Se queda** — en proyectos que lo usen como tal (en ZP ese conjunto es vacío: el único consumidor de Redis es la cola) |
+| Redis como idempotency store (dedup `nq_idem`) | **Se queda durante toda la migración** (imprescindible en el dual-consume, D15); candidato a NATS KV en **M10**, con trigger propio |
 
 ### Reconocimiento honesto del timing
 
@@ -156,10 +157,7 @@ Se mantiene la decisión del informe 2/3: CloudEvents describe el sobre de *un* 
 | D12 | Claim-check vía `BlobStore` pasa de recomendación a **obligación** para payloads grandes | NATS limita el payload a 1 MB por defecto. El publisher valida y rechaza con error tipado. |
 | D13 | El contrato adopta la **descomposición de AsyncAPI** (channels/operations/messages/servers/bindings): `policy` semántica transport-agnostic, transporte solo en `bindings`, servers/credenciales fuera (GitOps). El formato literal (AsyncAPI 3.0 con `x-nq-*` vs YAML propio exportable) se decide en M1 | La separación semántica/binding hace estructural la promesa de D5: un swap de transporte reescribe solo `bindings`. `operations` alimenta el manifest del worker y el tooling de flota. Ver §3.3. Prototipo validado en el spike (E7: 5 proyecciones coherentes de un contrato real). |
 | D14 | **Runtime v2 sin taskiq.** El contrato asume el rol de definición de tasks (`channel`/`operations`); un **receiver propio sobre `nats-py`** asume el runtime (fetch loop con semáforo, dispatch por `HandlerSpec`, `NexusRetryableError`→NAK, `NexusPermanentError`→TERM+DLQ, heartbeat `in_progress`, listener de advisories→DLQ); el publisher publica el envelope directamente (`js.publish`). taskiq sigue en el lado Redis hasta drenar (M5) y sale de las dependencias al cierre | taskiq no puede expresar la semántica JetStream (E1) y su valor residual era un fetch loop + binder de kwargs: lo valioso del runtime (envelope, naming, idempotencia, puertos, handlers tipados, métricas, tracing) **ya es nuestro** — `handlers.py` ya puenteaba taskiq para el around-scope. Las semánticas del receiver están todas validadas en vivo (E2/E3/E4/E6). El scheduler de taskiq no lo usa nadie (verificado). |
-
----
-
-## 5. Mapeo del wire contract (Redis → NATS)
+| D15 | **El idempotency store migra a NATS KV solo como fase diferida (M10) con trigger de estabilidad — nunca durante la migración del transporte.** El objetivo cero-Redis por proyecto es legítimo y queda declarado, pero secuenciado | Dos razones para el "no ahora": (a) el dual-consume de M4–M5 exige que el worker viejo (Redis Streams) y el nuevo (JetStream) vean **los mismos claims** de `nq_idem` — un store compartido y quieto es lo que hace el drain contabilizable; (b) no se acopla la garantía de corrección (exactly-once-effect) al broker recién estrenado cuya curva operacional aún se está aprendiendo. Cuando el transporte lleve semanas estable, el swap es pequeño y aislado: `IdempotencyStore` es una interfaz y la semántica del claim (`create`-si-no-existe + TTL) existe en NATS KV. Ver M10. |
 
 | Hoy (Redis Streams) | Con JetStream | Nota |
 |---|---|---|
@@ -177,7 +175,7 @@ Se mantiene la decisión del informe 2/3: CloudEvents describe el sobre de *un* 
 
 ## 6. Plan de implementación por fases
 
-> Numeración nueva **M0–M9** para no colisionar con las F del informe 3/3. Correspondencias indicadas. Cada fase tiene un **gate** — no se avanza sin cumplirlo.
+> Numeración nueva **M0–M10** para no colisionar con las F del informe 3/3. Correspondencias indicadas. Cada fase tiene un **gate** — no se avanza sin cumplirlo.
 
 ### M0 — Suite de conformidad mínima *(era F7-mínimo; se adelanta)*
 
@@ -213,6 +211,7 @@ Banco reproducible en `backend/nexus-queue/spike-jetstream/` (`./run_all.sh`); v
 
 **Trabajo**:
 - Chart oficial de NATS vía GitOps (Mileto-Infra-GitOps para **cortes**; equivalente en el cluster de nixon). **1 réplica, file storage**, PVC inicial dimensionado (5–10 Gi), límites por defecto de streams.
+- **Versión: nats-server ≥ 2.11 desde el nacimiento** (TTL por mensaje — lo necesita M10 para TTL per-key en el KV de idempotencia) y alinear el devcontainer (hoy 2.10) con la versión del chart. Nacer en 2.11 evita un bump posterior.
 - **NACK** (jetstream-controller) + CRDs `Stream`/`Consumer`.
 - Métricas: exporter/endpoint nativo + ServiceMonitor; **endpoint de monitoring (8222) accesible** — lo consume el scaler de KEDA.
 - ExternalSecret para credenciales (usuario de aplicación con permisos sobre `nq.>`; usuario ops read-only). NetworkPolicy: egress workers → NATS.
@@ -296,6 +295,22 @@ Banco reproducible en `backend/nexus-queue/spike-jetstream/` (`./run_all.sh`); v
 
 **Trabajo**: suite completa (M0 + checklist extendido: métricas, drain, claim-check, contabilidad de idempotencia) obligatoria en el CI de PayloadAgents, ZP y nixon. La spec v1.1 declara: un proyecto es "compliant" **solo** si la suite corre verde en su CI.
 
+### M10 — Idempotencia a NATS KV y cero-Redis por proyecto *(opcional por proyecto; trigger propio — D15)*
+
+> **Trigger**: M5 cerrada **+** 2–4 semanas de operación estable de toda la flota migrada sin incidencias de redelivery/dedup. No antes — este es el orden innegociable: transporte primero, idempotencia después, nunca los dos a la vez.
+
+**Objetivo**: en proyectos donde el único papel residual de Redis sea el idempotency store (ZP hoy: sin cache ni ningún otro consumidor), retirar Redis por completo — **un solo sistema stateful de mensajería**.
+
+**Trabajo**:
+- Implementación de `IdempotencyStore` sobre **NATS KV**: claim = operación `create` (falla si la key existe — semántica idéntica al `SET NX EX` actual; el ciclo claim→release→re-claim sobrevive porque `create` sobre key borrada funciona); TTL vía `max-age` del bucket (la config actual usa un único `idempotency_ttl_s`, encaja) o TTL por mensaje si se quiere granularidad per-key (nats-server ≥ 2.11, que M2 ya fija como versión de nacimiento).
+- **El seam ya existe**: el receiver v2 recibe el store **inyectado** (`nats_runtime.py`) — M10 es una segunda implementación del mismo puerto + selector `idempotency_backend: redis | nats-kv` en `RuntimeConfig`, no un refactor del runtime.
+- **Parametrizar la suite de conformidad también por store** (el harness M0 lo fija a Redis hoy): con el assert "doble publish con mismo `nq_idem` → un solo efecto" corriendo contra el backend como parámetro, el swap hereda su test de aceptación sin escribir nada nuevo.
+- Cutover del store sin migración de datos (el estado es efímero por TTL): ventana de **doble-claim** (claim en ambos stores, miss solo si falta en ambos) durante ≥ 1 TTL completo; después, solo KV.
+- Retirada por proyecto: `redis.enabled: false` en values → borrar StatefulSet/Service/NetworkPolicy de Redis del chart cuando ningún adoptante lo use → quitar `redis` del devcontainer → `redis_url` fuera de settings y `redis` fuera de las dependencias de `nexus_queue`.
+- **El estándar NO exige M10**: un proyecto con un uso legítimo de Redis-cache lo conserva sin penalización de conformidad. Incluye un bump menor de la spec: la v1.1 hoy fija "Redis permanece como idempotency store en ambos (D4)"; M10 la relaja a exigir *un* store conforme (claim atómico + TTL), con `redis` y `nats-kv` como implementaciones válidas.
+
+**Gate / criterio falsable**: cero claves `nq:*` y **cero conexiones a Redis** en el proyecto durante 1 semana con la suite M0/M9 verde contra el store KV — incluido el assert "doble publish con mismo `nq_idem` → un solo efecto".
+
 ---
 
 ## 7. Riesgos y mitigaciones
@@ -313,6 +328,7 @@ Banco reproducible en `backend/nexus-queue/spike-jetstream/` (`./run_all.sh`); v
 | Dual-write del productor (commit DB ok + enqueue fallido) | Jobs perdidos | Independiente del transporte: patrón `CREATED`-antes-de-enqueue + sweep de huérfanos formalizado en spec (D9) |
 | El codegen contract-first no aguanta casos reales | Se cae la visión de elegancia | Degradación honesta: el contrato queda como documentación ejecutable + validación en CI aunque la generación sea parcial; se decide en M1, no tras meses |
 | Drift entre proyectos durante la obra | Volver al punto de partida | M0 corre en los tres CI desde el día uno |
+| Swap del idempotency store a NATS KV (M10): pérdida de claims → efectos dobles | Corrección (exactly-once-effect) | Trigger de estabilidad (nunca junto al transporte, D15); doble-claim durante ≥ 1 TTL; assert de doble publish en la suite contra KV; rollback trivial (reactivar el store Redis, el estado expira solo) |
 
 ---
 
@@ -331,8 +347,9 @@ Nuevos, propios de esta migración:
 6. De un `*.contract.yaml` se generan tipos TS + pydantic + CRDs + ScaledObject **sin edición manual** (o, si M1 degradó la ambición: el contrato valida en CI y ninguna proyección diverge de él).
 7. Suite de conformidad **verde contra NATS en el CI de los tres repos**.
 8. `delayed.py` eliminado del repo; **cero pollers en producción**.
-9. Redis en producción solo como cache + idempotency store; ningún stream `nq:*` activo.
+9. Redis en producción solo como cache + idempotency store; ningún stream `nq:*` activo. *(Al cierre de M5.)*
 10. **taskiq fuera del `pyproject.toml` de nexus-queue** al cierre de M5 (D14) — el runtime v2 no depende de ningún framework de tasks.
+11. **Cero Redis en los proyectos sin uso de cache** al cierre de M10 (D15) — en ZP, un solo sistema stateful de mensajería. *(Opcional por proyecto; trigger de estabilidad propio.)*
 
 ---
 
@@ -345,7 +362,7 @@ Nuevos, propios de esta migración:
 - **No construir F4–F6 sobre Redis en paralelo** "por si acaso" — no pagar las dos facturas.
 - **No relajar la idempotencia de handlers** porque el broker tenga dedup (D4).
 - **No reconstruir un framework de tasks** (D14) — el receiver es una librería fina cuya config viene del contrato; si le crecen hooks genéricos o abstracciones "por si acaso", regla del dos.
-- **No desmantelar Redis** — cambia de papel, no desaparece.
+- **No desmantelar Redis durante la migración del transporte** — en el cutover cambia de papel, no desaparece. Su retirada total es M10, con trigger de estabilidad propio (D15); adelantarla sería cambiar dos variables a la vez.
 - **No mover handlers entre proyectos preventivamente** — movilidad oportunista: cuando la duplicación duela de verdad.
 
 ---
@@ -373,3 +390,4 @@ Se mantienen las conclusiones del informe 2/3, actualizadas tras la decisión:
 | F6 (CLI + observabilidad) | M8 | Contra NATS; federación con trigger propio |
 | F7 (conformidad) | **M0** (mínima) + M9 (completa) | **Adelantada a primera posición** — guardián + test de aceptación |
 | — | M1–M5 | Nuevas: spike, infra, runtime, piloto, migración |
+| — | M10 | Nueva (enmienda 2026-07-08): idempotencia a NATS KV + cero-Redis por proyecto, post-estabilización (D15) |
