@@ -129,8 +129,14 @@ class RuntimeConfig(BaseModel):
             raise ValueError("idempotency_backend='nats-kv' requires nats_url")
         if self.transport == "redis" and not self.redis_url:
             raise ValueError("transport='redis' requires redis_url")
-        if self.idempotency_backend == "redis" and self.idempotency_ttl_s > 0 and not self.redis_url:
-            raise ValueError("idempotency_backend='redis' requires redis_url (or idempotency_ttl_s=0)")
+        if (
+            self.idempotency_backend == "redis"
+            and self.idempotency_ttl_s > 0
+            and not self.redis_url
+        ):
+            raise ValueError(
+                "idempotency_backend='redis' requires redis_url (or idempotency_ttl_s=0)"
+            )
         return self
 
     @property

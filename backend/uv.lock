@@ -100,7 +100,7 @@ requires-dist = [
 
 [[package]]
 name = "agno-agent-builder"
-version = "0.1.15"
+version = "0.1.16"
 source = { editable = "agno-agent-builder" }
 dependencies = [
     { name = "ag-ui-protocol" },
@@ -1599,7 +1599,7 @@ wheels = [
 
 [[package]]
 name = "nexus-queue"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "nexus-queue" }
 dependencies = [
     { name = "fastapi" },
