@@ -49,8 +49,15 @@ async def run_worker(
     host: str = "0.0.0.0",  # noqa: S104 — a worker pod binds all interfaces by design
     port: int = 8000,
     ensure_topology: bool = True,
+    enable_kicker: bool = False,
 ) -> None:
-    """Standard v2 worker entrypoint for ZP documents (``transport='nats'``)."""
+    """Standard v2 worker entrypoint for ZP documents (``transport='nats'``).
+
+    ``enable_kicker`` defaults to False: the web publishes parse jobs to NATS
+    directly (via ``@zetesis/nexus-queue``), so the worker only serves probes
+    and metrics. Set it True to also expose the HTTP ``/enqueue`` kicker for a
+    producer that can't speak NATS.
+    """
     if config.transport != "nats":
         raise ValueError(
             "run_worker requires transport='nats'; transport='redis' runs via "
@@ -64,6 +71,7 @@ async def run_worker(
         host=host,
         port=port,
         ensure_topology=ensure_topology,
+        enable_kicker=enable_kicker,
     )
 
 
