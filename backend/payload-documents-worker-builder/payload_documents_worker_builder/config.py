@@ -35,15 +35,26 @@ class RuntimeConfig(BaseModel):
             "way: it remains the idempotency store."
         ),
     )
-    redis_url: str = Field(
+    redis_url: str | None = Field(
+        default=None,
         description=(
-            "Redis connection URL (e.g. redis://redis:6379). Broker for "
-            "transport='redis'; idempotency store for every transport."
+            "Redis connection URL (e.g. redis://redis:6379). Required for "
+            "transport='redis' and for idempotency_backend='redis'."
         ),
     )
     nats_url: str | None = Field(
         default=None,
-        description="NATS server URL (e.g. nats://nats:4222). Required when transport='nats'.",
+        description=(
+            "NATS server URL (e.g. nats://nats:4222). Required when "
+            "transport='nats' or idempotency_backend='nats-kv'."
+        ),
+    )
+    idempotency_backend: Literal["redis", "nats-kv"] = Field(
+        default="redis",
+        description=(
+            "Where nq_idem claims live. 'nats-kv' + transport='nats' removes "
+            "the worker's Redis dependency entirely (D15/M10)."
+        ),
     )
 
     # ── Payload CMS ────────────────────────────────────────────────────────
@@ -99,6 +110,7 @@ class RuntimeConfig(BaseModel):
             transport=self.transport,
             redis_url=self.redis_url,
             nats_url=self.nats_url,
+            idempotency_backend=self.idempotency_backend,
             internal_secret=self.internal_secret,
             public_paths=self.public_paths,
             max_retries=2,
