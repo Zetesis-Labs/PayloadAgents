@@ -43,22 +43,33 @@ export type ResolveFileBinary = (args: { doc: DocumentRecord; req: PayloadReques
 }>
 
 /**
- * When set, the parse endpoint enqueues a task on a `payload-documents-worker-builder`
- * runtime instead of calling LlamaParse inline. The worker downloads the
- * upload, runs the parse, and writes `parsed_text` / `parse_status` back via
- * Payload REST. The parse-status endpoint becomes a passive read in this mode
- * (it returns the document's current `parse_status` without touching LlamaParse).
+ * When set, the parse endpoint publishes a task straight to NATS JetStream
+ * (via `@zetesis/nexus-queue`) instead of calling LlamaParse inline. The worker
+ * downloads the upload, runs the parse, and writes `parsed_text` / `parse_status`
+ * back via Payload REST. The parse-status endpoint becomes a passive read in
+ * this mode (it returns the document's current `parse_status`).
  */
 export interface DocumentsWorkerConfig {
   /**
-   * Base URL of the FastAPI HTTP "kicker" exposed by the worker
-   * (e.g. `http://localhost:8001` or `http://payload-documents-worker:8001`).
+   * NATS server URL the producer publishes to (e.g. `nats://nats:4222` or
+   * `nats://nats.nats.svc.cluster.local:4222`).
    */
-  url: string
+  natsUrl: string
   /**
-   * Shared secret sent as `X-Nexus-Secret`. Must match the value
+   * Project slug that namespaces the subject (`nq.{project}.{queue}`), e.g. `zp`.
+   * Must match the worker's `RuntimeConfig.project`.
+   */
+  project: string
+  /**
+   * Queue name that namespaces the subject, e.g. `documents`. Must match the
+   * worker's `RuntimeConfig.queue`.
+   */
+  queue: string
+  /**
+   * Shared secret the WORKER sends back as `X-Internal-Secret` when it calls
+   * this app's `/parse-file` / `/parse-context` endpoints. Must match the value
    * `payload-documents-worker-builder` / `nexus-queue` `RuntimeConfig.internal_secret`
-   * was built with.
+   * was built with. (Enqueue no longer uses it — the producer talks NATS directly.)
    */
   internalSecret: string
   /**

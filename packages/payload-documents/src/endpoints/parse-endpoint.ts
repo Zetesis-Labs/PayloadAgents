@@ -7,6 +7,21 @@ import { type EndpointConfig, fetchDocument, getRouteId, requireAuth, updateDocu
 
 const DEFAULT_TASK_NAME = 'documents.parse'
 
+// One NATS connection per worker config, reused across requests (opening one
+// per enqueue would handshake JetStream every parse). The worker config object
+// is created once at plugin init and lives for the process, so keying the
+// client off it gives a natural process-lifetime singleton without globals.
+const clientByWorker = new WeakMap<DocumentsWorkerConfig, NexusQueueClient>()
+
+const queueClient = (worker: DocumentsWorkerConfig): NexusQueueClient => {
+  let client = clientByWorker.get(worker)
+  if (!client) {
+    client = new NexusQueueClient({ natsUrl: worker.natsUrl, project: worker.project, queue: worker.queue })
+    clientByWorker.set(worker, client)
+  }
+  return client
+}
+
 export const createParseEndpoint = (config: EndpointConfig): Endpoint => ({
   path: '/:id/parse',
   method: 'post',
@@ -38,7 +53,7 @@ const queueOnWorker = async (
     parse_job_id: null
   })
 
-  const queue = new NexusQueueClient({ kickerUrl: worker.url, secret: worker.internalSecret })
+  const queue = queueClient(worker)
 
   try {
     // Per-attempt idempotency key: dedupes a redelivery of THIS enqueue, but a
