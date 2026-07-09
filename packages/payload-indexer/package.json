@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-indexer",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Generic document indexing library for Payload CMS with support for multiple search backends, embedding providers, and chunking strategies.",
   "license": "MIT",
   "sideEffects": false,
@@ -33,9 +33,9 @@
     "openai": "^4.68.0"
   },
   "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.81.0",
-    "@payloadcms/ui": "^3.81.0",
-    "payload": "^3.81.0",
+    "@payloadcms/richtext-lexical": "^3.85.2",
+    "@payloadcms/ui": "^3.85.2",
+    "payload": "^3.85.2",
     "react": "^19"
   },
   "peerDependenciesMeta": {

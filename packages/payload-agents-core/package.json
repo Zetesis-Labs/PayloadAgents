@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-agents-core",
-  "version": "0.6.6",
+  "version": "0.8.0",
   "description": "Payload CMS plugin for AI agent management — collections, endpoints, and SSE proxy for Agno-based agent runtimes",
   "license": "MIT",
   "author": {
@@ -48,17 +48,17 @@
   },
   "peerDependencies": {
     "drizzle-orm": ">=0.36",
-    "payload": "^3.0.0",
-    "@payloadcms/ui": "^3.0.0",
+    "payload": "^3.85.2",
+    "@payloadcms/ui": "^3.85.2",
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",
-    "payload": "^3.0.0",
+    "payload": "^3.85.2",
     "rimraf": "3.0.2",
     "tsdown": "^0.16.5",
     "typescript": "5.7.3",
-    "@payloadcms/ui": "^3.0.0",
+    "@payloadcms/ui": "^3.85.2",
     "react": "^19.0.0",
     "@types/react": "^19.0.0"
   },

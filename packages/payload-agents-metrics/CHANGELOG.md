@@ -1,5 +1,91 @@
 # @zetesis/payload-agents-metrics
 
+## [1.5.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.4.1...payload-agents-metrics-v1.5.0) (2026-07-06)
+
+
+### Features
+
+* **agno-agent-builder:** add Teams channel support ([c937a81](https://github.com/Zetesis-Labs/PayloadAgents/commit/c937a81615b56b70350bae9b0a84d8cfffd8bc6f))
+* **agno-agent-builder:** Microsoft Teams channel + attachment intake (Teams + Discord) ([f0dd9af](https://github.com/Zetesis-Labs/PayloadAgents/commit/f0dd9afd2de75e8ae87180da70faedf80351dd53))
+* **metrics:** add payload-agents-metrics package + onRunCompleted hook ([#23](https://github.com/Zetesis-Labs/PayloadAgents/issues/23)) ([ff02b1a](https://github.com/Zetesis-Labs/PayloadAgents/commit/ff02b1a82a6222ff2bf05992f64140c9c2003052))
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9e4f089](https://github.com/Zetesis-Labs/PayloadAgents/commit/9e4f0892b6daaece238ad9dd2ca781b2c3e9de93))
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9a1f4c0](https://github.com/Zetesis-Labs/PayloadAgents/commit/9a1f4c0cfadc29f5d2bf5fa51e5bfdcbb28bc252))
+* replace chat-agent with AG-UI based @zetesis/agent-ui ([#64](https://github.com/Zetesis-Labs/PayloadAgents/issues/64)) ([adf5acd](https://github.com/Zetesis-Labs/PayloadAgents/commit/adf5acd9cf110bf0339389c215be2075bbf69e5e))
+
+
+### Bug Fixes
+
+* **metrics:** batchFetchFirstMessages binds text[] correctly via IN list ([#34](https://github.com/Zetesis-Labs/PayloadAgents/issues/34)) ([7636261](https://github.com/Zetesis-Labs/PayloadAgents/commit/763626164d176eae2603ef2780b110ee949d29f6))
+* **metrics:** re-export MetricsPluginResult (lost in 0.1.0 rebase) ([#32](https://github.com/Zetesis-Labs/PayloadAgents/issues/32)) ([419c5c7](https://github.com/Zetesis-Labs/PayloadAgents/commit/419c5c77a4e8c2145cebd9cb41564a43678d9b94))
+* **payload-agents-core:** tighten payload peer range to ^3.85.2 ([cdea5da](https://github.com/Zetesis-Labs/PayloadAgents/commit/cdea5da826d25935f11c16993c45fe4ed6a84437))
+* **security:** timing-safe internal-secret compare + LlamaParse upload limits ([77ac5c6](https://github.com/Zetesis-Labs/PayloadAgents/commit/77ac5c6954abb196b25f3cb3ef0fe120fa32ca28))
+* **security:** timing-safe internal-secret compare + LlamaParse upload limits ([d3e3fbd](https://github.com/Zetesis-Labs/PayloadAgents/commit/d3e3fbd41dd952d2d46775dde8179c1a064e0a52))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/payload-agents-core bumped to 0.8.0
+  * peerDependencies
+    * @zetesis/payload-agents-core bumped to 0.8.0
+
+## [1.4.1](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.4.0...payload-agents-metrics-v1.4.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **payload-agents-core:** tighten payload peer range to ^3.85.2 ([cdea5da](https://github.com/Zetesis-Labs/PayloadAgents/commit/cdea5da826d25935f11c16993c45fe4ed6a84437))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.1
+  * peerDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.1
+
+## [1.4.0](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.3.5...payload-agents-metrics-v1.4.0) (2026-07-06)
+
+
+### Features
+
+* **agno-agent-builder:** add Teams channel support ([c937a81](https://github.com/Zetesis-Labs/PayloadAgents/commit/c937a81615b56b70350bae9b0a84d8cfffd8bc6f))
+* **agno-agent-builder:** Microsoft Teams channel + attachment intake (Teams + Discord) ([f0dd9af](https://github.com/Zetesis-Labs/PayloadAgents/commit/f0dd9afd2de75e8ae87180da70faedf80351dd53))
+* **metrics:** add payload-agents-metrics package + onRunCompleted hook ([#23](https://github.com/Zetesis-Labs/PayloadAgents/issues/23)) ([ff02b1a](https://github.com/Zetesis-Labs/PayloadAgents/commit/ff02b1a82a6222ff2bf05992f64140c9c2003052))
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9e4f089](https://github.com/Zetesis-Labs/PayloadAgents/commit/9e4f0892b6daaece238ad9dd2ca781b2c3e9de93))
+* **payload-agents-metrics:** persist the gateway's real per-call cost ([9a1f4c0](https://github.com/Zetesis-Labs/PayloadAgents/commit/9a1f4c0cfadc29f5d2bf5fa51e5bfdcbb28bc252))
+* replace chat-agent with AG-UI based @zetesis/agent-ui ([#64](https://github.com/Zetesis-Labs/PayloadAgents/issues/64)) ([adf5acd](https://github.com/Zetesis-Labs/PayloadAgents/commit/adf5acd9cf110bf0339389c215be2075bbf69e5e))
+
+
+### Bug Fixes
+
+* **metrics:** batchFetchFirstMessages binds text[] correctly via IN list ([#34](https://github.com/Zetesis-Labs/PayloadAgents/issues/34)) ([7636261](https://github.com/Zetesis-Labs/PayloadAgents/commit/763626164d176eae2603ef2780b110ee949d29f6))
+* **metrics:** re-export MetricsPluginResult (lost in 0.1.0 rebase) ([#32](https://github.com/Zetesis-Labs/PayloadAgents/issues/32)) ([419c5c7](https://github.com/Zetesis-Labs/PayloadAgents/commit/419c5c77a4e8c2145cebd9cb41564a43678d9b94))
+* **security:** timing-safe internal-secret compare + LlamaParse upload limits ([77ac5c6](https://github.com/Zetesis-Labs/PayloadAgents/commit/77ac5c6954abb196b25f3cb3ef0fe120fa32ca28))
+* **security:** timing-safe internal-secret compare + LlamaParse upload limits ([d3e3fbd](https://github.com/Zetesis-Labs/PayloadAgents/commit/d3e3fbd41dd952d2d46775dde8179c1a064e0a52))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.0
+  * peerDependencies
+    * @zetesis/payload-agents-core bumped to 0.7.0
+
+## [1.3.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.3.4...payload-agents-metrics-v1.3.5) (2026-07-06)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zetesis/payload-agents-core bumped to 0.6.7
+  * peerDependencies
+    * @zetesis/payload-agents-core bumped to 0.6.7
+
 ## [1.3.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-agents-metrics-v1.3.3...payload-agents-metrics-v1.3.4) (2026-06-24)
 
 

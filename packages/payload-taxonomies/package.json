@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-taxonomies",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Taxonomies for Payload CMS",
   "keywords": [
     "payload-cms",
@@ -49,8 +49,8 @@
     "all": "pnpm run taxonomize && pnpm run process && pnpm run diagram"
   },
   "peerDependencies": {
-    "@payloadcms/ui": "^3.81.0",
-    "payload": "^3.81.0",
+    "@payloadcms/ui": "^3.85.2",
+    "payload": "^3.85.2",
     "react": "^19"
   },
   "devDependencies": {
@@ -58,7 +58,7 @@
     "@types/node": "^22.0.0",
     "dotenv": "16.4.7",
     "copyfiles": "^2.4.1",
-    "payload": "^3.81.0",
+    "payload": "^3.85.2",
     "rimraf": "^5.0.10",
     "tsdown": "^0.16.5",
     "typescript": "^5.0.0"

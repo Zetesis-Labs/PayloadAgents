@@ -1,6 +1,6 @@
 {
   "name": "@zetesis/payload-lexical-blocks-builder",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Builder y renderer de bloques para Payload CMS Lexical",
   "keywords": [
     "payload-cms",
@@ -53,13 +53,13 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.81.0",
-    "@payloadcms/ui": "^3.81.0",
-    "payload": "^3.81.0",
+    "@payloadcms/richtext-lexical": "^3.85.2",
+    "@payloadcms/ui": "^3.85.2",
+    "payload": "^3.85.2",
     "react": "^19"
   },
   "devDependencies": {
-    "@payloadcms/richtext-lexical": "^3.81.0",
+    "@payloadcms/richtext-lexical": "^3.85.2",
     "@storybook/react": "^8.6.11",
     "@types/node": "^22.0.0",
     "@types/react": "^19",
