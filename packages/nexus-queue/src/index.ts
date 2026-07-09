@@ -9,7 +9,7 @@
  * on shutdown.
  */
 
-import { connect, type NatsConnection, type JetStreamClient } from 'nats'
+import { connect, type JetStreamClient, type NatsConnection } from 'nats'
 
 /** Wire-contract version — must match the Python runtime's `NQ_VERSION`. */
 export const NQ_VERSION = '1'
