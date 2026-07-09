@@ -96,6 +96,31 @@ def create_nats_kicker(config: RuntimeConfig, *, ensure_topology: bool = True) -
     return _build_kicker(config, publisher_ctx)
 
 
+def create_probes_app(config: RuntimeConfig) -> FastAPI:
+    """HTTP surface for a worker that does NOT accept enqueues — only the
+    Kubernetes probes and the Prometheus scrape endpoint.
+
+    Used when producers publish to the broker directly (no HTTP kicker), so the
+    worker still needs ``/health``, ``/ready`` and ``/metrics`` but not
+    ``/enqueue`` — and therefore no publisher connection of its own.
+    """
+    app = FastAPI(title=config.app_name)
+
+    @app.get("/health")
+    async def health() -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
+        return {"status": "ok"}
+
+    @app.get("/ready")
+    async def ready() -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
+        return {"status": "ok"}
+
+    @app.get("/metrics")
+    async def metrics() -> Response:  # pyright: ignore[reportUnusedFunction]
+        return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+    return app
+
+
 def _build_kicker(
     config: RuntimeConfig,
     publisher_ctx: Callable[[], AbstractAsyncContextManager[_PublisherLike]],

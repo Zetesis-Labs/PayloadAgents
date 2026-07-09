@@ -22,7 +22,7 @@ from nexus_queue.exceptions import (
     NexusRetryableError,
 )
 from nexus_queue.handlers import HandlerSpec, register
-from nexus_queue.kicker import create_kicker, create_nats_kicker
+from nexus_queue.kicker import create_kicker, create_nats_kicker, create_probes_app
 from nexus_queue.lifecycle import (
     IdempotencyStore,
     IdempotencyStorePort,
@@ -86,6 +86,7 @@ __all__ = [
     "create_idempotency_store",
     "create_kicker",
     "create_nats_kicker",
+    "create_probes_app",
     "create_worker",
     "delayed_set",
     "dlq_stream",

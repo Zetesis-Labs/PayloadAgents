@@ -235,6 +235,12 @@ class NatsHarness:
     def make_kicker_app(self, config: RuntimeConfig) -> Any:
         return create_nats_kicker(config)
 
+    async def ensure_topology(self, config: RuntimeConfig) -> None:
+        """Create the work/DLQ streams so a direct producer can publish before
+        any worker exists (the worker would otherwise create them on startup)."""
+        js = await self._js()
+        await ensure_streams(js, config)
+
     @contextlib.asynccontextmanager
     async def publisher(self, config: RuntimeConfig) -> AsyncIterator[NatsPublisher]:
         nc = await nats.connect(NATS_URL)
