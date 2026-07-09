@@ -7,6 +7,8 @@ deploys can build several `RuntimeConfig` instances from a single env file.
 
 from __future__ import annotations
 
+from typing import Literal
+
 from nexus_queue import RuntimeConfig as NexusRuntimeConfig
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
 
@@ -25,8 +27,23 @@ class RuntimeConfig(BaseModel):
     )
 
     # ── Broker ─────────────────────────────────────────────────────────────
+    transport: Literal["redis", "nats"] = Field(
+        default="redis",
+        description=(
+            "Queue transport. 'redis' = taskiq + Redis Streams (v1). 'nats' = the "
+            "taskiq-free JetStream runtime (v2, D14). Redis stays required either "
+            "way: it remains the idempotency store."
+        ),
+    )
     redis_url: str = Field(
-        description="Redis connection URL used by taskiq-redis as the broker (e.g. redis://redis:6379).",
+        description=(
+            "Redis connection URL (e.g. redis://redis:6379). Broker for "
+            "transport='redis'; idempotency store for every transport."
+        ),
+    )
+    nats_url: str | None = Field(
+        default=None,
+        description="NATS server URL (e.g. nats://nats:4222). Required when transport='nats'.",
     )
 
     # ── Payload CMS ────────────────────────────────────────────────────────
@@ -79,7 +96,9 @@ class RuntimeConfig(BaseModel):
             app_name=self.app_name,
             project="zp",
             queue="documents",
+            transport=self.transport,
             redis_url=self.redis_url,
+            nats_url=self.nats_url,
             internal_secret=self.internal_secret,
             public_paths=self.public_paths,
             max_retries=2,
