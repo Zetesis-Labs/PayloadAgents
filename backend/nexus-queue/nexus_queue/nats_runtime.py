@@ -36,6 +36,7 @@ from typing import Any
 
 import nats
 import structlog
+from nats.aio.client import Client as NatsClient
 from nats.aio.msg import Msg
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, RetentionPolicy
@@ -47,7 +48,7 @@ from nexus_queue.config import RuntimeConfig
 from nexus_queue.envelope import Envelope, require_supported_version
 from nexus_queue.exceptions import NexusPermanentError
 from nexus_queue.handlers import HandlerSpec
-from nexus_queue.lifecycle import IdempotencyStore
+from nexus_queue.lifecycle import IdempotencyStorePort, create_idempotency_store
 from nexus_queue.middleware.metrics import COMPLETED, CONSUME_SECONDS, FAILED, RECEIVED
 from nexus_queue.naming import LABEL_IDEM, LABEL_TASK, LABEL_TENANT, LABEL_TRACE, SINGLE_TENANT
 
@@ -165,7 +166,7 @@ class NatsReceiver:
         config: RuntimeConfig,
         deps: Any,
         specs: Sequence[HandlerSpec],
-        idempotency: IdempotencyStore | None,
+        idempotency: IdempotencyStorePort | None,
         *,
         max_concurrency: int = 4,
     ) -> None:
@@ -325,9 +326,9 @@ class NatsWorker:
         self._config = config
         self._deps = deps
         self._specs = list(specs)
-        self._nc: nats.NATS | None = None
+        self._nc: NatsClient | None = None
         self._js: JetStreamContext | None = None
-        self._idempotency = IdempotencyStore(config) if config.idempotency_ttl_s else None
+        self._idempotency = create_idempotency_store(config) if config.idempotency_ttl_s else None
         self._receiver: NatsReceiver | None = None
         self._runner: asyncio.Task[None] | None = None
 
@@ -374,10 +375,12 @@ class NatsWorker:
     async def _on_max_deliveries(self, advisory: Msg) -> None:
         """Exhausted messages are invisible to the worker and to KEDA (E4):
         this listener is their only exit to the DLQ."""
-        if self._js is None or self._receiver is None:
+        if self._js is None or self._receiver is None or advisory.data is None:
             return  # shutdown race: advisory after the worker released its pieces
         body = json.loads(advisory.data)
         raw = await self._js.get_msg(self._config.nats_stream, body["stream_seq"])
+        if raw.data is None:
+            return  # message purged between the advisory and the lookup
         envelope = json.loads(raw.data)
         await self._receiver._dead_letter(  # worker and receiver are one unit
             envelope,

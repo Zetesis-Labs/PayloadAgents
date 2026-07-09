@@ -206,13 +206,15 @@ class RedisHarness:
 class NatsHarness:
     """NATS JetStream implementation (v2 transport: taskiq-free runtime).
 
-    Redis stays in the loop as the idempotency store (D4), so the harness
-    wipes both sides.
+    The claims store is parametrized (D15): 'redis' keeps the v1 store in the
+    loop (D4 transition shape); 'nats-kv' is the zero-Redis shape (M10). The
+    harness wipes both sides either way.
     """
 
     transport = "nats"
 
-    def __init__(self) -> None:
+    def __init__(self, idempotency_backend: str = "redis") -> None:
+        self.idempotency_backend = idempotency_backend
         self._redis: aioredis.Redis = aioredis.from_url(REDIS_URL)
         self._nc: nats.NATS | None = None
 
@@ -222,7 +224,13 @@ class NatsHarness:
         return self._nc.jetstream()
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
-        return make_config(queue, transport="nats", nats_url=NATS_URL, **overrides)
+        return make_config(
+            queue,
+            transport="nats",
+            nats_url=NATS_URL,
+            idempotency_backend=self.idempotency_backend,
+            **overrides,
+        )
 
     def make_kicker_app(self, config: RuntimeConfig) -> Any:
         return create_nats_kicker(config)
@@ -254,7 +262,7 @@ class NatsHarness:
         with contextlib.suppress(Exception):
             for info in await js.streams_info():
                 name = info.config.name or ""
-                if name.startswith("NQ_TEST"):
+                if name.startswith("NQ_TEST") or name == "KV_nq-idem-test":
                     await js.delete_stream(name)
         async for key in self._redis.scan_iter("nq:test*"):
             await self._redis.delete(key)

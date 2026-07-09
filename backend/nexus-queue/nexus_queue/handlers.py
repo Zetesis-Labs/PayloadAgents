@@ -20,7 +20,7 @@ from taskiq import AsyncBroker, Context, TaskiqDepends
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.envelope import require_supported_version
-from nexus_queue.lifecycle import IdempotencyStore
+from nexus_queue.lifecycle import IdempotencyStorePort
 from nexus_queue.middleware.metrics import CONSUME_SECONDS
 from nexus_queue.naming import LABEL_IDEM, LABEL_TENANT, LABEL_TRACE, SINGLE_TENANT
 
@@ -54,7 +54,7 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
         raw_idem = labels.get(LABEL_IDEM) if spec.idempotent else None
         idem = str(raw_idem) if raw_idem else None
         tenant = str(labels.get(LABEL_TENANT, SINGLE_TENANT))
-        store: IdempotencyStore | None = state.nexus_idempotency if idem else None
+        store: IdempotencyStorePort | None = state.nexus_idempotency if idem else None
         # Claim up front so two concurrent in-flight redeliveries can't both run.
         if store is not None and idem and not await store.claim(idem, tenant):
             logger.info("duplicate-skipped", task=spec.task_name, idem=idem)

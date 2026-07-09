@@ -38,15 +38,27 @@ class RuntimeConfig(BaseModel):
             "either way: it remains the idempotency store."
         ),
     )
-    redis_url: str = Field(
+    redis_url: str | None = Field(
+        default=None,
         description=(
-            "Redis URL (e.g. redis://redis:6379). Broker for transport='redis'; "
-            "idempotency store for every transport."
+            "Redis URL (e.g. redis://redis:6379). Required for transport='redis' "
+            "(broker) and for idempotency_backend='redis' (store)."
         ),
     )
     nats_url: str | None = Field(
         default=None,
-        description="NATS server URL (e.g. nats://nats:4222). Required when transport='nats'.",
+        description=(
+            "NATS server URL (e.g. nats://nats:4222). Required when "
+            "transport='nats' or idempotency_backend='nats-kv'."
+        ),
+    )
+    idempotency_backend: Literal["redis", "nats-kv"] = Field(
+        default="redis",
+        description=(
+            "Where nq_idem claims live. 'redis' = SET NX EX (v1 default). "
+            "'nats-kv' = JetStream KV create + bucket max-age TTL (M10, D15) — "
+            "with transport='nats' this removes the Redis dependency entirely."
+        ),
     )
 
     # ── HTTP kicker ────────────────────────────────────────────────────────
@@ -110,9 +122,15 @@ class RuntimeConfig(BaseModel):
         return naming.validate_slug(value, kind=info.field_name or "slug")
 
     @model_validator(mode="after")
-    def _require_nats_url(self) -> RuntimeConfig:
+    def _require_broker_urls(self) -> RuntimeConfig:
         if self.transport == "nats" and not self.nats_url:
             raise ValueError("transport='nats' requires nats_url")
+        if self.idempotency_backend == "nats-kv" and not self.nats_url:
+            raise ValueError("idempotency_backend='nats-kv' requires nats_url")
+        if self.transport == "redis" and not self.redis_url:
+            raise ValueError("transport='redis' requires redis_url")
+        if self.idempotency_backend == "redis" and self.idempotency_ttl_s > 0 and not self.redis_url:
+            raise ValueError("idempotency_backend='redis' requires redis_url (or idempotency_ttl_s=0)")
         return self
 
     @property

@@ -51,6 +51,8 @@ class DelayedRetryPoller:
         self._task: asyncio.Task[None] | None = None
 
     async def startup(self) -> None:
+        if self._config.redis_url is None:  # unreachable: the config validator enforces it
+            raise RuntimeError("the delayed-retry poller requires redis_url")
         self._redis = aioredis.from_url(self._config.redis_url)
         self._task = asyncio.create_task(self._run())
 

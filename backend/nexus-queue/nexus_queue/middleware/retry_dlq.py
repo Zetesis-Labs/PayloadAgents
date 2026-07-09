@@ -49,6 +49,8 @@ class RetryDlqMiddleware(TaskiqMiddleware):
         self._redis: aioredis.Redis | None = None
 
     async def startup(self) -> None:
+        if self._config.redis_url is None:  # unreachable: the config validator enforces it
+            raise RuntimeError("the retry/DLQ middleware requires redis_url")
         self._redis = aioredis.from_url(self._config.redis_url)
 
     async def shutdown(self) -> None:

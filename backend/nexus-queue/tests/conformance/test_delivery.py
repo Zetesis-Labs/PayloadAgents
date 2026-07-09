@@ -6,7 +6,7 @@ import asyncio
 import time
 
 from nexus_queue import HandlerSpec
-from nexus_queue.lifecycle import IdempotencyStore
+from nexus_queue.lifecycle import create_idempotency_store
 from pydantic import BaseModel
 
 from .harness import Scratch, TransportHarness
@@ -17,7 +17,7 @@ class EchoPayload(BaseModel):
 
 
 async def test_idempotency_store_claims(harness: TransportHarness) -> None:
-    store = IdempotencyStore(harness.make_config("q3"))
+    store = create_idempotency_store(harness.make_config("q3"))
     await store.startup()
     try:
         # First claim wins; a concurrent re-delivery of the same key is skipped.

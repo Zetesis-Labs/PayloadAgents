@@ -25,7 +25,10 @@ from nexus_queue.handlers import HandlerSpec, register
 from nexus_queue.kicker import create_kicker, create_nats_kicker
 from nexus_queue.lifecycle import (
     IdempotencyStore,
+    IdempotencyStorePort,
+    NatsKvIdempotencyStore,
     configure_logging,
+    create_idempotency_store,
     register_lifecycle,
 )
 from nexus_queue.naming import (
@@ -60,9 +63,11 @@ __all__ = [
     "Envelope",
     "HandlerSpec",
     "IdempotencyStore",
+    "IdempotencyStorePort",
     "IndexPort",
     "JobStatePort",
     "JobStatus",
+    "NatsKvIdempotencyStore",
     "NatsPublisher",
     "NatsWorker",
     "NexusPermanentError",
@@ -78,6 +83,7 @@ __all__ = [
     "configure_tracing",
     "consumer_group",
     "create_broker",
+    "create_idempotency_store",
     "create_kicker",
     "create_nats_kicker",
     "create_worker",

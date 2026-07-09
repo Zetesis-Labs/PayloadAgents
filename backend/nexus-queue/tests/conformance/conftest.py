@@ -6,18 +6,27 @@ import pytest
 
 from .harness import NatsHarness, RedisHarness, Scratch, TransportHarness
 
-TRANSPORTS = ["redis", "nats"]
+# (transport, idempotency_backend) — the claims store is a second conformance
+# dimension (D15): the same asserts must hold on Redis SET NX EX and on
+# JetStream KV create. transport='redis' with a KV store is not a supported
+# combination (zero-Redis only makes sense on the NATS transport).
+MATRIX = [
+    ("redis", "redis"),
+    ("nats", "redis"),
+    ("nats", "nats-kv"),
+]
 
 
-@pytest.fixture(params=TRANSPORTS)
+@pytest.fixture(params=MATRIX, ids=["redis", "nats", "nats+kv"])
 async def harness(request: pytest.FixtureRequest) -> AsyncIterator[TransportHarness]:
+    transport, store = request.param
     instance: TransportHarness
-    if request.param == "redis":
+    if transport == "redis":
         instance = RedisHarness()
-    elif request.param == "nats":
-        instance = NatsHarness()
+    elif transport == "nats":
+        instance = NatsHarness(idempotency_backend=store)
     else:  # pragma: no cover - guard for future transports
-        raise ValueError(f"unknown transport {request.param!r}")
+        raise ValueError(f"unknown transport {transport!r}")
     await instance.wipe()
     yield instance
     await instance.wipe()

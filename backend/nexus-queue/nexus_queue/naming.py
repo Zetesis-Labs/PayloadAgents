@@ -7,6 +7,7 @@ the same constants.
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 #: Wire-contract version. Bumped only on incompatible envelope changes.
@@ -110,3 +111,29 @@ def idempotency_redis_key(idem: str, *, project: str, tenant: str) -> str:
     natural key.
     """
     return f"nq:{project}:idem:{tenant}:{idem}"
+
+
+# JetStream KV keys only allow this charset; nq_idem is a free-form producer
+# string, so it travels hashed (see idempotency_kv_key).
+_KV_UNSAFE = re.compile(r"[^-/_=.a-zA-Z0-9]")
+
+
+def idempotency_kv_bucket(project: str) -> str:
+    """JetStream KV bucket holding a project's ``nq_idem`` claims (D15/M10).
+
+    Scoped like the Redis keys: project-wide, shared across the project's
+    queues, so the two backends dedup over the same population.
+    """
+    return f"nq-idem-{project}"
+
+
+def idempotency_kv_key(idem: str, *, tenant: str) -> str:
+    """KV key for a claim: ``{tenant}.{sha256(idem)}``.
+
+    The tenant segment keeps the per-tenant namespacing observable; the idem
+    is hashed because KV keys forbid most free-form characters and the
+    producer controls that string.
+    """
+    safe_tenant = _KV_UNSAFE.sub("-", tenant) or SINGLE_TENANT
+    digest = hashlib.sha256(idem.encode()).hexdigest()
+    return f"{safe_tenant}.{digest}"

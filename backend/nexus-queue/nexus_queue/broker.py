@@ -18,6 +18,8 @@ from nexus_queue.middleware.retry_dlq import RetryDlqMiddleware
 
 def create_broker(config: RuntimeConfig) -> AsyncBroker:
     """Build the standard broker: namespaced streams + the Nexus-Queue middleware stack."""
+    if config.redis_url is None:  # unreachable: the config validator enforces it
+        raise RuntimeError("transport='redis' requires redis_url")
     broker: AsyncBroker = RedisStreamBroker(
         url=config.redis_url,
         queue_name=config.work_stream,
