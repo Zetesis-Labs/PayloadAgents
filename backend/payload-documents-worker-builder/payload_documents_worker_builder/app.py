@@ -1,22 +1,18 @@
-"""Top-level factories.
+"""Top-level worker factory.
 
-v1 (taskiq/Redis): ``create_app(config)`` returns a ``WorkerApp``
-(``app, broker = create_app(config)``) — expose ``broker`` to the taskiq CLI
-and ``app`` to uvicorn.
+``run_worker(config)`` / ``main_worker(config)`` — the standard single-process
+JetStream entrypoint: receiver + probes/metrics HTTP, SIGTERM drains gracefully.
 
-v2 (JetStream, D14): ``run_worker(config)`` / ``main_worker(config)`` — the
-standard single-process entrypoint: receiver + kicker/probes/metrics HTTP,
-SIGTERM drains gracefully. Requires ``transport='nats'``.
-
-The broker + retry/DLQ/idempotency/tracing/kicker all come from ``nexus-queue``;
-this package only contributes the ZP adapters and the parse-document handler.
+The runtime (retry/DLQ, KV idempotency, tracing, kicker) all comes from
+``nexus-queue``; this package only contributes the ZP adapters and the
+parse-document handler.
 """
 
 from __future__ import annotations
 
 import asyncio
 
-from nexus_queue import HandlerSpec, WorkerApp, create_worker, run_nats_worker
+from nexus_queue import HandlerSpec, run_nats_worker
 
 from payload_documents_worker_builder.adapters import ZpDocumentsAdapters
 from payload_documents_worker_builder.config import RuntimeConfig
@@ -37,12 +33,6 @@ def _handler_specs() -> list[HandlerSpec]:
     ]
 
 
-def create_app(config: RuntimeConfig) -> WorkerApp:
-    """Build the Nexus-Queue worker for ZP documents (v1, taskiq/Redis)."""
-    adapters = ZpDocumentsAdapters.from_config(config)
-    return create_worker(config.to_nexus_config(), adapters, _handler_specs())
-
-
 async def run_worker(
     config: RuntimeConfig,
     *,
@@ -51,18 +41,13 @@ async def run_worker(
     ensure_topology: bool = True,
     enable_kicker: bool = False,
 ) -> None:
-    """Standard v2 worker entrypoint for ZP documents (``transport='nats'``).
+    """Standard worker entrypoint for ZP documents.
 
     ``enable_kicker`` defaults to False: the web publishes parse jobs to NATS
     directly (via ``@zetesis/nexus-queue``), so the worker only serves probes
     and metrics. Set it True to also expose the HTTP ``/enqueue`` kicker for a
     producer that can't speak NATS.
     """
-    if config.transport != "nats":
-        raise ValueError(
-            "run_worker requires transport='nats'; transport='redis' runs via "
-            "the taskiq CLI + uvicorn over create_app()"
-        )
     adapters = ZpDocumentsAdapters.from_config(config)
     await run_nats_worker(
         config.to_nexus_config(),

@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Zetesis Labs" }]
-keywords = ["payload", "worker", "nexus-queue", "taskiq", "llamaparse"]
+keywords = ["payload", "worker", "nexus-queue", "nats", "llamaparse"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
