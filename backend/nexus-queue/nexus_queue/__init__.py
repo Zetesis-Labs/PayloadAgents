@@ -1,8 +1,8 @@
 """nexus-queue — portable NATS JetStream worker runtime.
 
 Public API: the config, the ports, the envelope, the error taxonomy, and the
-JetStream runtime (worker, publisher, kicker). Producers publish to NATS
-directly via :class:`NatsPublisher` (or the TypeScript client); workers run via
+JetStream runtime (worker, publisher). Producers publish to NATS directly via
+:class:`NatsPublisher` (or the TypeScript client); workers run via
 :func:`run_nats_worker`.
 """
 
@@ -21,7 +21,6 @@ from nexus_queue.exceptions import (
     NexusRetryableError,
 )
 from nexus_queue.handlers import HandlerSpec
-from nexus_queue.kicker import create_nats_kicker, create_probes_app
 from nexus_queue.lifecycle import (
     ClaimOutcome,
     IdempotencyStorePort,
@@ -44,6 +43,7 @@ from nexus_queue.ports import (
     StatusEvent,
     StatusEventPort,
 )
+from nexus_queue.probes import create_probes_app
 from nexus_queue.tracing import configure_tracing
 
 __all__ = [
@@ -69,7 +69,6 @@ __all__ = [
     "configure_logging",
     "configure_tracing",
     "create_idempotency_store",
-    "create_nats_kicker",
     "create_probes_app",
     "dlq_subject",
     "main_nats_worker",

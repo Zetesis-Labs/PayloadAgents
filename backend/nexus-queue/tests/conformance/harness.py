@@ -21,14 +21,12 @@ from nexus_queue import (
     NatsPublisher,
     NatsWorker,
     RuntimeConfig,
-    create_nats_kicker,
 )
 from nexus_queue.naming import nats_dlq_stream_name, nats_stream_name
 from nexus_queue.nats_runtime import ensure_streams
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel
 
 NATS_URL = os.environ.get("NATS_URL", "nats://127.0.0.1:4222")
-SECRET = "test-secret"
 
 
 class PublisherLike(Protocol):
@@ -53,7 +51,6 @@ def make_config(queue: str, **overrides: Any) -> RuntimeConfig:
         "project": "test",
         "queue": queue,
         "nats_url": NATS_URL,
-        "internal_secret": SecretStr(SECRET),
         "max_retries": 2,
         "retry_base_delay_s": 0.2,
     }
@@ -93,10 +90,6 @@ class TransportHarness(Protocol):
     transport: str
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig: ...
-
-    def make_kicker_app(self, config: RuntimeConfig) -> Any:
-        """The HTTP kicker for this transport, ready for uvicorn (lifespan-managed)."""
-        ...
 
     def publisher(self, config: RuntimeConfig) -> contextlib.AbstractAsyncContextManager[Any]:
         """A producer for the queue, without a worker consuming it."""
@@ -140,9 +133,6 @@ class NatsHarness:
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
         return make_config(queue, **overrides)
-
-    def make_kicker_app(self, config: RuntimeConfig) -> Any:
-        return create_nats_kicker(config)
 
     async def ensure_topology(self, config: RuntimeConfig) -> None:
         """Create the work/DLQ streams so a direct producer can publish before

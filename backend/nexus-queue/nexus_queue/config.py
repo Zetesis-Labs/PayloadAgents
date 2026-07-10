@@ -7,7 +7,7 @@ multi-tenant deploy can build several `RuntimeConfig` instances from one env.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, SecretStr, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from nexus_queue import naming
 
@@ -31,16 +31,6 @@ class RuntimeConfig(BaseModel):
     nats_url: str | None = Field(
         default=None,
         description="NATS server URL, e.g. nats://nats:4222 (required).",
-    )
-
-    # ── HTTP kicker ────────────────────────────────────────────────────────
-    internal_secret: SecretStr = Field(
-        default=SecretStr(""),
-        description="Shared secret required by the kicker (X-Nexus-Secret). Empty disables the kicker auth gate.",
-    )
-    public_paths: tuple[str, ...] = Field(
-        default=("/health", "/ready", "/metrics", "/docs", "/openapi.json"),
-        description="Kicker paths served without the secret.",
     )
 
     # ── Retry / DLQ / idempotency ──────────────────────────────────────────

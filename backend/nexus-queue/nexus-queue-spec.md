@@ -42,7 +42,7 @@ Nexus-Queue es el estándar de colas asíncronas para el ecosistema. Dos objetiv
 ├──────────────────────────────────────────────────────────────┤
 │  RUNTIME  nexus-queue:  broker namespaced · middleware stack    │
 │           (tracing·métricas·idempotencia·retry·DLQ) · lifecycle │
-│           · WORKER_TASKS · Publisher · kicker genérico          │
+│           · WORKER_TASKS · Publisher · probes/metrics HTTP      │
 └──────────────────────────────────────────────────────────────┘
    adapters por proyecto ─┐
    ZP    → PayloadJobState · PayloadMedia · TypesenseIndex
@@ -236,22 +236,27 @@ publisher.enqueue(
 ```
 
 ### 8.2 TypeScript — `@zetesis/nexus-queue`
-Cliente HTTP del kicker estándar (`POST /enqueue/{task}` + `X-Nexus-Secret`):
-el envelope lo estampa el kicker server-side, así que el productor TS pone en
-el wire exactamente la misma forma que el Python — en cualquier transporte —
-y propaga `traceparent` (traza e2e desde Node hasta el worker). **Reemplazó el
-kicker hecho a mano de ZP.** (El acceso directo al broker desde TS de la v0.1
-draft no se implementó: un solo camino de escritura es un solo sitio donde
-validar.)
+Publica **directo al broker** (JetStream, subject `nq.{project}.{queue}`):
+estampa el mismo envelope y los mismos labels que el publisher Python (paridad
+verificada por la suite de conformidad §14), valida slugs y tamaño de payload
+en el cliente, pone `Nats-Msg-Id` = clave de idempotencia y propaga
+`traceparent` (traza e2e desde Node hasta el worker). **Reemplazó el kicker
+hecho a mano de ZP.**
 
-### 8.3 Kicker estándar (para productores que no llegan a Redis)
+### 8.3 Fachada HTTP (kicker) — retirada
+No hay fachada HTTP de enqueue: ambos productores (Python y TS) publican
+directo al broker, y el HTTP del worker sirve solo `/health`, `/ready` y
+`/metrics` (D3, `create_probes_app`). El kicker v2 (`POST /enqueue/{task}` +
+`X-Nexus-Secret`) se retiró del paquete al quedarse sin consumidores tras el
+paso del cliente TS a publicación directa; si aparece un productor que no
+pueda hablar NATS (webhook, serverless), se reintroduce con este mismo
+contrato:
 ```
 POST /enqueue/{task}
 X-Nexus-Secret: <hmac>            # o mTLS
 { "payload": {...}, "tenant": "...", "idempotency_key": "...",
   "priority": "default", "trace": "00-..." }
 → 202 { "status": "queued", "task": "<task>", "task_id": "<id>" }
-GET /health · GET /ready          # ready = conectividad al broker
 ```
 
 ---
@@ -278,7 +283,7 @@ GET /health · GET /ready          # ready = conectividad al broker
 
 ## 11. Despliegue y ops
 
-- **Un worker** = runtime + adapters + handlers registrados. Imagen única. Entrypoint: v1 = broker module (taskiq CLI) + uvicorn; v2 = **`run_nats_worker()`** — proceso único con receiver + kicker/probes/métricas HTTP.
+- **Un worker** = runtime + adapters + handlers registrados. Imagen única. Entrypoint: v1 = broker module (taskiq CLI) + uvicorn; v2 = **`run_nats_worker()`** — proceso único con receiver + probes/métricas HTTP.
 - **Split por carga**: `WORKER_TASKS` (idiom de nixon, estándar) — registro selectivo de tasks por env; en Helm, un Deployment por variante.
 - **Autoescalado**: KEDA `ScaledObject` sobre el **lag del consumer** (señal real), no CPU. En NATS: trigger `nats-jetstream` (lag = `num_pending + num_ack_pending` vía monitoring endpoint), **KEDA ≥ 2.15.1** (ideal ≥ 2.20); el consumer durable debe existir independientemente de los workers (CRDs). El endpoint de monitoring no tiene auth → NetworkPolicy.
 - **Resiliencia**: PDB por worker; **probes (D3)**: liveness = salud del proceso; la conectividad al broker es **métrica + alerta, nunca un probe que mate pods** (un parpadeo del broker sincronizaría restarts de toda la flota). Graceful drain: SIGTERM → dejar de consumir + terminar lo en vuelo + ack + salir; `terminationGracePeriodSeconds` debe cubrir el handler más lento.
@@ -312,11 +317,11 @@ Un proyecto cumple si:
 6. Tiene retry+DLQ activos (no drop) y emite status events.
 7. Expone las métricas estándar y probes según D3 (liveness = proceso).
 
-**La suite existe**: `backend/nexus-queue/tests/conformance/` — pytest
-parametrizado por transporte (`TRANSPORTS = [redis, nats]`) contra brokers
-reales, con el round-trip cross-language conduciendo el **dist real** del
-cliente TS a través del kicker. Corre en el CI de este repo (job
-`nexus-queue-conformance`); los proyectos adoptantes la cablean al suyo.
+**La suite existe**: `backend/nexus-queue/tests/conformance/` — pytest contra
+un NATS real (el binding Redis se retiró con el runtime v1), con el round-trip
+cross-language conduciendo el **dist real** del cliente TS publicando directo
+al broker. Corre en el CI de este repo (job `nexus-queue-conformance`); los
+proyectos adoptantes la cablean al suyo.
 
 ---
 
@@ -339,7 +344,7 @@ del runtime (criterio de éxito #10).
 ```
 PayloadAgents/
   packages/nexus-queue/   → npm  @zetesis/nexus-queue   (cliente TS + tipos del envelope + helpers de test)
-  backend/nexus-queue/    → PyPI nexus-queue            (runtime, puertos, middleware, kicker, PipelineRouter)
+  backend/nexus-queue/    → PyPI nexus-queue            (runtime JetStream, puertos, probes)
 ```
 - Release-please (scopes nuevos `nexus-queue` TS + `nexus-queue` Python). Contenido **agnóstico de Zetesis** pese al scope `@zetesis/`; Konect lo consume desde npm/PyPI (ya consume `@zetesis/*`).
 

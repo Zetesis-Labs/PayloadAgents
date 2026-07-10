@@ -1,13 +1,11 @@
-"""Wire contract (spec §4): naming, envelope labels, typed payload, kicker."""
+"""Wire contract (spec §4): naming, envelope labels, typed payload."""
 
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
-from nexus_queue import create_nats_kicker
 from nexus_queue.naming import REQUIRED_LABELS
 from pydantic import BaseModel
 
-from .harness import SECRET, TransportHarness, make_config
+from .harness import TransportHarness
 
 TRACEPARENT = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
@@ -52,21 +50,3 @@ async def test_default_stream_never_used(harness: TransportHarness) -> None:
         await publisher.enqueue("test.echo", EchoPayload(id="ns1"), idempotency_key="test-ns1")
         assert len(await harness.read_work_messages("test", "q1")) == 1
         await harness.assert_default_stream_unused()
-
-
-def test_kicker_auth_and_enqueue() -> None:
-    """Spec §8.3: the HTTP kicker rejects a missing secret and accepts an
-    authenticated enqueue. The wire shape it publishes is covered by
-    test_publisher_stamps_envelope; here we only assert the auth gate + 202."""
-    config = make_config("q2")
-    app = create_nats_kicker(config, ensure_topology=True)
-    with TestClient(app) as client:
-        denied = client.post("/enqueue/test.echo", json={"payload": {"id": "x"}})
-        assert denied.status_code == 403
-        ok = client.post(
-            "/enqueue/test.echo",
-            json={"payload": {"id": "x"}, "idempotency_key": "test-k2"},
-            headers={"X-Nexus-Secret": SECRET},
-        )
-        assert ok.status_code == 202
-        assert ok.json()["task"] == "test.echo"
