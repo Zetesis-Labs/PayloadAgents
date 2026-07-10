@@ -1,11 +1,10 @@
-"""Generic HTTP kicker for producers that can't speak the broker directly
-(e.g. a TypeScript/Payload caller). One standard contract for every project
-and transport: ``POST /enqueue/{task}`` gated by ``X-Nexus-Secret``, plus
-``/health``/``/ready``/``/metrics``.
+"""Generic HTTP kicker for producers that can't speak NATS directly (e.g. a
+webhook or serverless caller). ``POST /enqueue/{task}`` gated by
+``X-Nexus-Secret``, plus ``/health``/``/ready``/``/metrics``.
 
-The HTTP surface is transport-independent; only the publisher wired in the
-lifespan changes: :func:`create_kicker` (taskiq/Redis, v1) vs
-:func:`create_nats_kicker` (JetStream, v2).
+Built by :func:`create_nats_kicker`; :func:`create_probes_app` is the
+probes/metrics-only variant for workers whose producers publish to NATS
+directly.
 """
 
 from __future__ import annotations
@@ -20,11 +19,9 @@ from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
-from taskiq import AsyncBroker
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.naming import SINGLE_TENANT
-from nexus_queue.publisher import Publisher
 
 logger = structlog.get_logger("nexus_queue.kicker")
 
@@ -50,31 +47,12 @@ class _PublisherLike(Protocol):
     ) -> str: ...
 
 
-def create_kicker(broker: AsyncBroker, config: RuntimeConfig) -> FastAPI:
-    """Build the FastAPI kicker for the taskiq/Redis transport (v1)."""
-
-    @asynccontextmanager
-    async def publisher_ctx() -> AsyncIterator[_PublisherLike]:
-        # The kicker connects the broker; the worker process owns its own lifecycle.
-        if not broker.is_worker_process:
-            await broker.startup()
-        try:
-            yield Publisher(broker, config)
-        finally:
-            if not broker.is_worker_process:
-                await broker.shutdown()
-
-    return _build_kicker(config, publisher_ctx)
-
-
 def create_nats_kicker(config: RuntimeConfig, *, ensure_topology: bool = True) -> FastAPI:
-    """Build the FastAPI kicker for the JetStream transport (v2, D14).
+    """Build the FastAPI kicker for JetStream (D14).
 
     Owns its NATS connection through the app lifespan. ``ensure_topology``
     creates the work/DLQ streams if absent (tests/local dev; prod = NACK CRDs).
     """
-    if config.transport != "nats":
-        raise ValueError("create_nats_kicker requires transport='nats'")
 
     @asynccontextmanager
     async def publisher_ctx() -> AsyncIterator[_PublisherLike]:
@@ -83,7 +61,7 @@ def create_nats_kicker(config: RuntimeConfig, *, ensure_topology: bool = True) -
         from nexus_queue.nats_runtime import NatsPublisher, ensure_streams
 
         if config.nats_url is None:  # unreachable: the config validator enforces it
-            raise RuntimeError("transport='nats' requires nats_url")
+            raise RuntimeError("nats_url is required")
         nc = await nats.connect(config.nats_url)
         js = nc.jetstream()
         if ensure_topology:

@@ -43,35 +43,10 @@ def validate_slug(part: str, *, kind: str) -> str:
     return part
 
 
-def work_stream(project: str, queue: str) -> str:
-    """Redis stream key that carries work for a queue."""
-    return f"nq:{project}:{queue}"
-
-
-def consumer_group(project: str, queue: str) -> str:
-    """Consumer group name for a queue's workers."""
-    return f"nq:{project}:{queue}:cg"
-
-
-def dlq_stream(project: str, queue: str) -> str:
-    """Dead-letter stream key for a queue."""
-    return f"nq:{project}:{queue}:dlq"
-
-
-def delayed_set(project: str, queue: str) -> str:
-    """Sorted-set key holding retries until their backoff elapses."""
-    return f"nq:{project}:{queue}:delayed"
-
-
-def status_stream(project: str) -> str:
-    """Per-project status-event stream key."""
-    return f"nq:{project}:status"
-
-
-# ── NATS JetStream naming (transport v2) ───────────────────────────────────
-# Mechanical mapping of the Redis names (spec §4.2): `nq:{p}:{q}` ⇄ `nq.{p}.{q}`.
-# Stream/durable names replace hyphens: NATS identifiers reject them less
-# predictably than subjects, and the codegen (contract → CRD) does the same.
+# ── NATS JetStream naming ──────────────────────────────────────────────────
+# `nq.{project}.{queue}` for subjects; stream/durable names replace hyphens,
+# since NATS identifiers reject them less predictably than subjects (the codegen
+# contract → CRD does the same).
 
 
 def _nats_token(part: str) -> str:
@@ -122,16 +97,6 @@ def nats_advisory_stream_name(project: str, queue: str) -> str:
 def nats_advisory_durable_name(project: str, queue: str) -> str:
     """Durable consumer the workers share to process advisories once each."""
     return f"nq_{_nats_token(project)}_{_nats_token(queue)}_adv"
-
-
-def idempotency_redis_key(idem: str, *, project: str, tenant: str) -> str:
-    """Redis key used by the idempotency middleware to dedup a message.
-
-    Namespaced by project + tenant (like every other key here) so a shared Redis
-    can't let one tenant poison another's dedup state or collide on a shared
-    natural key.
-    """
-    return f"nq:{project}:idem:{tenant}:{idem}"
 
 
 # JetStream KV keys only allow this charset; nq_idem is a free-form producer

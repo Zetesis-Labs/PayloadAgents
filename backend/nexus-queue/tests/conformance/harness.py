@@ -16,27 +16,19 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any, Protocol
 
 import nats
-import redis.asyncio as aioredis
 from nexus_queue import (
     HandlerSpec,
     NatsPublisher,
     NatsWorker,
-    Publisher,
     RuntimeConfig,
-    create_broker,
-    create_kicker,
     create_nats_kicker,
-    create_worker,
 )
-from nexus_queue.naming import dlq_stream, nats_dlq_stream_name, nats_stream_name, work_stream
+from nexus_queue.naming import nats_dlq_stream_name, nats_stream_name
 from nexus_queue.nats_runtime import ensure_streams
 from pydantic import BaseModel, SecretStr
-from taskiq.api import run_receiver_task
 
-REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379")
 NATS_URL = os.environ.get("NATS_URL", "nats://127.0.0.1:4222")
 SECRET = "test-secret"
-DEFAULT_TASKIQ_STREAM = "taskiq"
 
 
 class PublisherLike(Protocol):
@@ -60,11 +52,10 @@ def make_config(queue: str, **overrides: Any) -> RuntimeConfig:
         "app_name": "nexus-queue-conformance",
         "project": "test",
         "queue": queue,
-        "redis_url": REDIS_URL,
+        "nats_url": NATS_URL,
         "internal_secret": SecretStr(SECRET),
         "max_retries": 2,
         "retry_base_delay_s": 0.2,
-        "retry_poll_interval_s": 0.05,
     }
     params.update(overrides)
     return RuntimeConfig(**params)
@@ -134,88 +125,12 @@ class TransportHarness(Protocol):
         ...
 
 
-class RedisHarness:
-    """Redis Streams implementation (v1 transport: taskiq runtime)."""
-
-    transport = "redis"
-
-    def __init__(self) -> None:
-        self._client: aioredis.Redis = aioredis.from_url(REDIS_URL)
-
-    def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
-        return make_config(queue, **overrides)
-
-    def make_kicker_app(self, config: RuntimeConfig) -> Any:
-        return create_kicker(create_broker(config), config)
-
-    @contextlib.asynccontextmanager
-    async def publisher(self, config: RuntimeConfig) -> AsyncIterator[Publisher]:
-        broker = create_broker(config)
-        await broker.startup()
-        try:
-            yield Publisher(broker, config)
-        finally:
-            await broker.shutdown()
-
-    @contextlib.asynccontextmanager
-    async def running_worker(
-        self, config: RuntimeConfig, deps: Any, specs: Sequence[HandlerSpec]
-    ) -> AsyncIterator[Publisher]:
-        worker = create_worker(config, deps, list(specs))
-        client_broker = create_broker(config)
-        await client_broker.startup()
-        receiver = asyncio.create_task(run_receiver_task(worker.broker, run_startup=True))
-        await asyncio.sleep(0.5)  # let the consumer group form + start listening
-        try:
-            yield Publisher(client_broker, config)
-        finally:
-            receiver.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await receiver
-            await client_broker.shutdown()
-            await worker.broker.shutdown()
-
-    async def wipe(self) -> None:
-        async for key in self._client.scan_iter("nq:test*"):
-            await self._client.delete(key)
-        await self._client.delete(DEFAULT_TASKIQ_STREAM)
-
-    async def close(self) -> None:
-        await self._client.aclose()
-
-    async def read_work_messages(self, project: str, queue: str) -> list[dict[str, Any]]:
-        entries = await self._client.xrange(work_stream(project, queue))
-        return [json.loads(fields[b"data"]) for _, fields in entries]
-
-    async def wait_dlq_record(self, project: str, queue: str, tries: int = 50) -> dict[str, Any]:
-        stream = dlq_stream(project, queue)
-        for _ in range(tries):
-            entries = await self._client.xrange(stream)
-            if entries:
-                record: dict[str, Any] = json.loads(entries[0][1][b"data"])
-                return record
-            await asyncio.sleep(0.1)
-        raise AssertionError(f"DLQ {stream} stayed empty")
-
-    async def assert_default_stream_unused(self) -> None:
-        assert await self._client.xlen(DEFAULT_TASKIQ_STREAM) == 0, (
-            "a message landed on the default 'taskiq' stream — naming contract broken"
-        )
-
-
 class NatsHarness:
-    """NATS JetStream implementation (v2 transport: taskiq-free runtime).
-
-    The claims store is parametrized (D15): 'redis' keeps the v1 store in the
-    loop (D4 transition shape); 'nats-kv' is the zero-Redis shape (M10). The
-    harness wipes both sides either way.
-    """
+    """NATS JetStream implementation — the runtime."""
 
     transport = "nats"
 
-    def __init__(self, idempotency_backend: str = "redis") -> None:
-        self.idempotency_backend = idempotency_backend
-        self._redis: aioredis.Redis = aioredis.from_url(REDIS_URL)
+    def __init__(self) -> None:
         self._nc: nats.NATS | None = None
 
     async def _js(self) -> Any:
@@ -224,13 +139,7 @@ class NatsHarness:
         return self._nc.jetstream()
 
     def make_config(self, queue: str, **overrides: Any) -> RuntimeConfig:
-        return make_config(
-            queue,
-            transport="nats",
-            nats_url=NATS_URL,
-            idempotency_backend=self.idempotency_backend,
-            **overrides,
-        )
+        return make_config(queue, **overrides)
 
     def make_kicker_app(self, config: RuntimeConfig) -> Any:
         return create_nats_kicker(config)
@@ -270,11 +179,8 @@ class NatsHarness:
                 name = info.config.name or ""
                 if name.startswith("NQ_TEST") or name == "KV_nq-idem-test":
                     await js.delete_stream(name)
-        async for key in self._redis.scan_iter("nq:test*"):
-            await self._redis.delete(key)
 
     async def close(self) -> None:
-        await self._redis.aclose()
         if self._nc is not None:
             await self._nc.close()
 

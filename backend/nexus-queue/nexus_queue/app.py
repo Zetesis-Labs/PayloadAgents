@@ -1,60 +1,23 @@
-"""Top-level factories.
+"""Top-level worker entrypoint (JetStream, D14).
 
-v1 (taskiq/Redis): ``create_worker(config, adapters, handlers)`` — expose the
-returned ``broker`` to the taskiq CLI and ``app`` to uvicorn (two processes,
-or the in-process ``--workers 1`` pattern).
-
-v2 (JetStream, D14): ``run_nats_worker(config, adapters, handlers)`` — the
-standard single-process entrypoint the worker chart expects: receiver +
-kicker/probes/metrics HTTP in one process, SIGTERM drains gracefully.
+``run_nats_worker(config, adapters, handlers)`` is the standard single-process
+entrypoint the worker chart expects: receiver + kicker/probes/metrics HTTP in
+one process, SIGTERM drains gracefully.
 """
 
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
+from collections.abc import Sequence
 
 import uvicorn
-from fastapi import FastAPI
-from taskiq import AsyncBroker
 
-from nexus_queue.broker import create_broker
 from nexus_queue.config import RuntimeConfig
-from nexus_queue.handlers import HandlerSpec, register
-from nexus_queue.kicker import create_kicker, create_nats_kicker, create_probes_app
-from nexus_queue.lifecycle import configure_logging, register_lifecycle
+from nexus_queue.handlers import HandlerSpec
+from nexus_queue.kicker import create_nats_kicker, create_probes_app
+from nexus_queue.lifecycle import configure_logging
 from nexus_queue.nats_runtime import NatsWorker
 from nexus_queue.tracing import configure_tracing
-
-
-@dataclass(slots=True, frozen=True)
-class WorkerApp:
-    """Bundle returned by :func:`create_worker`: ``app, broker = create_worker(...)``."""
-
-    app: FastAPI
-    broker: AsyncBroker
-
-    def __iter__(self) -> Iterator[FastAPI | AsyncBroker]:
-        yield self.app
-        yield self.broker
-
-
-def create_worker(
-    config: RuntimeConfig,
-    adapters: object,
-    handlers: Sequence[HandlerSpec],
-) -> WorkerApp:
-    """Build the broker (namespaced + middleware), register lifecycle + handlers,
-    and wrap a FastAPI kicker."""
-    configure_logging(config)
-    configure_tracing(config)
-    broker = create_broker(config)
-    register_lifecycle(broker, config, adapters)
-    for spec in handlers:
-        register(broker, spec, config)
-    app = create_kicker(broker, config)
-    return WorkerApp(app=app, broker=broker)
 
 
 async def run_nats_worker(

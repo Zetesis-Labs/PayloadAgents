@@ -419,11 +419,9 @@ class NatsReceiver:
 
 
 class NatsWorker:
-    """Owns the v2 worker lifecycle: connection, topology, receiver, advisories."""
+    """Owns the worker lifecycle: connection, topology, receiver, advisories."""
 
     def __init__(self, config: RuntimeConfig, deps: Any, specs: Sequence[HandlerSpec]) -> None:
-        if config.transport != "nats":
-            raise ValueError("NatsWorker requires transport='nats'")
         self._config = config
         self._deps = deps
         self._specs = list(specs)

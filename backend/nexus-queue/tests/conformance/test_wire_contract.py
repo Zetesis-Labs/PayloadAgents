@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import redis as redis_sync
 from fastapi.testclient import TestClient
-from nexus_queue import create_broker, create_kicker
-from nexus_queue.naming import REQUIRED_LABELS, work_stream
+from nexus_queue import create_nats_kicker
+from nexus_queue.naming import REQUIRED_LABELS
 from pydantic import BaseModel
 
-from .harness import REDIS_URL, SECRET, TransportHarness, make_config
+from .harness import SECRET, TransportHarness, make_config
 
 TRACEPARENT = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
@@ -56,14 +55,11 @@ async def test_default_stream_never_used(harness: TransportHarness) -> None:
 
 
 def test_kicker_auth_and_enqueue() -> None:
-    """Spec §8.3: the HTTP kicker rejects missing secrets and stamps the
-    envelope server-side. (Wire read is redis-sync here because the kicker
-    test is sync; the enqueue path itself goes through the broker.)"""
+    """Spec §8.3: the HTTP kicker rejects a missing secret and accepts an
+    authenticated enqueue. The wire shape it publishes is covered by
+    test_publisher_stamps_envelope; here we only assert the auth gate + 202."""
     config = make_config("q2")
-    broker = create_broker(config)
-    app = create_kicker(broker, config)
-    sync = redis_sync.from_url(REDIS_URL)
-    sync.delete(work_stream("test", "q2"))
+    app = create_nats_kicker(config, ensure_topology=True)
     with TestClient(app) as client:
         denied = client.post("/enqueue/test.echo", json={"payload": {"id": "x"}})
         assert denied.status_code == 403
@@ -74,6 +70,3 @@ def test_kicker_auth_and_enqueue() -> None:
         )
         assert ok.status_code == 202
         assert ok.json()["task"] == "test.echo"
-    entries = sync.xrange(work_stream("test", "q2"))
-    assert len(entries) == 1
-    sync.close()
