@@ -55,6 +55,10 @@ const queueOnWorker = async (
   const existing = await fetchDocument(req, collectionSlug, id)
   if (existing instanceof Response) return existing
   const version = existing.updatedAt ?? id
+  // Scope the job to its tenant (multi-tenant deploys) so idempotency claims are
+  // namespaced per tenant on the worker; undefined falls back to the single-
+  // tenant sentinel in the client.
+  const tenant = existing.tenant != null ? String(existing.tenant) : undefined
 
   await updateDocument(req, collectionSlug, id, {
     parse_status: 'pending',
@@ -66,7 +70,7 @@ const queueOnWorker = async (
 
   try {
     const idempotencyKey = `${id}:${version}`
-    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey })
+    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey, tenant })
     return Response.json({ status: 'queued' })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker is unreachable'

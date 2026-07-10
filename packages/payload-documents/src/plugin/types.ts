@@ -14,6 +14,9 @@ export interface DocumentRecord {
   id: string | number
   /** Payload's row version timestamp; used to key a parse job for idempotency. */
   updatedAt?: string | null
+  /** Owning tenant id (multi-tenant deploys); stamped on the parse job for
+   * per-tenant idempotency namespacing and tracing. */
+  tenant?: string | number | null
   filename?: string | null
   url?: string | null
   mimeType?: string | null
