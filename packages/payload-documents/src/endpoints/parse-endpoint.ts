@@ -127,7 +127,12 @@ const queueOnWorker = async (
     )
     return Response.json({ status: 'queued' })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Worker is unreachable'
+    // Log the real failure (it names the broker URL and subject) but persist
+    // and return a generic message: parse_error is readable by anyone with
+    // read access to the doc and the 502 body reaches the browser — neither
+    // should leak the internal broker topology.
+    req.payload.logger.error({ err: error, documentId: id }, 'Failed to publish the parse job to NATS')
+    const message = 'Failed to queue the parse job'
     await updateDocument(req, collectionSlug, id, {
       parse_status: 'error',
       parse_error: message
