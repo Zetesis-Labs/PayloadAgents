@@ -20,7 +20,8 @@ from taskiq import AsyncBroker, Context, TaskiqDepends
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.envelope import require_supported_version
-from nexus_queue.lifecycle import IdempotencyStorePort
+from nexus_queue.exceptions import NexusRetryableError
+from nexus_queue.lifecycle import ClaimOutcome, IdempotencyStorePort
 from nexus_queue.middleware.metrics import CONSUME_SECONDS
 from nexus_queue.naming import LABEL_IDEM, LABEL_TENANT, LABEL_TRACE, SINGLE_TENANT
 
@@ -55,10 +56,17 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
         idem = str(raw_idem) if raw_idem else None
         tenant = str(labels.get(LABEL_TENANT, SINGLE_TENANT))
         store: IdempotencyStorePort | None = state.nexus_idempotency if idem else None
-        # Claim up front so two concurrent in-flight redeliveries can't both run.
-        if store is not None and idem and not await store.claim(idem, tenant):
-            logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
-            return
+        # Claim up front. DONE -> a prior attempt completed, skip. IN_PROGRESS ->
+        # another live attempt holds it (or a crashed one whose lease hasn't
+        # expired): raise so taskiq retries rather than dropping the message.
+        if store is not None and idem:
+            outcome = await store.claim(idem, tenant)
+            if outcome is ClaimOutcome.DONE:
+                logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
+                return
+            if outcome is ClaimOutcome.IN_PROGRESS:
+                logger.info("claim-in-progress", task=spec.task_name, idem=idem)
+                raise NexusRetryableError(f"idempotency claim in progress: {idem}")
 
         adapters = state.nexus_adapters
         try:
@@ -74,6 +82,13 @@ def register(broker: AsyncBroker, spec: HandlerSpec, config: RuntimeConfig) -> N
                 span.set_attribute("nq.tenant", tenant)
                 with CONSUME_SECONDS.labels(config.project, config.queue, spec.task_name).time():
                     await spec.handler(payload, adapters)
+            # Mark the claim done (dedups later duplicates for the TTL). The
+            # taskiq path has no heartbeat, so the in-progress lease is not
+            # refreshed mid-run — idempotency_lease_s must exceed the handler's
+            # runtime on this transport, else a concurrent same-idem could take
+            # the claim over.
+            if store is not None and idem:
+                await store.mark_done(idem, tenant)
         except Exception:
             # Release the claim so a legitimate retry can re-claim — otherwise the
             # up-front claim would make the retry skip itself as a phantom dup.

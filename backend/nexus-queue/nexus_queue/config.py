@@ -92,6 +92,18 @@ class RuntimeConfig(BaseModel):
         ge=0,
         description="TTL of the dedup key; 0 disables the idempotency middleware.",
     )
+    idempotency_lease_s: float = Field(
+        default=30.0,
+        gt=0,
+        description=(
+            "Lease on an in-progress claim, refreshed while the handler runs "
+            "(via the ack_wait heartbeat). If the holder dies, the lease "
+            "expires after this many seconds and a later delivery takes the "
+            "claim over — bounding how long a crashed attempt blocks its idem "
+            "key (vs the full idempotency_ttl_s). Must exceed the heartbeat "
+            "interval; short handlers never reach it."
+        ),
+    )
     dlq_maxlen: int = Field(
         default=100_000,
         ge=0,

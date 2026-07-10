@@ -6,7 +6,7 @@ import asyncio
 import time
 
 from nexus_queue import HandlerSpec
-from nexus_queue.lifecycle import create_idempotency_store
+from nexus_queue.lifecycle import ClaimOutcome, create_idempotency_store
 from pydantic import BaseModel
 
 from .harness import Scratch, TransportHarness
@@ -20,14 +20,35 @@ async def test_idempotency_store_claims(harness: TransportHarness) -> None:
     store = create_idempotency_store(harness.make_config("q3"))
     await store.startup()
     try:
-        # First claim wins; a concurrent re-delivery of the same key is skipped.
-        assert await store.claim("test-idem", "_") is True
-        assert await store.claim("test-idem", "_") is False
+        # First claim wins; a second, concurrent claim of the same live key is
+        # deferred (the holder hasn't finished), not treated as a completion.
+        assert await store.claim("test-idem", "_") is ClaimOutcome.CLAIMED
+        assert await store.claim("test-idem", "_") is ClaimOutcome.IN_PROGRESS
         # A failed attempt releases the claim so a legitimate retry can re-claim.
         await store.release("test-idem", "_")
-        assert await store.claim("test-idem", "_") is True
+        assert await store.claim("test-idem", "_") is ClaimOutcome.CLAIMED
+        # Once marked done, a later claim of the same key is a genuine duplicate.
+        await store.mark_done("test-idem", "_")
+        assert await store.claim("test-idem", "_") is ClaimOutcome.DONE
         # A different tenant is namespaced apart, so it never collides.
-        assert await store.claim("test-idem", "other") is True
+        assert await store.claim("test-idem", "other") is ClaimOutcome.CLAIMED
+    finally:
+        await store.shutdown()
+
+
+async def test_idempotency_stale_lease_is_taken_over(harness: TransportHarness) -> None:
+    """A crashed holder never releases its claim; once the lease expires a later
+    delivery must be able to take it over (not be skipped forever)."""
+    config = harness.make_config("q3b", idempotency_lease_s=0.3)
+    store = create_idempotency_store(config)
+    await store.startup()
+    try:
+        assert await store.claim("stale-idem", "_") is ClaimOutcome.CLAIMED
+        # Simulated crash: no refresh, no release. While the lease is live the
+        # claim is deferred; once it expires it can be taken over.
+        assert await store.claim("stale-idem", "_") is ClaimOutcome.IN_PROGRESS
+        await asyncio.sleep(0.5)
+        assert await store.claim("stale-idem", "_") is ClaimOutcome.CLAIMED
     finally:
         await store.shutdown()
 

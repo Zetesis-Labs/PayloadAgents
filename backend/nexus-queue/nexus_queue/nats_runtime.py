@@ -48,7 +48,7 @@ from nexus_queue.config import RuntimeConfig
 from nexus_queue.envelope import Envelope, require_supported_version
 from nexus_queue.exceptions import NexusPermanentError
 from nexus_queue.handlers import HandlerSpec
-from nexus_queue.lifecycle import IdempotencyStorePort, create_idempotency_store
+from nexus_queue.lifecycle import ClaimOutcome, IdempotencyStorePort, create_idempotency_store
 from nexus_queue.middleware.metrics import (
     COMPLETED,
     CONSUME_SECONDS,
@@ -267,13 +267,26 @@ class NatsReceiver:
             idem = str(idem_raw) if idem_raw else None
             tenant = str(labels.get(LABEL_TENANT, SINGLE_TENANT))
             store = self._idempotency if idem else None
-            # Claim up front so two concurrent in-flight redeliveries can't both run.
-            if store is not None and idem and not await store.claim(idem, tenant):
-                logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
-                await msg.ack()
-                return
+            # Claim up front. The outcome distinguishes a completed duplicate
+            # (skip) from another live attempt (defer) from our own claim (run) —
+            # a crashed holder's claim leases out, so it never masquerades as
+            # "done" and gets the message ACK-and-dropped (the old silent loss).
+            if store is not None and idem:
+                outcome = await store.claim(idem, tenant)
+                if outcome is ClaimOutcome.DONE:
+                    logger.info("duplicate-skipped", task=spec.task_name, idem=idem)
+                    await msg.ack()
+                    return
+                if outcome is ClaimOutcome.IN_PROGRESS:
+                    # Another live attempt owns this idem — defer, never ACK-drop.
+                    # If that holder is actually dead its lease expires and a
+                    # later delivery takes over; otherwise this redelivers or,
+                    # once max_deliver is spent, dead-letters (visible, not lost).
+                    logger.info("claim-in-progress", task=spec.task_name, idem=idem)
+                    await msg.nak(delay=self._retry_delay(msg.metadata.num_delivered))
+                    return
 
-            heartbeat = asyncio.create_task(self._extend_while_running(msg))
+            heartbeat = asyncio.create_task(self._extend_while_running(msg, store, idem, tenant))
             try:
                 require_supported_version(labels)
                 payload = spec.payload_model(**envelope.get("kwargs", {}))
@@ -288,6 +301,12 @@ class NatsReceiver:
                         self._config.project, self._config.queue, spec.task_name
                     ).time():
                         await spec.handler(payload, self._deps)
+                # Turn the claim into a completion marker (dedups later
+                # duplicates for idempotency_ttl_s) BEFORE the ack, so a crash
+                # in the gap redelivers to a claim that reads DONE, not a lost
+                # message. mark_done before ack: at worst a duplicate re-runs.
+                if store is not None and idem:
+                    await store.mark_done(idem, tenant)
                 COMPLETED.labels(self._config.project, self._config.queue, task_label).inc()
                 await msg.ack()
             except NexusPermanentError as exc:
@@ -336,18 +355,29 @@ class NatsReceiver:
         finally:
             semaphore.release()
 
-    async def _extend_while_running(self, msg: Msg) -> None:
+    async def _extend_while_running(
+        self,
+        msg: Msg,
+        store: IdempotencyStorePort | None,
+        idem: str | None,
+        tenant: str,
+    ) -> None:
         while True:
             await asyncio.sleep(self._heartbeat_every_s)
             try:
+                # Extend ack_wait AND the idempotency lease together: the same
+                # liveness signal keeps both alive, so a crash stops refreshing
+                # both at once (redelivery + lease take-over line up).
                 await msg.in_progress()
+                if store is not None and idem:
+                    await store.refresh(idem, tenant)
             except Exception:
-                # A transient in_progress() failure (a reconnect window) must
-                # not kill the heartbeat: the handler is still running and its
-                # ack_wait still needs extending, otherwise the message is
-                # redelivered mid-flight. Log and keep trying — the task is
-                # cancelled in _process's finally when the handler settles, and
-                # CancelledError (BaseException) still propagates out of here.
+                # A transient failure (a reconnect window) must not kill the
+                # heartbeat: the handler is still running and its ack_wait/lease
+                # still need extending, otherwise the message is redelivered
+                # mid-flight. Log and keep trying — the task is cancelled in
+                # _process's finally when the handler settles, and CancelledError
+                # (BaseException) still propagates out of here.
                 logger.warning("heartbeat-extend-failed", exc_info=True)
 
     async def _dead_letter(
