@@ -291,7 +291,16 @@ class NatsReceiver:
     async def _extend_while_running(self, msg: Msg) -> None:
         while True:
             await asyncio.sleep(self._heartbeat_every_s)
-            await msg.in_progress()
+            try:
+                await msg.in_progress()
+            except Exception:
+                # A transient in_progress() failure (a reconnect window) must
+                # not kill the heartbeat: the handler is still running and its
+                # ack_wait still needs extending, otherwise the message is
+                # redelivered mid-flight. Log and keep trying — the task is
+                # cancelled in _process's finally when the handler settles, and
+                # CancelledError (BaseException) still propagates out of here.
+                logger.warning("heartbeat-extend-failed", exc_info=True)
 
     async def _dead_letter(
         self, envelope: dict[str, Any], error: str, *, permanent: bool, attempts: int
