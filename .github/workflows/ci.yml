@@ -96,22 +96,22 @@ jobs:
         working-directory: backend
         run: uv sync --frozen --all-packages
 
-      # docker run instead of GH services: service containers can't take
-      # command args and NATS needs `-js`; odd host ports avoid collisions
-      # on shared self-hosted runners.
-      - name: Start brokers (Redis + NATS JetStream)
+      # docker run instead of a GH service: service containers can't take
+      # command args and NATS needs `-js`; the odd host port avoids collisions
+      # on shared self-hosted runners. run_id-suffixed name/port keep concurrent
+      # runs on one host from clashing.
+      - name: Start NATS JetStream
         run: |
-          docker run -d --name nq-ci-redis -p 16379:6379 redis:7-alpine
-          docker run -d --name nq-ci-nats -p 14222:4222 -p 18222:8222 nats:2.10-alpine -js -m 8222
+          docker run -d --name nq-ci-nats-${{ github.run_id }} \
+            -p 14222:4222 -p 18222:8222 nats:2.11-alpine -js -m 8222
           sleep 2
 
-      - name: Conformance suite (both transports)
+      - name: Conformance suite
         working-directory: backend
         env:
-          REDIS_URL: redis://127.0.0.1:16379
           NATS_URL: nats://127.0.0.1:14222
         run: uv run pytest nexus-queue/tests/conformance -q
 
-      - name: Stop brokers
+      - name: Stop NATS
         if: always()
-        run: docker rm -f nq-ci-redis nq-ci-nats || true
+        run: docker rm -f nq-ci-nats-${{ github.run_id }} || true
