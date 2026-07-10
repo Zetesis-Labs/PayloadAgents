@@ -195,8 +195,19 @@ class NatsReceiver:
         semaphore = asyncio.Semaphore(self._max_concurrency)
         pending: set[asyncio.Task[None]] = set()
         while not self._stop.is_set():
+            # Only fetch what we can start right now. Fetching a full batch
+            # regardless of free slots leaves the surplus buffered in-process
+            # with their ack_wait clock ticking but no heartbeat (that starts
+            # inside _process) — a slow handler then burns their delivery
+            # budget into spurious redeliveries/DLQ. len(pending) is the
+            # in-flight count (a task holds a slot until it's discarded).
+            free = self._max_concurrency - len(pending)
+            if free <= 0:
+                # Saturated: wait for a slot before pulling more.
+                await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                continue
             try:
-                msgs = await psub.fetch(self._max_concurrency, timeout=1)
+                msgs = await psub.fetch(free, timeout=1)
             except nats.errors.TimeoutError:
                 continue
             except Exception:
@@ -206,6 +217,8 @@ class NatsReceiver:
                 await asyncio.sleep(1)
                 continue
             for msg in msgs:
+                # Never blocks: we fetched at most `free` messages and each
+                # pending task holds exactly one permit.
                 await semaphore.acquire()
                 task = asyncio.create_task(self._process(msg, semaphore))
                 pending.add(task)
