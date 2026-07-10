@@ -97,19 +97,20 @@ jobs:
         run: uv sync --frozen --all-packages
 
       # docker run instead of a GH service: service containers can't take
-      # command args and NATS needs `-js`; the odd host port avoids collisions
-      # on shared self-hosted runners. run_id-suffixed name/port keep concurrent
-      # runs on one host from clashing.
+      # command args and NATS needs `-js`. A per-run name AND host port keep
+      # concurrent runs on one shared self-hosted runner from clashing.
       - name: Start NATS JetStream
         run: |
+          NATS_PORT=$(( 20000 + ${{ github.run_number }} % 20000 ))
+          echo "NATS_PORT=$NATS_PORT" >> "$GITHUB_ENV"
           docker run -d --name nq-ci-nats-${{ github.run_id }} \
-            -p 14222:4222 -p 18222:8222 nats:2.11-alpine -js -m 8222
+            -p "$NATS_PORT:4222" nats:2.11-alpine -js
           sleep 2
 
       - name: Conformance suite
         working-directory: backend
         env:
-          NATS_URL: nats://127.0.0.1:14222
+          NATS_URL: nats://127.0.0.1:${{ env.NATS_PORT }}
         run: uv run pytest nexus-queue/tests/conformance -q
 
       - name: Stop NATS
