@@ -192,3 +192,15 @@ class RuntimeConfig(BaseModel):
     @property
     def nats_durable(self) -> str:
         return naming.nats_durable_name(self.project, self.queue)
+
+    @property
+    def advisory_subject(self) -> str:
+        return naming.max_deliveries_advisory_subject(self.nats_stream, self.nats_durable)
+
+    @property
+    def nats_advisory_stream(self) -> str:
+        return naming.nats_advisory_stream_name(self.project, self.queue)
+
+    @property
+    def nats_advisory_durable(self) -> str:
+        return naming.nats_advisory_durable_name(self.project, self.queue)

@@ -103,6 +103,27 @@ def nats_durable_name(project: str, queue: str) -> str:
     return f"nq_{_nats_token(project)}_{_nats_token(queue)}_cg"
 
 
+def max_deliveries_advisory_subject(nats_stream: str, durable: str) -> str:
+    """Subject the server publishes a MAX_DELIVERIES advisory on for a consumer."""
+    return f"$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.{nats_stream}.{durable}"
+
+
+def nats_advisory_stream_name(project: str, queue: str) -> str:
+    """JetStream stream that durably captures the queue's MAX_DELIVERIES advisories.
+
+    Exhausted messages are invisible to the worker and to KEDA (spike E4), so
+    the advisory is their only exit to the DLQ. Capturing it in a stream (not a
+    core-NATS subscription) makes it survive restarts and lets a durable
+    consumer hand each advisory to exactly one replica.
+    """
+    return f"{nats_stream_name(project, queue)}_ADV"
+
+
+def nats_advisory_durable_name(project: str, queue: str) -> str:
+    """Durable consumer the workers share to process advisories once each."""
+    return f"nq_{_nats_token(project)}_{_nats_token(queue)}_adv"
+
+
 def idempotency_redis_key(idem: str, *, project: str, tenant: str) -> str:
     """Redis key used by the idempotency middleware to dedup a message.
 

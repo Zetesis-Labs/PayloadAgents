@@ -40,6 +40,7 @@ from nats.aio.client import Client as NatsClient
 from nats.aio.msg import Msg
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, RetentionPolicy
+from nats.js.errors import NotFoundError
 from opentelemetry import trace
 from opentelemetry.propagate import extract, inject
 from pydantic import BaseModel
@@ -388,6 +389,7 @@ class NatsReceiver:
         permanent: bool,
         attempts: int,
         raw: str | None = None,
+        msg_id: str | None = None,
     ) -> None:
         record = {
             "task_id": envelope.get("task_id"),
@@ -403,7 +405,10 @@ class NatsReceiver:
         if raw is not None:
             # Only present for poison bodies we couldn't parse into an envelope.
             record["raw_body"] = raw
-        await self._js.publish(self._config.dlq_subject, json.dumps(record, default=str).encode())
+        headers = {"Nats-Msg-Id": msg_id} if msg_id else None
+        await self._js.publish(
+            self._config.dlq_subject, json.dumps(record, default=str).encode(), headers=headers
+        )
         logger.warning(
             "dead-letter",
             task=record["task_name"],
@@ -427,6 +432,8 @@ class NatsWorker:
         self._idempotency = create_idempotency_store(config) if config.idempotency_ttl_s else None
         self._receiver: NatsReceiver | None = None
         self._runner: asyncio.Task[None] | None = None
+        self._advisory_runner: asyncio.Task[None] | None = None
+        self._advisory_stop = asyncio.Event()
 
     @property
     def js(self) -> JetStreamContext:
@@ -476,42 +483,86 @@ class NatsWorker:
             durable=self._config.nats_durable,
             config=consumer_config(self._config),
         )
-        await self._nc.subscribe(
-            f"$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES."
-            f"{self._config.nats_stream}.{self._config.nats_durable}",
-            cb=self._on_max_deliveries,
+        # Exhausted messages exit to the DLQ only via the MAX_DELIVERIES advisory
+        # (E4). A core-NATS subscription would drop advisories fired during a
+        # restart/reconnect (silent loss) and, with N replicas, hand each one to
+        # every replica (N duplicate DLQ records). Capture them in a durable
+        # stream and share ONE durable consumer, so an advisory survives restarts
+        # (replayed) and is processed once.
+        advisory_psub = await self._js.pull_subscribe(
+            self._config.advisory_subject,
+            durable=self._config.nats_advisory_durable,
+            stream=self._config.nats_advisory_stream,
         )
         self._receiver = NatsReceiver(
             self._js, self._config, self._deps, self._specs, self._idempotency
         )
         self._runner = asyncio.create_task(self._receiver.run(psub))
+        self._advisory_runner = asyncio.create_task(self._run_advisories(advisory_psub))
 
     async def shutdown(self) -> None:
         if self._receiver is not None:
             self._receiver.stop()
+        self._advisory_stop.set()
         if self._runner is not None:
             await self._runner
+        if self._advisory_runner is not None:
+            await self._advisory_runner
         if self._idempotency is not None:
             await self._idempotency.shutdown()
         if self._nc is not None:
             await self._nc.close()
 
-    async def _on_max_deliveries(self, advisory: Msg) -> None:
-        """Exhausted messages are invisible to the worker and to KEDA (E4):
-        this listener is their only exit to the DLQ."""
-        if self._js is None or self._receiver is None or advisory.data is None:
+    async def _run_advisories(self, psub: Any) -> None:
+        """Pull MAX_DELIVERIES advisories from the durable consumer and route each
+        exhausted message to the DLQ. One shared durable → processed once."""
+        while not self._advisory_stop.is_set():
+            try:
+                msgs = await psub.fetch(1, timeout=1)
+            except nats.errors.TimeoutError:
+                continue
+            except Exception:
+                if self._advisory_stop.is_set():
+                    break
+                logger.exception("advisory-fetch-failed", stream=self._config.nats_advisory_stream)
+                await asyncio.sleep(1)
+                continue
+            for advisory in msgs:
+                await self._process_advisory(advisory)
+
+    async def _process_advisory(self, advisory: Msg) -> None:
+        if self._js is None or self._receiver is None:
             return  # shutdown race: advisory after the worker released its pieces
-        body = json.loads(advisory.data)
-        raw = await self._js.get_msg(self._config.nats_stream, body["stream_seq"])
-        if raw.data is None:
-            return  # message purged between the advisory and the lookup
-        envelope = json.loads(raw.data)
-        await self._receiver._dead_letter(  # worker and receiver are one unit
-            envelope,
-            "max_deliveries exhausted",
-            permanent=False,
-            attempts=int(body.get("deliveries", self._config.max_retries)),
-        )
+        try:
+            body = json.loads(advisory.data)
+            seq = body["stream_seq"]
+            try:
+                raw = await self._js.get_msg(self._config.nats_stream, seq)
+            except NotFoundError:
+                # The exhausted message aged out / was purged before we got here:
+                # nothing to dead-letter, so consume the advisory and move on.
+                await advisory.ack()
+                return
+            if raw.data is None:
+                await advisory.ack()
+                return
+            envelope = json.loads(raw.data)
+            await self._receiver._dead_letter(  # worker and receiver are one unit
+                envelope,
+                "max_deliveries exhausted",
+                permanent=False,
+                attempts=int(body.get("deliveries", self._config.max_retries)),
+                # Dedup a redelivered advisory (crash before ack) into one DLQ
+                # record where the DLQ stream has a duplicate window.
+                msg_id=f"{self._config.nats_stream}:{seq}",
+            )
+            await advisory.ack()
+        except Exception:
+            # Don't ack a failed advisory — let the durable redeliver it, so a
+            # transient DLQ-publish failure doesn't strand the exhausted message.
+            logger.exception("advisory-processing-failed")
+            with contextlib.suppress(Exception):
+                await advisory.nak()
 
 
 async def ensure_streams(js: JetStreamContext, config: RuntimeConfig) -> None:
@@ -520,10 +571,14 @@ async def ensure_streams(js: JetStreamContext, config: RuntimeConfig) -> None:
     Work stream retention is LIMITS, not WORKQUEUE: the MAX_DELIVERIES advisory
     listener must be able to fetch the exhausted message by sequence (E4), and
     workqueue retention would also cap the subject at one consumer.
+
+    The advisory stream captures ``$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.*``
+    for this consumer so the exit-to-DLQ path survives restarts (prod = NACK CRDs).
     """
     for name, subject in (
         (config.nats_stream, config.work_subject),
         (config.nats_dlq_stream, config.dlq_subject),
+        (config.nats_advisory_stream, config.advisory_subject),
     ):
         with contextlib.suppress(Exception):
             await js.add_stream(name=name, subjects=[subject], retention=RetentionPolicy.LIMITS)
