@@ -84,14 +84,36 @@ export class NexusQueueClient {
 
   /** Lazily open (and reuse) a single JetStream connection. */
   async #connection(): Promise<{ nc: NatsConnection; js: JetStreamClient }> {
+    if (this.#conn) {
+      // A connection that has permanently closed (its reconnects gave up, or it
+      // was drained) must not be reused — every publish on it would throw
+      // forever. Drop it and rebuild.
+      const cached = await this.#conn
+      if (cached.nc.isClosed()) this.#conn = null
+    }
     if (!this.#conn) {
-      this.#conn = (async () => {
+      const built = (async () => {
         try {
-          const nc = await connect({ servers: this.#natsUrl, name: this.#name })
+          const nc = await connect({
+            servers: this.#natsUrl,
+            name: this.#name,
+            // Reconnect forever: an established connection must survive a NATS
+            // outage of any length instead of closing for good and bricking
+            // every later enqueue until the process restarts. The INITIAL
+            // connect still fails fast (no waitOnFirstConnect) so a misconfigured
+            // url surfaces loudly rather than hanging.
+            maxReconnectAttempts: -1,
+            reconnectTimeWait: 2000
+          })
+          // If it ever does close for good, drop the cache so the next enqueue
+          // rebuilds rather than publishing on a dead connection.
+          void nc.closed().then(() => {
+            if (this.#conn === built) this.#conn = null
+          })
           return { nc, js: nc.jetstream() }
         } catch (error) {
           // Don't cache a failed connect — the next enqueue should retry.
-          this.#conn = null
+          if (this.#conn === built) this.#conn = null
           throw new NexusQueueError(
             `Nexus-Queue could not connect to NATS at ${this.#natsUrl}: ${
               error instanceof Error ? error.message : String(error)
@@ -99,6 +121,7 @@ export class NexusQueueClient {
           )
         }
       })()
+      this.#conn = built
     }
     return this.#conn
   }

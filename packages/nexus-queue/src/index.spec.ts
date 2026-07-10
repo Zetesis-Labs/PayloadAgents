@@ -5,7 +5,10 @@ const publish = vi.fn<(subject: string, data: Uint8Array, opts?: { msgID?: strin
   Promise.resolve({})
 )
 const drain = vi.fn(() => Promise.resolve())
-const connect = vi.fn(() => Promise.resolve({ jetstream: () => ({ publish }), drain }))
+// `closed()` never resolves in the happy path; `isClosed()` reports liveness.
+const closed = vi.fn(() => new Promise<void>(() => {}))
+const isClosed = vi.fn(() => false)
+const connect = vi.fn(() => Promise.resolve({ jetstream: () => ({ publish }), drain, closed, isClosed }))
 
 vi.mock('nats', () => ({ connect }))
 
@@ -21,6 +24,9 @@ describe('NexusQueueClient', () => {
     publish.mockClear()
     connect.mockClear()
     drain.mockClear()
+    closed.mockClear()
+    isClosed.mockClear()
+    isClosed.mockReturnValue(false)
   })
 
   it('publishes a standard envelope to the queue work subject', async () => {
@@ -69,6 +75,15 @@ describe('NexusQueueClient', () => {
     await client.enqueue('t', {})
     await client.enqueue('t', {})
     expect(connect).toHaveBeenCalledTimes(1)
+  })
+
+  it('rebuilds the connection after it has closed for good', async () => {
+    const client = new NexusQueueClient({ natsUrl: 'nats://n:4222', project: 'zp', queue: 'documents' })
+    await client.enqueue('t', {})
+    // The cached connection reports closed → the next enqueue must not reuse it.
+    isClosed.mockReturnValueOnce(true)
+    await client.enqueue('t', {})
+    expect(connect).toHaveBeenCalledTimes(2)
   })
 
   it('wraps a publish failure in NexusQueueError', async () => {
