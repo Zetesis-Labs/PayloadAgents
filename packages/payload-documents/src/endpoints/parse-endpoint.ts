@@ -1,3 +1,4 @@
+import { context, propagation } from '@opentelemetry/api'
 import { NexusQueueClient } from '@zetesis/nexus-queue'
 import type { Endpoint, PayloadRequest } from 'payload'
 import type { DocumentsWorkerConfig } from '../plugin/types'
@@ -6,19 +7,34 @@ import { type EndpointConfig, fetchDocument, getRouteId, requireAuth, updateDocu
 
 const DEFAULT_TASK_NAME = 'documents.parse'
 
-// One NATS connection per worker config, reused across requests (opening one
-// per enqueue would handshake JetStream every parse). The worker config object
-// is created once at plugin init and lives for the process, so keying the
-// client off it gives a natural process-lifetime singleton without globals.
-const clientByWorker = new WeakMap<DocumentsWorkerConfig, NexusQueueClient>()
+// One NATS connection per broker target (natsUrl+project+queue), reused across
+// requests (opening one per enqueue would handshake JetStream every parse).
+// The cache lives on globalThis so a Next.js dev hot-reload reuses the same
+// client instead of leaking a new connection each reload — in prod it's a
+// single process-lifetime singleton either way.
+const globalForNexus = globalThis as unknown as {
+  __nexusQueueClients: Map<string, NexusQueueClient> | undefined
+}
+const clients: Map<string, NexusQueueClient> = globalForNexus.__nexusQueueClients ?? new Map()
+globalForNexus.__nexusQueueClients = clients
 
 const queueClient = (worker: DocumentsWorkerConfig): NexusQueueClient => {
-  let client = clientByWorker.get(worker)
+  const key = `${worker.natsUrl}|${worker.project}|${worker.queue}`
+  let client = clients.get(key)
   if (!client) {
     client = new NexusQueueClient({ natsUrl: worker.natsUrl, project: worker.project, queue: worker.queue })
-    clientByWorker.set(worker, client)
+    clients.set(key, client)
   }
   return client
+}
+
+// W3C traceparent from the active OTel context, if any. A no-op (undefined)
+// when the host app hasn't registered an OTel provider; once it does, the
+// worker's consume span links back to the request that enqueued the job.
+const currentTraceparent = (): string | undefined => {
+  const carrier: Record<string, string> = {}
+  propagation.inject(context.active(), carrier)
+  return carrier.traceparent
 }
 
 export const createParseEndpoint = (config: EndpointConfig): Endpoint => ({
@@ -70,7 +86,11 @@ const queueOnWorker = async (
 
   try {
     const idempotencyKey = `${id}:${version}`
-    await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey, tenant })
+    await queue.enqueue(
+      worker.taskName ?? DEFAULT_TASK_NAME,
+      { document_id: id },
+      { idempotencyKey, tenant, trace: currentTraceparent() }
+    )
     return Response.json({ status: 'queued' })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker is unreachable'
