@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { NexusQueueClient } from '@zetesis/nexus-queue'
 import type { Endpoint, PayloadRequest } from 'payload'
 import type { DocumentsWorkerConfig } from '../plugin/types'
@@ -47,6 +46,16 @@ const queueOnWorker = async (
   id: string,
   worker: DocumentsWorkerConfig
 ): Promise<Response> => {
+  // Capture the document's version BEFORE flipping it to pending (that write
+  // bumps updatedAt). This keys the job per *logical* parse, not per attempt:
+  // two racing POSTs for the same unchanged doc dedup to a single run (broker
+  // Nats-Msg-Id + worker nq_idem), while a genuine re-parse — the doc changed,
+  // so updatedAt moved — gets a fresh key and runs. A per-attempt random key
+  // (the old behaviour) made both dedup layers inert.
+  const existing = await fetchDocument(req, collectionSlug, id)
+  if (existing instanceof Response) return existing
+  const version = existing.updatedAt ?? id
+
   await updateDocument(req, collectionSlug, id, {
     parse_status: 'pending',
     parse_error: null,
@@ -56,10 +65,7 @@ const queueOnWorker = async (
   const queue = queueClient(worker)
 
   try {
-    // Per-attempt idempotency key: dedupes a redelivery of THIS enqueue, but a
-    // static `id` would block intentional reprocessing (a re-parse) for the
-    // dedup TTL. Each POST /parse is a fresh attempt.
-    const idempotencyKey = `${id}:${randomUUID()}`
+    const idempotencyKey = `${id}:${version}`
     await queue.enqueue(worker.taskName ?? DEFAULT_TASK_NAME, { document_id: id }, { idempotencyKey })
     return Response.json({ status: 'queued' })
   } catch (error) {
