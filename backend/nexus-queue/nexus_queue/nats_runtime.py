@@ -573,8 +573,12 @@ class NatsWorker:
                 await advisory.nak()
 
 
+_DAY_S = 24 * 3600
+
+
 async def ensure_streams(js: JetStreamContext, config: RuntimeConfig) -> None:
-    """Create the work + DLQ streams if absent (tests/local dev; prod = NACK CRDs).
+    """Create the work + DLQ + advisory streams if absent (tests/local dev; prod
+    = NACK CRDs).
 
     Work stream retention is LIMITS, not WORKQUEUE: the MAX_DELIVERIES advisory
     listener must be able to fetch the exhausted message by sequence (E4), and
@@ -582,11 +586,21 @@ async def ensure_streams(js: JetStreamContext, config: RuntimeConfig) -> None:
 
     The advisory stream captures ``$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.*``
     for this consumer so the exit-to-DLQ path survives restarts (prod = NACK CRDs).
+
+    ``max_age`` mirrors the prod CRD bounds so self-provisioned topology (dev,
+    preview) doesn't retain acked messages forever. It's generous by design: a
+    message must stay fetchable by seq long enough for its MAX_DELIVERIES advisory
+    to be processed (seconds/minutes), so the 7d floor never races that path.
     """
-    for name, subject in (
-        (config.nats_stream, config.work_subject),
-        (config.nats_dlq_stream, config.dlq_subject),
-        (config.nats_advisory_stream, config.advisory_subject),
+    for name, subject, max_age_s in (
+        (config.nats_stream, config.work_subject, 7 * _DAY_S),
+        (config.nats_dlq_stream, config.dlq_subject, 30 * _DAY_S),
+        (config.nats_advisory_stream, config.advisory_subject, 7 * _DAY_S),
     ):
         with contextlib.suppress(Exception):
-            await js.add_stream(name=name, subjects=[subject], retention=RetentionPolicy.LIMITS)
+            await js.add_stream(
+                name=name,
+                subjects=[subject],
+                retention=RetentionPolicy.LIMITS,
+                max_age=float(max_age_s),
+            )
