@@ -3,7 +3,7 @@
 ``run_worker(config)`` / ``main_worker(config)`` — the standard single-process
 JetStream entrypoint: receiver + probes/metrics HTTP, SIGTERM drains gracefully.
 
-The runtime (retry/DLQ, KV idempotency, tracing, kicker) all comes from
+The runtime (retry/DLQ, KV idempotency, tracing, probes) all comes from
 ``nexus-queue``; this package only contributes the ZP adapters and the
 parse-document handler.
 """
@@ -39,14 +39,11 @@ async def run_worker(
     host: str = "0.0.0.0",  # noqa: S104 — a worker pod binds all interfaces by design
     port: int = 8000,
     ensure_topology: bool = True,
-    enable_kicker: bool = False,
 ) -> None:
     """Standard worker entrypoint for ZP documents.
 
-    ``enable_kicker`` defaults to False: the web publishes parse jobs to NATS
-    directly (via ``@zetesis/nexus-queue``), so the worker only serves probes
-    and metrics. Set it True to also expose the HTTP ``/enqueue`` kicker for a
-    producer that can't speak NATS.
+    The web publishes parse jobs to NATS directly (via ``@zetesis/nexus-queue``),
+    so the worker's HTTP surface is probes and metrics only.
     """
     adapters = ZpDocumentsAdapters.from_config(config)
     await run_nats_worker(
@@ -56,7 +53,6 @@ async def run_worker(
         host=host,
         port=port,
         ensure_topology=ensure_topology,
-        enable_kicker=enable_kicker,
     )
 
 

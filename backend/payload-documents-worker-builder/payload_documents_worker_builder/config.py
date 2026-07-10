@@ -55,13 +55,12 @@ class RuntimeConfig(BaseModel):
         description="Hard cap on how long a single parse task waits before failing.",
     )
 
-    # ── Internal HTTP kicker ──────────────────────────────────────────────
+    # ── Payload callback auth ─────────────────────────────────────────────
     internal_secret: SecretStr = Field(
-        description="Shared secret required by every `POST /tasks/*` request (X-Internal-Secret header).",
-    )
-    public_paths: tuple[str, ...] = Field(
-        default=("/health", "/ready", "/docs", "/openapi.json"),
-        description="Paths the InternalAuthMiddleware lets through without the secret.",
+        description=(
+            "Shared secret the worker sends as `X-Internal-Secret` when it "
+            "calls the Payload plugin endpoints (`/parse-file`, writebacks)."
+        ),
     )
 
     # ── Logging ───────────────────────────────────────────────────────────
@@ -74,8 +73,6 @@ class RuntimeConfig(BaseModel):
             project="zp",
             queue="documents",
             nats_url=self.nats_url,
-            internal_secret=self.internal_secret,
-            public_paths=self.public_paths,
             max_retries=2,
             log_level=self.log_level,
         )
