@@ -95,4 +95,19 @@ describe('NexusQueueClient', () => {
   it('builds the subject from project + queue', () => {
     expect(workSubject('nixon', 'jobs')).toBe('nq.nixon.jobs')
   })
+
+  it('rejects an invalid project or queue slug at construction', () => {
+    expect(() => new NexusQueueClient({ natsUrl: 'nats://n:4222', project: 'ZP', queue: 'documents' })).toThrowError(
+      NexusQueueError
+    )
+    expect(() => new NexusQueueClient({ natsUrl: 'nats://n:4222', project: 'zp', queue: 'do cs' })).toThrowError(
+      NexusQueueError
+    )
+  })
+
+  it('rejects a payload over the size limit', async () => {
+    const client = new NexusQueueClient({ natsUrl: 'nats://n:4222', project: 'zp', queue: 'documents' })
+    await expect(client.enqueue('t', { blob: 'x'.repeat(1024 * 1024 + 10) })).rejects.toThrowError(NexusQueueError)
+    expect(publish).not.toHaveBeenCalled()
+  })
 })

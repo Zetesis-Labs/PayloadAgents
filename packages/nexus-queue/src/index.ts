@@ -27,6 +27,14 @@ export const LABELS = {
 
 const SINGLE_TENANT = '_'
 
+// Mirror of the Python `validate_slug` charset — a project/queue that doesn't
+// match produces a subject no stream is bound to ("no responders" at publish),
+// so reject it at construction instead.
+const SLUG = /^[a-z0-9][a-z0-9-]*$/
+// JetStream's default max message size is 1 MiB; guard here for a clear error
+// rather than an opaque broker rejection (spec D12).
+const MAX_PAYLOAD_BYTES = 1024 * 1024
+
 /** JetStream subject that carries a queue's work: `nq.{project}.{queue}`. */
 export const workSubject = (project: string, queue: string): string => `nq.${project}.${queue}`
 
@@ -75,6 +83,14 @@ export class NexusQueueClient {
   #conn: Promise<{ nc: NatsConnection; js: JetStreamClient }> | null = null
 
   constructor(options: NexusQueueClientOptions) {
+    for (const [field, value] of [
+      ['project', options.project],
+      ['queue', options.queue]
+    ] as const) {
+      if (!SLUG.test(value)) {
+        throw new NexusQueueError(`Invalid ${field} "${value}": must match ${SLUG.source}`)
+      }
+    }
     this.#natsUrl = options.natsUrl
     this.#project = options.project
     this.#queue = options.queue
@@ -149,8 +165,15 @@ export class NexusQueueClient {
       kwargs: payload
     }
 
+    const body = new TextEncoder().encode(JSON.stringify(message))
+    if (body.byteLength > MAX_PAYLOAD_BYTES) {
+      throw new NexusQueueError(
+        `Nexus-Queue payload for ${task} is ${body.byteLength} bytes, over the ${MAX_PAYLOAD_BYTES}-byte limit`
+      )
+    }
+
     try {
-      await js.publish(this.#subject, new TextEncoder().encode(JSON.stringify(message)), {
+      await js.publish(this.#subject, body, {
         // Broker-side publish dedup within the stream's window (D4: the
         // load-bearing dedup is still nq_idem in the worker).
         msgID: options.idempotencyKey ?? taskId
