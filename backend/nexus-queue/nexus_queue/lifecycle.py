@@ -119,6 +119,20 @@ class NatsKvIdempotencyStore:
             except APIError:
                 # Lost the create race against another worker: the bucket exists now.
                 self._kv = await js.key_value(bucket)
+        else:
+            # The bucket already existed: its TTL is fixed at creation and
+            # nats-py can't update it. Surface drift loudly instead of silently
+            # honouring the old TTL (delete/recreate the bucket to change it).
+            with contextlib.suppress(Exception):
+                existing_ttl = (await self._kv.status()).ttl
+                if existing_ttl and abs(existing_ttl - self._config.idempotency_ttl_s) > 1:
+                    logger.warning(
+                        "idempotency-bucket-ttl-drift",
+                        bucket=bucket,
+                        bucket_ttl_s=existing_ttl,
+                        config_ttl_s=self._config.idempotency_ttl_s,
+                        hint="delete + recreate the KV bucket to apply the new TTL",
+                    )
 
     async def shutdown(self) -> None:
         if self._nc is not None:

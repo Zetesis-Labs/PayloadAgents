@@ -121,5 +121,11 @@ def idempotency_kv_key(idem: str, *, tenant: str) -> str:
     producer controls that string.
     """
     safe_tenant = _KV_UNSAFE.sub("-", tenant) or SINGLE_TENANT
+    if safe_tenant != tenant:
+        # Two distinct tenants can sanitize to the same token ("a b" and "a?b"
+        # both → "a-b"), which would cross-contaminate their dedup state. Append
+        # a short hash of the raw tenant to disambiguate; KV-safe tenants (the
+        # common case: slugs) keep their clean, readable segment.
+        safe_tenant = f"{safe_tenant}-{hashlib.sha256(tenant.encode()).hexdigest()[:8]}"
     digest = hashlib.sha256(idem.encode()).hexdigest()
     return f"{safe_tenant}.{digest}"

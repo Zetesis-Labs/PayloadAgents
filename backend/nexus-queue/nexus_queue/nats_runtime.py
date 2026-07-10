@@ -43,7 +43,7 @@ from nats.js.api import AckPolicy, ConsumerConfig, RetentionPolicy
 from nats.js.errors import NotFoundError
 from opentelemetry import trace
 from opentelemetry.propagate import extract, inject
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from nexus_queue.config import RuntimeConfig
 from nexus_queue.envelope import Envelope, require_supported_version
@@ -260,7 +260,9 @@ class NatsReceiver:
             spec = self._handlers.get(str(envelope.get("task_name", "")))
             if spec is None:
                 FAILED.labels(self._config.project, self._config.queue, task_label).inc()
-                await self._dead_letter(envelope, "unknown task", permanent=True, attempts=1)
+                await self._dead_letter(
+                    envelope, "unknown task", permanent=True, attempts=msg.metadata.num_delivered
+                )
                 await msg.term()
                 return
 
@@ -310,7 +312,10 @@ class NatsReceiver:
                     await store.mark_done(idem, tenant)
                 COMPLETED.labels(self._config.project, self._config.queue, task_label).inc()
                 await msg.ack()
-            except NexusPermanentError as exc:
+            except (NexusPermanentError, ValidationError) as exc:
+                # NexusPermanentError = handler said non-retryable; ValidationError
+                # = the payload doesn't fit the model, which is deterministic, so
+                # retrying only burns the budget. Both go straight to the DLQ.
                 if store is not None and idem:
                     await store.release(idem, tenant)
                 FAILED.labels(self._config.project, self._config.queue, task_label).inc()
@@ -476,6 +481,11 @@ class NatsWorker:
             await self._idempotency.startup()
         if ensure_topology:
             await ensure_streams(self._js, self._config)
+        # config= only applies when the durable doesn't exist yet: it bootstraps
+        # the consumer in dev/tests. In prod the NACK CRD is the authority for
+        # max_deliver/ack_wait/backoff and pull_subscribe binds it as-is — the
+        # worker deliberately does NOT override CRD-managed config. Re-run after
+        # a wipe (or change the CRD) to pick up new consumer settings.
         psub = await self._js.pull_subscribe(
             self._config.work_subject,
             durable=self._config.nats_durable,
