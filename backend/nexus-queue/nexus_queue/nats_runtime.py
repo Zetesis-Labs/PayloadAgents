@@ -215,7 +215,22 @@ class NatsReceiver:
 
     async def _process(self, msg: Msg, semaphore: asyncio.Semaphore) -> None:
         try:
-            envelope: dict[str, Any] = json.loads(msg.data)
+            try:
+                envelope: dict[str, Any] = json.loads(msg.data)
+            except Exception:
+                # Poison body: unparseable, so it can never succeed. TERM it
+                # (don't redeliver to exhaustion) and capture the raw bytes in
+                # the DLQ, instead of dying as an unretrieved task exception.
+                logger.exception("poison-message", subject=self._config.work_subject)
+                await self._dead_letter(
+                    {},
+                    "unparseable body",
+                    permanent=True,
+                    attempts=msg.metadata.num_delivered,
+                    raw=msg.data.decode("utf-8", "replace") if msg.data else None,
+                )
+                await msg.term()
+                return
             labels: dict[str, Any] = envelope.get("labels", {})
             task_label = str(labels.get(LABEL_TASK, envelope.get("task_name", "")))
             RECEIVED.labels(self._config.project, self._config.queue, task_label).inc()
@@ -285,6 +300,18 @@ class NatsReceiver:
                 # gather(return_exceptions=...): a heartbeat racing the final
                 # ack/nak/term can raise on an already-settled msg — irrelevant
                 await asyncio.gather(heartbeat, return_exceptions=True)
+        except Exception:
+            # Last-resort guard: an unexpected failure in the dispatch/settle
+            # path (a failed DLQ publish, a settle error, the claim store being
+            # down) must not leave the task dying with an unretrieved exception
+            # while the message silently redelivers. NAK for retry — a genuine
+            # poison message still exhausts max_deliver and exits via the
+            # advisory→DLQ path; never TERM here, that would discard a
+            # possibly-transient failure. Best-effort: the message may already
+            # be settled, in which case the NAK is a harmless no-op error.
+            logger.exception("process-failed", subject=self._config.work_subject)
+            with contextlib.suppress(Exception):
+                await msg.nak(delay=self._retry_delay(msg.metadata.num_delivered))
         finally:
             semaphore.release()
 
@@ -303,7 +330,13 @@ class NatsReceiver:
                 logger.warning("heartbeat-extend-failed", exc_info=True)
 
     async def _dead_letter(
-        self, envelope: dict[str, Any], error: str, *, permanent: bool, attempts: int
+        self,
+        envelope: dict[str, Any],
+        error: str,
+        *,
+        permanent: bool,
+        attempts: int,
+        raw: str | None = None,
     ) -> None:
         record = {
             "task_id": envelope.get("task_id"),
@@ -316,6 +349,9 @@ class NatsReceiver:
             "attempts": attempts,
             "failed_at": datetime.now(UTC).isoformat(),
         }
+        if raw is not None:
+            # Only present for poison bodies we couldn't parse into an envelope.
+            record["raw_body"] = raw
         await self._js.publish(self._config.dlq_subject, json.dumps(record, default=str).encode())
         logger.warning(
             "dead-letter",
