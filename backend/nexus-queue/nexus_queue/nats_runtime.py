@@ -49,7 +49,14 @@ from nexus_queue.envelope import Envelope, require_supported_version
 from nexus_queue.exceptions import NexusPermanentError
 from nexus_queue.handlers import HandlerSpec
 from nexus_queue.lifecycle import IdempotencyStorePort, create_idempotency_store
-from nexus_queue.middleware.metrics import COMPLETED, CONSUME_SECONDS, FAILED, RECEIVED
+from nexus_queue.middleware.metrics import (
+    COMPLETED,
+    CONSUME_SECONDS,
+    FAILED,
+    FETCH_ERRORS,
+    NATS_DISCONNECTS,
+    RECEIVED,
+)
 from nexus_queue.naming import LABEL_IDEM, LABEL_TASK, LABEL_TENANT, LABEL_TRACE, SINGLE_TENANT
 
 logger = structlog.get_logger("nexus_queue.nats")
@@ -213,6 +220,7 @@ class NatsReceiver:
             except Exception:
                 if self._stop.is_set():
                     break
+                FETCH_ERRORS.labels(self._config.project, self._config.queue).inc()
                 logger.exception("fetch-failed", subject=self._config.work_subject)
                 await asyncio.sleep(1)
                 continue
@@ -396,10 +404,38 @@ class NatsWorker:
             raise RuntimeError("worker not started")
         return self._js
 
+    async def _on_disconnected(self) -> None:
+        NATS_DISCONNECTS.labels(self._config.project, self._config.queue).inc()
+        logger.warning("nats-disconnected", subject=self._config.work_subject)
+
+    async def _on_reconnected(self) -> None:
+        logger.info("nats-reconnected", subject=self._config.work_subject)
+
+    async def _on_closed(self) -> None:
+        # With infinite reconnect this only fires on an explicit close (shutdown)
+        # or a truly unrecoverable state. Log loudly; D3 keeps this off the
+        # probes — the fetch-error/disconnect counters carry the alert.
+        logger.error("nats-connection-closed", subject=self._config.work_subject)
+
+    async def _on_error(self, err: Exception) -> None:
+        logger.warning("nats-error", error=str(err), subject=self._config.work_subject)
+
     async def startup(self, *, ensure_topology: bool = True) -> None:
         if self._config.nats_url is None:  # unreachable: the config validator enforces it
             raise RuntimeError("transport='nats' requires nats_url")
-        self._nc = await nats.connect(self._config.nats_url)
+        # Reconnect forever: the default budget (~60 attempts) lets a NATS outage
+        # longer than a couple of minutes close the connection permanently, after
+        # which every fetch raises and the worker is a healthy-looking zombie
+        # (D3 keeps /ready green on purpose). -1 keeps it retrying; the callbacks
+        # + counters make the outage observable.
+        self._nc = await nats.connect(
+            self._config.nats_url,
+            max_reconnect_attempts=-1,
+            disconnected_cb=self._on_disconnected,
+            reconnected_cb=self._on_reconnected,
+            closed_cb=self._on_closed,
+            error_cb=self._on_error,
+        )
         self._js = self._nc.jetstream()
         if self._idempotency is not None:
             await self._idempotency.startup()

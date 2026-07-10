@@ -109,7 +109,9 @@ class NatsKvIdempotencyStore:
     async def startup(self) -> None:
         if self._config.idempotency_ttl_s <= 0 or self._config.nats_url is None:
             return
-        self._nc = await nats.connect(self._config.nats_url)
+        # Reconnect forever (see NatsWorker.startup): a terminal close here would
+        # make every claim() raise and NAK its message to exhaustion.
+        self._nc = await nats.connect(self._config.nats_url, max_reconnect_attempts=-1)
         js = self._nc.jetstream()
         bucket = idempotency_kv_bucket(self._config.project)
         try:

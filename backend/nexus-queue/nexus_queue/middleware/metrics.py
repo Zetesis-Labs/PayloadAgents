@@ -39,6 +39,22 @@ CONSUME_SECONDS = Histogram(
     _LABELNAMES,
 )
 
+# Broker-connectivity signals for the NATS receiver. D3 keeps connectivity out
+# of the liveness/readiness probes (a broker blip must not kill pods) and makes
+# it a metric + alert instead — these are that metric.
+_CONN_LABELNAMES = ("project", "queue")
+
+FETCH_ERRORS = Counter(
+    "nexus_queue_fetch_errors_total",
+    "Pull-fetch failures in the NATS receiver loop (broker connectivity).",
+    _CONN_LABELNAMES,
+)
+NATS_DISCONNECTS = Counter(
+    "nexus_queue_nats_disconnects_total",
+    "NATS connection disconnect events observed by the worker.",
+    _CONN_LABELNAMES,
+)
+
 
 class MetricsMiddleware(TaskiqMiddleware):
     """Increment throughput counters around execution."""
