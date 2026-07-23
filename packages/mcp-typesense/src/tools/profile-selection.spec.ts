@@ -33,4 +33,31 @@ describe('requireProfileSelection', () => {
   it('accepts a valid slug', () => {
     expect(requireProfileSelection(withProfiles(['a', 'b']), 'b')).toBeNull()
   })
+
+  describe('single-profile authorization (privilege boundary)', () => {
+    const singleProfile = (slug: string): McpAuthContext => ({ tenantSlug: 't', defaultProfileSlug: slug })
+
+    it('applies the default when no slug is given', () => {
+      expect(requireProfileSelection(singleProfile('bastos'), undefined)).toBeNull()
+    })
+
+    it('accepts the caller’s own default slug', () => {
+      expect(requireProfileSelection(singleProfile('bastos'), 'bastos')).toBeNull()
+    })
+
+    it('REJECTS a different profile slug of the same tenant (no cross-profile read)', () => {
+      const err = requireProfileSelection(singleProfile('bastos'), 'escohotado')
+      expect(err?.error).toBe('retrieval_profile_required')
+      expect(err?.message).toMatch(/escohotado/)
+    })
+
+    it('rejects an unknown slug even when the catalog was sent but the slug is outside it', () => {
+      const auth: McpAuthContext = {
+        tenantSlug: 't',
+        defaultProfileSlug: 'a',
+        availableProfiles: [{ slug: 'a', name: 'a', description: '' }]
+      }
+      expect(requireProfileSelection(auth, 'b')?.error).toBe('retrieval_profile_required')
+    })
+  })
 })

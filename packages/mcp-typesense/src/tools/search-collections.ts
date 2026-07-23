@@ -88,25 +88,53 @@ export interface ProfileRequiredError {
 }
 
 /**
- * Enforce profile selection: when the caller's token exposes retrieval profiles,
- * every search MUST pick one (the agent can't query "raw"). Returns an error
- * payload to surface back to the agent, or null when the call may proceed
- * (no profiles configured, or a valid one was chosen).
+ * Enforce profile selection AND authorization: the caller may only search under
+ * a profile it was actually granted — its catalog (`availableProfiles`, sent for
+ * multi-profile callers) plus its default (`defaultProfileSlug`, the single
+ * profile the proxy/builder attached). A caller with neither is an unscoped
+ * legacy token and may query raw.
+ *
+ * This is a privilege boundary, not just UX: `applyProfileScope` will resolve
+ * ANY slug that exists in the caller's tenant, so without this gate an agent
+ * granted profile A could read under a more permissive profile B of the same
+ * tenant just by naming B's slug (e.g. via prompt injection). We reject a slug
+ * the caller wasn't granted before it ever reaches the resolver.
+ *
+ * Returns an error payload to surface back to the agent, or null to proceed.
  */
 export function requireProfileSelection(
   auth: McpAuthContext | null,
   chosen: string | undefined
 ): ProfileRequiredError | null {
   const profiles = auth?.availableProfiles ?? []
-  if (profiles.length === 0) return null
-  if (chosen && profiles.some(p => p.slug === chosen)) return null
-  return {
-    error: 'retrieval_profile_required',
-    message: chosen
-      ? `Unknown retrieval_profile "${chosen}". You must search with one of the available profiles.`
-      : 'This search requires a retrieval_profile. Call list_retrieval_profiles and pass the slug of the profile that best fits the query.',
-    available_profiles: profiles
+  const granted = new Set(profiles.map(p => p.slug))
+  if (auth?.defaultProfileSlug) granted.add(auth.defaultProfileSlug)
+
+  // No profile attached at all → unscoped legacy token, open search.
+  if (granted.size === 0) return null
+
+  if (chosen) {
+    // A named profile must be one the caller was granted — in single- and
+    // multi-profile alike. This is the line that blocks cross-profile reads.
+    if (granted.has(chosen)) return null
+    return {
+      error: 'retrieval_profile_required',
+      message: `Unknown retrieval_profile "${chosen}". You must search with one of the profiles available to you.`,
+      available_profiles: profiles
+    }
   }
+
+  // No choice: multi-profile callers must pick one; a single granted profile
+  // (single-profile agents / token) applies as the default.
+  if (profiles.length >= 2) {
+    return {
+      error: 'retrieval_profile_required',
+      message:
+        'This search requires a retrieval_profile. Call list_retrieval_profiles and pass the slug of the profile that best fits the query.',
+      available_profiles: profiles
+    }
+  }
+  return null
 }
 
 interface TaxonomyInfo {
