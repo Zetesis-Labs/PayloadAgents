@@ -88,12 +88,24 @@ export async function comparePerspectives(
   const groupResults = await Promise.all(
     input.groups.map(async g => {
       const filters = g.taxonomy_slugs ? { taxonomy_slugs: g.taxonomy_slugs } : undefined
-      const groupAuth = await applyProfileScope(
-        auth,
-        g.retrieval_profile ?? input.retrieval_profile,
-        ctx.resolveProfileScope
-      )
+      const profile = g.retrieval_profile ?? input.retrieval_profile
+      const groupScope = await applyProfileScope(auth, profile, ctx.resolveProfileScope)
 
+      // A group whose profile can't be resolved reports the error instead of
+      // silently running unscoped; the other groups still return their hits.
+      if (!groupScope.ok) {
+        return {
+          name: g.name,
+          taxonomy_slugs: g.taxonomy_slugs,
+          retrieval_profile: profile,
+          total_found: 0,
+          hits: [],
+          error: groupScope.error
+        }
+      }
+
+      // `searchCollections` intersects `filters.taxonomy_slugs` with the
+      // profile's own scope, so a group can only narrow within its profile.
       const result = await searchCollections(
         {
           query: input.query,
@@ -105,15 +117,16 @@ export async function comparePerspectives(
           expand_context: input.expand_context
         },
         ctx,
-        groupAuth
+        groupScope.auth
       )
 
       return {
         name: g.name,
         taxonomy_slugs: g.taxonomy_slugs,
-        retrieval_profile: g.retrieval_profile ?? input.retrieval_profile,
+        retrieval_profile: profile,
         total_found: result.total_found,
-        hits: result.hits
+        hits: result.hits,
+        ...(result.scope_notice ? { scope_notice: result.scope_notice } : {})
       }
     })
   )

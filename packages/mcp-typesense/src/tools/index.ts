@@ -174,7 +174,10 @@ export function registerTools(opts: RegisterToolsOptions): void {
       // token route, where the proxy already resolved `auth.retrieval`.
       const chosen = input.retrieval_profile ?? auth?.defaultProfileSlug
       const scoped = await applyProfileScope(auth, chosen, ctx.resolveProfileScope)
-      const result = await searchCollections(input, ctx, scoped)
+      // Fail closed: an unresolvable profile aborts the search instead of
+      // degrading to an unfiltered one.
+      if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+      const result = await searchCollections(input, ctx, scoped.auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )

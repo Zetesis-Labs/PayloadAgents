@@ -10,6 +10,7 @@ import type { ToolContext } from '../context'
 import { applyQueryRewriteTemplate } from '../query-rewrite'
 import { setAttributes, withSpan } from '../tracing'
 import type { ChunkCollectionConfig, McpAuthContext } from '../types'
+import { applyScopeToFilters } from './scope-filters'
 
 /** Chunk document shape as returned by Typesense. Loose because the schema evolves per collection. */
 type ChunkDoc = DocumentSchema
@@ -41,7 +42,9 @@ export const searchCollectionsSchema = z.object({
     .record(z.union([z.string(), z.array(z.string())]))
     .optional()
     .describe(
-      'Facet filters to apply. Keys are field names (tenant, taxonomy_slugs, folder_slugs, headers), values are strings or arrays.'
+      'Facet filters to apply. Keys are field names (taxonomy_slugs, folder_slugs, headers), values are strings or arrays. ' +
+        'These filters can only NARROW your retrieval profile scope, never widen it: slugs outside the profile are dropped, ' +
+        'and `tenant` is always fixed by your credentials.'
     ),
   per_page: z
     .number()
@@ -140,6 +143,12 @@ export interface SearchResult {
   per_page: number
   search_time_ms: number
   snippet_length: number
+  /**
+   * Present when the caller's filters were narrowed (or emptied) by the scope
+   * of its retrieval profile / credentials. Tells the agent why it got fewer
+   * hits than it asked for instead of silently returning a different scope.
+   */
+  scope_notice?: string
 }
 
 function buildFilterString(filters: Record<string, string | string[]>): string {
@@ -438,23 +447,19 @@ async function executeSearch(
   auth: McpAuthContext | null,
   parentSpan: import('@opentelemetry/api').Span
 ): Promise<SearchResult> {
-  // Auto-scope by tenant, taxonomy, and folder when auth provides them.
-  let scopedFilters = input.filters
-  if (auth?.tenantSlug && !scopedFilters?.tenant) {
-    scopedFilters = { ...scopedFilters, tenant: auth.tenantSlug }
-  }
-  if (auth?.taxonomySlugs?.length && !scopedFilters?.taxonomy_slugs) {
-    scopedFilters = {
-      ...scopedFilters,
-      taxonomy_slugs: auth.taxonomySlugs.length === 1 ? auth.taxonomySlugs[0] : auth.taxonomySlugs
-    }
-  }
-  if (auth?.folderSlugs?.length && !scopedFilters?.folder_slugs) {
-    scopedFilters = {
-      ...scopedFilters,
-      folder_slugs: auth.folderSlugs.length === 1 ? auth.folderSlugs[0] : auth.folderSlugs
-    }
-  }
+  // Enforce the caller's scope over the requested filters. Tenant is fixed by
+  // the credentials; the profile's taxonomy/folder filters are a ceiling the
+  // caller can narrow but never widen.
+  const scope = applyScopeToFilters(input.filters, auth)
+  const scopedFilters = scope.filters
+  const scopeNotice = scope.notices.length > 0 ? scope.notices.join(' ') : undefined
+  setAttributes(parentSpan, {
+    'retrieval.scope.enforced': scope.notices.length > 0,
+    'retrieval.scope.out_of_scope': scope.outOfScope
+  })
+  // Everything the caller asked for is outside its scope — running the query
+  // would only return content it is not allowed to see.
+  if (scope.outOfScope) return { ...emptyResult(input), scope_notice: scopeNotice }
 
   const targets = resolveTargets(ctx, input.collections)
   if (targets === null) return emptyResult(input)
@@ -484,10 +489,13 @@ async function executeSearch(
   // to the reranker (or to the caller when no reranker is configured).
   // hybridAlpha weights vector vs lexical in hybrid mode. topK caps the
   // final response — defaults to perPage so the legacy single-stage
-  // behavior is preserved when no profile is attached.
+  // behavior is preserved when no profile is attached. An explicit `per_page`
+  // wins over the profile's topK: the caller asked for a page size, and
+  // silently returning a different count reads as a bug.
   const inputK = clampPositiveInt(auth?.retrieval?.inputK, DEFAULT_VECTOR_K, 1, 1000)
   const hybridAlpha = clampNumber(auth?.retrieval?.hybridAlpha, DEFAULT_HYBRID_ALPHA, 0, 1)
-  const topK = clampPositiveInt(auth?.retrieval?.topK, perPage, 1, MAX_PER_PAGE)
+  const topK =
+    input.per_page !== undefined ? perPage : clampPositiveInt(auth?.retrieval?.topK, perPage, 1, MAX_PER_PAGE)
   const fetchPerCollection = Math.min(inputK, MAX_PER_PAGE)
 
   const learnedHead = auth?.retrieval?.learnedHead
@@ -577,7 +585,8 @@ async function executeSearch(
     page,
     per_page: topK,
     search_time_ms: totalTime,
-    snippet_length: snippetLength
+    snippet_length: snippetLength,
+    ...(scopeNotice ? { scope_notice: scopeNotice } : {})
   }
 }
 
