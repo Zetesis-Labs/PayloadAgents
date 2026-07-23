@@ -6,6 +6,7 @@
 import type { DocumentSchema, SearchResponse, SearchResponseHit } from 'typesense/lib/Typesense/Documents'
 import type { MultiSearchRequestSchema } from 'typesense/lib/Typesense/Types'
 import { z } from 'zod'
+import { profileGrantedSet } from '../auth/profile-scope'
 import type { ToolContext } from '../context'
 import { applyQueryRewriteTemplate } from '../query-rewrite'
 import { setAttributes, withSpan } from '../tracing'
@@ -88,25 +89,47 @@ export interface ProfileRequiredError {
 }
 
 /**
- * Enforce profile selection: when the caller's token exposes retrieval profiles,
- * every search MUST pick one (the agent can't query "raw"). Returns an error
- * payload to surface back to the agent, or null when the call may proceed
- * (no profiles configured, or a valid one was chosen).
+ * Enforce profile selection AND authorization at the search entry point: the
+ * caller may only search under a profile it was granted (its catalog plus its
+ * default), and a multi-profile caller must pick one explicitly rather than
+ * silently defaulting.
+ *
+ * The authorization itself is enforced centrally in `applyProfileScope` (which
+ * every read tool also goes through); this guard adds the search-only "must
+ * pick" rule and surfaces the caller's available profiles in the error so the
+ * LLM can recover. A caller with no profile attached is an unscoped legacy
+ * token and may query raw.
  */
 export function requireProfileSelection(
   auth: McpAuthContext | null,
   chosen: string | undefined
 ): ProfileRequiredError | null {
   const profiles = auth?.availableProfiles ?? []
-  if (profiles.length === 0) return null
-  if (chosen && profiles.some(p => p.slug === chosen)) return null
-  return {
-    error: 'retrieval_profile_required',
-    message: chosen
-      ? `Unknown retrieval_profile "${chosen}". You must search with one of the available profiles.`
-      : 'This search requires a retrieval_profile. Call list_retrieval_profiles and pass the slug of the profile that best fits the query.',
-    available_profiles: profiles
+  const granted = profileGrantedSet(auth)
+
+  // No profile attached at all → unscoped legacy token, open search.
+  if (granted.size === 0) return null
+
+  if (chosen) {
+    if (granted.has(chosen)) return null
+    return {
+      error: 'retrieval_profile_required',
+      message: `Unknown retrieval_profile "${chosen}". You must search with one of the profiles available to you.`,
+      available_profiles: profiles
+    }
   }
+
+  // No choice: multi-profile callers must pick one; a single granted profile
+  // (single-profile agents / token) applies as the default.
+  if (profiles.length >= 2) {
+    return {
+      error: 'retrieval_profile_required',
+      message:
+        'This search requires a retrieval_profile. Call list_retrieval_profiles and pass the slug of the profile that best fits the query.',
+      available_profiles: profiles
+    }
+  }
+  return null
 }
 
 interface TaxonomyInfo {
