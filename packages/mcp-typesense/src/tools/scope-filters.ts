@@ -37,6 +37,24 @@ const toList = (value: string | string[]): string[] => (Array.isArray(value) ? v
 /** Typesense filters read better as a scalar when there is a single value. */
 const collapse = (slugs: string[]): string | string[] => (slugs.length === 1 ? (slugs[0] as string) : slugs)
 
+/** One Typesense clause per filter entry. Arrays become an OR set, scalars an exact match. */
+export function buildFilterString(filters: FilterMap): string {
+  return Object.entries(filters)
+    .map(([key, value]) => (Array.isArray(value) ? `${key}:[${value.join(',')}]` : `${key}:=${value}`))
+    .join(' && ')
+}
+
+/**
+ * The caller's scope as standalone Typesense clauses, ready to `&&` into any
+ * query. Read tools (`get_chunks_by_ids`, `get_chunks_by_parent`, …) use this
+ * to stay inside the same boundary `search_collections` enforces — otherwise
+ * an agent could search within its profile and then read outside it by id.
+ */
+export function scopeFilterClauses(auth: McpAuthContext | null): string[] {
+  const scoped = applyScopeToFilters(undefined, auth)
+  return scoped.filters ? Object.entries(scoped.filters).map(([k, v]) => buildFilterString({ [k]: v })) : []
+}
+
 export function applyScopeToFilters(requested: FilterMap | undefined, auth: McpAuthContext | null): ScopedFilterResult {
   const filters: FilterMap = { ...requested }
   const notices: string[] = []

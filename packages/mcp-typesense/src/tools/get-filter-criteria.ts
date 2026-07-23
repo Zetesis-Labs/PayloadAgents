@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import type { ToolContext } from '../context'
 import type { ChunkCollectionConfig, McpAuthContext } from '../types'
+import { scopeFilterClauses } from './scope-filters'
 
 export const getFilterCriteriaSchema = z.object({
   collection: z
@@ -30,9 +31,13 @@ interface CollectionFilters {
 async function getFacetsForCollection(
   ctx: ToolContext,
   collectionDef: ChunkCollectionConfig,
-  tenantSlug: string | null
+  auth: McpAuthContext | null
 ): Promise<CollectionFilters> {
   const facets: FacetValues[] = []
+  const tenantSlug = auth?.tenantSlug ?? null
+  // Facet counts computed within the caller's scope, so the returned filter
+  // options never advertise taxonomies/folders it cannot actually read.
+  const scopeFilter = scopeFilterClauses(auth).join(' && ')
 
   for (const facetField of collectionDef.chunkFacetFields) {
     // Skip parent_doc_id as it's not useful as a user-facing filter
@@ -50,7 +55,7 @@ async function getFacetsForCollection(
           facet_by: facetField,
           max_facet_values: 100,
           per_page: 0,
-          ...(tenantSlug ? { filter_by: `tenant:=${tenantSlug}` } : {})
+          ...(scopeFilter ? { filter_by: scopeFilter } : {})
         })
 
       const facetCounts = result.facet_counts?.find(f => f.field_name === facetField)
@@ -93,7 +98,6 @@ export async function getFilterCriteria(input: GetFilterCriteriaInput, ctx: Tool
     targets.push(...ctx.collections.chunks)
   }
 
-  const tenantSlug = auth?.tenantSlug ?? null
-  const results = await Promise.all(targets.map(t => getFacetsForCollection(ctx, t, tenantSlug)))
+  const results = await Promise.all(targets.map(t => getFacetsForCollection(ctx, t, auth)))
   return { collections: results }
 }

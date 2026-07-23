@@ -70,7 +70,7 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await getTaxonomyTree(input, ctx)
+      const result = await getTaxonomyTree(input, ctx, getCurrentAuth())
       return toolResult(result, input.format as OutputFormat)
     }
   )

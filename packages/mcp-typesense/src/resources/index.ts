@@ -61,7 +61,9 @@ export function registerResources(opts: RegisterResourcesOptions): void {
       mimeType: 'text/toon'
     },
     async () => {
-      const result = await getTaxonomyTree({}, ctx)
+      // Same scope as the tool: a profile-scoped caller sees only its own
+      // taxonomies here, not the full author list.
+      const result = await getTaxonomyTree({}, ctx, getCurrentAuth())
       return {
         contents: [
           {

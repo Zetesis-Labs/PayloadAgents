@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import type { ToolContext } from '../context'
 import type { McpAuthContext } from '../types'
+import { scopeFilterClauses } from './scope-filters'
 
 export const getChunksByIdsSchema = z.object({
   collection: z.string().describe('Chunk collection name'),
@@ -34,7 +35,9 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     }
   }
 
-  const tenantSlug = auth?.tenantSlug ?? null
+  // Ids alone are not an authorization: without the caller's scope an agent
+  // could search inside its retrieval profile and then read outside it by id.
+  const filterParts = [`id:[${input.ids.join(',')}]`, ...scopeFilterClauses(auth)]
 
   const result = await ctx.typesense
     .collections(input.collection)
@@ -42,7 +45,7 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     .search({
       q: '*',
       query_by: def.chunkSearchFields[0] || 'title',
-      filter_by: `id:[${input.ids.join(',')}]${tenantSlug ? ` && tenant:=${tenantSlug}` : ''}`,
+      filter_by: filterParts.join(' && '),
       per_page: input.ids.length,
       exclude_fields: 'embedding'
     })
@@ -62,5 +65,13 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     }
   })
 
-  return { chunks, total: chunks.length }
+  // Tell the agent why it got fewer chunks than it asked for, so a scope drop
+  // does not read as "these chunks do not exist".
+  const missing = input.ids.length - chunks.length
+  const scopeNotice =
+    missing > 0 && scopeFilterClauses(auth).length > 0
+      ? `${missing} of the ${input.ids.length} requested chunks are outside your scope and were not returned.`
+      : undefined
+
+  return { chunks, total: chunks.length, ...(scopeNotice ? { scope_notice: scopeNotice } : {}) }
 }
