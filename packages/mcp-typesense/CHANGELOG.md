@@ -1,5 +1,14 @@
 # @zetesis/mcp-typesense
 
+## [0.6.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.4...mcp-typesense-v0.6.5) (2026-07-23)
+
+
+### Bug Fixes
+
+* **mcp-typesense:** extend retrieval profile scope to the read and metadata tools ([0017c63](https://github.com/Zetesis-Labs/PayloadAgents/commit/0017c6394b7c41c096f94d1ebad62b12ed59d355))
+* **mcp-typesense:** extend retrieval profile scope to the read and metadata tools (v2) ([28ed2e1](https://github.com/Zetesis-Labs/PayloadAgents/commit/28ed2e154dabd75fb5f4b039f4a523b3bea240bb))
+* **mcp-typesense:** let read tools select the retrieval profile governing their scope ([b2090ad](https://github.com/Zetesis-Labs/PayloadAgents/commit/b2090ad8e7f633fb85567496b7f589fea3389cb6))
+
 ## [0.6.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.3...mcp-typesense-v0.6.4) (2026-07-23)
 
 
