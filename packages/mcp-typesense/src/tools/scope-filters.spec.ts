@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { McpAuthContext } from '../types'
-import { applyScopeToFilters } from './scope-filters'
+import { applyScopeToFilters, buildFilterString, scopeFilterClauses } from './scope-filters'
 
 const bastos: McpAuthContext = { tenantSlug: 'internal', taxonomySlugs: ['bastos'] }
 
@@ -59,5 +59,41 @@ describe('applyScopeToFilters', () => {
 
   it('returns undefined filters when there is nothing to filter by', () => {
     expect(applyScopeToFilters(undefined, null).filters).toBeUndefined()
+  })
+})
+
+describe('buildFilterString', () => {
+  it('emits an exact-match clause for a scalar', () => {
+    expect(buildFilterString({ tenant: 'internal' })).toBe('tenant:=internal')
+  })
+
+  it('emits an OR set for an array', () => {
+    expect(buildFilterString({ taxonomy_slugs: ['bastos', 'economia'] })).toBe('taxonomy_slugs:[bastos,economia]')
+  })
+
+  it('joins multiple fields with &&', () => {
+    expect(buildFilterString({ tenant: 'internal', taxonomy_slugs: 'bastos' })).toBe(
+      'tenant:=internal && taxonomy_slugs:=bastos'
+    )
+  })
+})
+
+describe('scopeFilterClauses', () => {
+  it('is empty without an auth scope', () => {
+    expect(scopeFilterClauses(null)).toEqual([])
+  })
+
+  it('yields one clause per scoped field', () => {
+    expect(scopeFilterClauses(bastos)).toEqual(['tenant:=internal', 'taxonomy_slugs:=bastos'])
+  })
+
+  it('OR-joins a multi-slug scope in a single clause', () => {
+    const multi: McpAuthContext = { tenantSlug: 'internal', taxonomySlugs: ['bastos', 'economia'] }
+    expect(scopeFilterClauses(multi)).toEqual(['tenant:=internal', 'taxonomy_slugs:[bastos,economia]'])
+  })
+
+  it('includes folder scope', () => {
+    const scoped: McpAuthContext = { tenantSlug: 'internal', folderSlugs: ['proyectos'] }
+    expect(scopeFilterClauses(scoped)).toEqual(['tenant:=internal', 'folder_slugs:=proyectos'])
   })
 })

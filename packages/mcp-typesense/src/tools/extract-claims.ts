@@ -53,7 +53,13 @@ export const extractClaimsSchema = z.object({
     .array(z.enum(CLAIM_TYPES))
     .optional()
     .describe('Filter claims by type: factual, normative, definitional, predictive.'),
-  max_claims_per_chunk: z.number().int().min(1).max(10).optional().describe('Budget per chunk. Default: 5.')
+  max_claims_per_chunk: z.number().int().min(1).max(10).optional().describe('Budget per chunk. Default: 5.'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Profile slug whose scope governs this read. Pass the SAME profile you searched with. Defaults to your default profile.'
+    )
 })
 
 export type ExtractClaimsInput = z.infer<typeof extractClaimsSchema>

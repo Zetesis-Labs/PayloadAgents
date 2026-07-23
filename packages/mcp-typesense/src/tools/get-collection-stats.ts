@@ -5,6 +5,7 @@
 
 import type { ToolContext } from '../context'
 import type { ChunkCollectionConfig, McpAuthContext } from '../types'
+import { scopeFilterClauses } from './scope-filters'
 
 interface TaxonomyStat {
   slug: string
@@ -26,9 +27,12 @@ interface CollectionStats {
 async function getStatsForCollection(
   ctx: ToolContext,
   collectionDef: ChunkCollectionConfig,
-  tenantSlug: string | null
+  auth: McpAuthContext | null
 ): Promise<CollectionStats> {
   const taxonomyMap = await ctx.taxonomy.getTaxonomyMap()
+  // Distribution computed within the caller's scope: a profile-scoped agent
+  // sees only its own taxonomies' counts, not the whole tenant's author list.
+  const scopeFilter = scopeFilterClauses(auth).join(' && ')
 
   try {
     const result = await ctx.typesense
@@ -40,7 +44,7 @@ async function getStatsForCollection(
         facet_by: 'taxonomy_slugs',
         max_facet_values: 200,
         per_page: 0,
-        ...(tenantSlug ? { filter_by: `tenant:=${tenantSlug}` } : {})
+        ...(scopeFilter ? { filter_by: scopeFilter } : {})
       })
 
     const facetCounts = result.facet_counts?.find(f => f.field_name === 'taxonomy_slugs')
@@ -84,7 +88,6 @@ export async function getCollectionStats(
   ctx: ToolContext,
   auth: McpAuthContext | null
 ): Promise<{ collections: CollectionStats[] }> {
-  const tenantSlug = auth?.tenantSlug ?? null
-  const results = await Promise.all(ctx.collections.chunks.map(c => getStatsForCollection(ctx, c, tenantSlug)))
+  const results = await Promise.all(ctx.collections.chunks.map(c => getStatsForCollection(ctx, c, auth)))
   return { collections: results }
 }

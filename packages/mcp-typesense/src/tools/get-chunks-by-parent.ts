@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import type { ToolContext } from '../context'
 import type { McpAuthContext } from '../types'
+import { scopeFilterClauses } from './scope-filters'
 
 const MAX_PER_PAGE = 100
 const DEFAULT_PER_PAGE = 50
@@ -70,13 +71,14 @@ export async function getChunksByParent(
     }
   }
 
-  const tenantSlug = auth?.tenantSlug ?? null
   const perPage = Math.min(input.per_page ?? DEFAULT_PER_PAGE, MAX_PER_PAGE)
   const page = input.page ?? 1
 
-  // Build filter: parent_doc_id + optional tenant + optional chunk_index range
-  const filterParts: string[] = [`parent_doc_id:=${input.parent_doc_id}`]
-  if (tenantSlug) filterParts.push(`tenant:=${tenantSlug}`)
+  // Build filter: parent_doc_id + the caller's scope (tenant + profile
+  // taxonomy/folder) + optional chunk_index range. Scoping here keeps a parent
+  // read inside the same boundary search_collections enforces — a parent_doc_id
+  // surfaced by one profile must not become a back door into another.
+  const filterParts: string[] = [`parent_doc_id:=${input.parent_doc_id}`, ...scopeFilterClauses(auth)]
   if (input.start_chunk !== undefined) filterParts.push(`chunk_index:>=${input.start_chunk}`)
   if (input.end_chunk !== undefined) filterParts.push(`chunk_index:<${input.end_chunk}`)
   const filter_by = filterParts.join(' && ')

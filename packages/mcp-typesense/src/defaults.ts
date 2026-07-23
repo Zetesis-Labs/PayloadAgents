@@ -24,6 +24,7 @@ SEARCH RULES:
 RETRIEVAL PROFILES AND SCOPE:
 - When \`list_retrieval_profiles\` returns profiles, the \`retrieval_profile\` you pass sets the HARD scope of the search. \`filters\` can only NARROW inside it, never widen it.
 - Slugs outside the profile are dropped and reported in \`scope_notice\`; if the whole filter falls outside, you get zero hits. To reach other content, switch \`retrieval_profile\` — not \`filters\`.
+- Read tools (\`get_chunks_by_ids\`, \`summarize_document\`, \`extract_claims\`) and metadata tools (\`get_taxonomy_tree\`, \`get_filter_criteria\`) are scoped the same way. Pass the SAME \`retrieval_profile\` you searched with — ids found under one profile are not readable under another; omitting it falls back to your default profile.
 - \`filters.tenant\` is ignored: the tenant comes from your credentials.
 
 PARAMETER TYPES:
@@ -53,6 +54,8 @@ If your credentials expose retrieval profiles, the chosen \`retrieval_profile\` 
 - Different tenant → not possible, it comes from your credentials
 
 Out-of-scope slugs are dropped and explained in \`scope_notice\`. Zero hits with a \`scope_notice\` means scope enforcement, not missing content — do not retry the same filter with a shorter query.
+
+Reads inherit the same boundary: \`get_chunks_by_ids\`, \`summarize_document\` and \`extract_claims\` accept \`retrieval_profile\` and only return chunks inside that profile's scope. Always pass the profile you searched with; without it the read runs under your default profile and chunks found under another profile come back missing (with a \`scope_notice\`).
 
 With no profiles attached, \`filters\` are unrestricted and this section does not apply.
 

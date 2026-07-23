@@ -6,6 +6,7 @@
 
 import { z } from 'zod'
 import type { ResolvedTaxonomy, ToolContext } from '../context'
+import type { McpAuthContext } from '../types'
 
 export const getTaxonomyTreeSchema = z.object({
   type: z.string().optional().describe('Filter by taxonomy type (e.g. "author", "topic"). If omitted, returns all.'),
@@ -15,6 +16,12 @@ export const getTaxonomyTreeSchema = z.object({
     .optional()
     .describe(
       'Output shape. "flat" (default, RECOMMENDED) returns a flat list with parent_slug references — TOON tabularizes it as one CSV-style row per node, ~3x more compact than tree. "tree" returns the nested hierarchy. "both" returns both at ~2x token cost.'
+    ),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      "Profile slug whose scope bounds the tree — you only see the taxonomies that profile can filter by. Defaults to your default profile's scope."
     )
 })
 
@@ -70,8 +77,23 @@ function sortTreeBySlug(nodes: TaxonomyNode[]): void {
   }
 }
 
-export async function getTaxonomyTree(input: GetTaxonomyTreeInput, ctx: ToolContext) {
-  const docs = await ctx.taxonomy.getAll()
+/**
+ * Restrict the taxonomy universe to the caller's retrieval-profile scope. A
+ * profile scoped to `taxonomy_slugs: [bastos]` can only ever filter by those
+ * slugs (search intersects against the same allow-list), so listing every
+ * author in the tree would advertise content it cannot read — the exact "it
+ * returns taxonomies it shouldn't" leak. A profile with no taxonomy scope
+ * (folder-only or open token) sees the full tree, matching what it can filter.
+ */
+function scopeDocs(docs: ResolvedTaxonomy[], auth: McpAuthContext | null): ResolvedTaxonomy[] {
+  const allowed = auth?.taxonomySlugs
+  if (!allowed?.length) return docs
+  const allow = new Set(allowed)
+  return docs.filter(doc => allow.has(doc.slug))
+}
+
+export async function getTaxonomyTree(input: GetTaxonomyTreeInput, ctx: ToolContext, auth: McpAuthContext | null) {
+  const docs = scopeDocs(await ctx.taxonomy.getAll(), auth)
   let tree = buildTree(docs)
 
   // Filter by type

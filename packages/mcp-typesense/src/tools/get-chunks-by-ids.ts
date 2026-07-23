@@ -6,10 +6,17 @@
 import { z } from 'zod'
 import type { ToolContext } from '../context'
 import type { McpAuthContext } from '../types'
+import { scopeFilterClauses } from './scope-filters'
 
 export const getChunksByIdsSchema = z.object({
   collection: z.string().describe('Chunk collection name'),
-  ids: z.array(z.string()).min(1).describe('Array of chunk document IDs to retrieve')
+  ids: z.array(z.string()).min(1).describe('Array of chunk document IDs to retrieve'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Profile slug whose scope governs this read. Pass the SAME profile you searched with — ids found under one profile are not readable under another. Defaults to your default profile.'
+    )
 })
 
 export type GetChunksByIdsInput = z.infer<typeof getChunksByIdsSchema>
@@ -34,7 +41,9 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     }
   }
 
-  const tenantSlug = auth?.tenantSlug ?? null
+  // Ids alone are not an authorization: without the caller's scope an agent
+  // could search inside its retrieval profile and then read outside it by id.
+  const filterParts = [`id:[${input.ids.join(',')}]`, ...scopeFilterClauses(auth)]
 
   const result = await ctx.typesense
     .collections(input.collection)
@@ -42,7 +51,7 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     .search({
       q: '*',
       query_by: def.chunkSearchFields[0] || 'title',
-      filter_by: `id:[${input.ids.join(',')}]${tenantSlug ? ` && tenant:=${tenantSlug}` : ''}`,
+      filter_by: filterParts.join(' && '),
       per_page: input.ids.length,
       exclude_fields: 'embedding'
     })
@@ -62,5 +71,17 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
     }
   })
 
-  return { chunks, total: chunks.length }
+  // Tell the agent why it got fewer chunks than it asked for, so a scope drop
+  // does not read as "these chunks do not exist". We cannot distinguish a
+  // nonexistent id from a scope-filtered one without a second unscoped query,
+  // so the notice names both and points at the usual cause (wrong profile).
+  const missing = input.ids.length - chunks.length
+  const scopeNotice =
+    missing > 0 && scopeFilterClauses(auth).length > 0
+      ? `${missing} of the ${input.ids.length} requested chunks were not returned — they do not exist or are outside ` +
+        'the scope of the retrieval profile used for this read. If they came from a search under a different profile, ' +
+        'retry with that `retrieval_profile`.'
+      : undefined
+
+  return { chunks, total: chunks.length, ...(scopeNotice ? { scope_notice: scopeNotice } : {}) }
 }

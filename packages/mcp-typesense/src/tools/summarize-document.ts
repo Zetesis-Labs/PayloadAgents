@@ -53,7 +53,13 @@ export const summarizeDocumentSchema = z.object({
     .min(1)
     .max(MAX_MAX_CHUNKS)
     .optional()
-    .describe(`Hard cap on chunks processed. Default: ${DEFAULT_MAX_CHUNKS}. Max: ${MAX_MAX_CHUNKS}.`)
+    .describe(`Hard cap on chunks processed. Default: ${DEFAULT_MAX_CHUNKS}. Max: ${MAX_MAX_CHUNKS}.`),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Profile slug whose scope governs this read. Pass the SAME profile you searched with. Defaults to your default profile.'
+    )
 })
 
 export type SummarizeDocumentInput = z.infer<typeof summarizeDocumentSchema>

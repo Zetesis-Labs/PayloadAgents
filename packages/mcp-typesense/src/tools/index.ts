@@ -57,6 +57,18 @@ export function registerTools(opts: RegisterToolsOptions): void {
   const hasContent = ctx.content !== null
   const llmSamplingEnabled = features.llmSampling !== false
 
+  /**
+   * Resolve the scope a read/metadata tool runs under: the caller-chosen
+   * profile, else the default. Reads deliberately skip the selection guard —
+   * a multi-profile agent that omits the slug falls back to its default
+   * profile and gets a `scope_notice` pointing at `retrieval_profile` when
+   * that scope drops chunks, instead of a hard error on every read.
+   */
+  const resolveReadScope = (profileSlug: string | undefined) => {
+    const auth = getCurrentAuth()
+    return applyProfileScope(auth, profileSlug ?? auth?.defaultProfileSlug, ctx.resolveProfileScope)
+  }
+
   // -- OVERVIEW --------------------------------------------------------------
 
   server.registerTool(
@@ -70,7 +82,9 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await getTaxonomyTree(input, ctx)
+      const scoped = await resolveReadScope(input.retrieval_profile)
+      if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+      const result = await getTaxonomyTree(input, ctx, scoped.auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )
@@ -92,7 +106,9 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await getFilterCriteria(input, ctx, getCurrentAuth())
+      const scoped = await resolveReadScope(input.retrieval_profile)
+      if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+      const result = await getFilterCriteria(input, ctx, scoped.auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )
@@ -218,7 +234,9 @@ export function registerTools(opts: RegisterToolsOptions): void {
       }
     },
     async input => {
-      const result = await getChunksByIds(input, ctx, getCurrentAuth())
+      const scoped = await resolveReadScope(input.retrieval_profile)
+      if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+      const result = await getChunksByIds(input, ctx, scoped.auth)
       return toolResult(result, input.format as OutputFormat)
     }
   )
@@ -242,7 +260,9 @@ export function registerTools(opts: RegisterToolsOptions): void {
         }
       },
       async (input, extra) => {
-        const result = await summarizeDocument(input, ctx, getCurrentAuth(), server, extra.signal)
+        const scoped = await resolveReadScope(input.retrieval_profile)
+        if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+        const result = await summarizeDocument(input, ctx, scoped.auth, server, extra.signal)
         return toolResult(result, input.format as OutputFormat)
       }
     )
@@ -259,7 +279,9 @@ export function registerTools(opts: RegisterToolsOptions): void {
         }
       },
       async (input, extra) => {
-        const result = await extractClaims(input, ctx, getCurrentAuth(), server, extra.signal)
+        const scoped = await resolveReadScope(input.retrieval_profile)
+        if (!scoped.ok) return toolResult(scoped.error, input.format as OutputFormat)
+        const result = await extractClaims(input, ctx, scoped.auth, server, extra.signal)
         return toolResult(result, input.format as OutputFormat)
       }
     )
