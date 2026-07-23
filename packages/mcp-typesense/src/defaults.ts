@@ -21,6 +21,11 @@ SEARCH RULES:
 - In semantic/hybrid, vector recall is fixed (top 100 neighbors); \`per_page\` only paginates the page you see.
 - \`total_found\` is only reliable in \`mode: "lexical"\`.
 
+RETRIEVAL PROFILES AND SCOPE:
+- When \`list_retrieval_profiles\` returns profiles, the \`retrieval_profile\` you pass sets the HARD scope of the search. \`filters\` can only NARROW inside it, never widen it.
+- Slugs outside the profile are dropped and reported in \`scope_notice\`; if the whole filter falls outside, you get zero hits. To reach other content, switch \`retrieval_profile\` — not \`filters\`.
+- \`filters.tenant\` is ignored: the tenant comes from your credentials.
+
 PARAMETER TYPES:
 - \`filters\` MUST be a JSON object, not a stringified JSON.
 - \`taxonomy_slugs\` and \`folder_slugs\` accept a string OR a string array.
@@ -38,6 +43,18 @@ export const DEFAULT_GUIDE = `# MCP Search Server — Agent Guide
 - Use \`folder_slugs\` **FILTERS** to scope by folder. The slug chain mirrors the folder breadcrumb (root → leaf), so filtering by an ancestor folder's slug selects everything below it.
 - Use the \`headers\` filter to search within a specific book section.
 - Do NOT add meta-words like "opinion", "thinks", "says", "believes" — they are not in the content.
+
+## Filters vs retrieval profiles
+
+If your credentials expose retrieval profiles, the chosen \`retrieval_profile\` is the hard boundary of what you can read and \`filters\` only narrow within it:
+
+- Different author/perspective → switch \`retrieval_profile\`
+- Sub-topic, folder or section inside your profile → add \`filters\`
+- Different tenant → not possible, it comes from your credentials
+
+Out-of-scope slugs are dropped and explained in \`scope_notice\`. Zero hits with a \`scope_notice\` means scope enforcement, not missing content — do not retry the same filter with a shorter query.
+
+With no profiles attached, \`filters\` are unrestricted and this section does not apply.
 
 ## Query length and lexical AND
 
