@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { McpAuthContext } from '../types'
-import { applyProfileScope } from './profile-scope'
+import { applyProfileScope, isProfileGranted } from './profile-scope'
 
 const lente = { w: [0.1, 0.2], b: 0.5 }
 
@@ -23,6 +23,30 @@ const unwrap = (result: Awaited<ReturnType<typeof applyProfileScope>>): McpAuthC
   if (!result.ok) throw new Error(`expected ok, got ${result.error.error}`)
   return result.auth
 }
+
+describe('cross-profile authorization (privilege boundary)', () => {
+  it('rejects a slug the caller was not granted, before resolving anything', async () => {
+    const resolver = vi.fn().mockResolvedValue({ taxonomySlugs: ['secret'] })
+    const single: McpAuthContext = { tenantSlug: 't', defaultProfileSlug: 'bastos' }
+    const result = await applyProfileScope(single, 'escohotado', resolver)
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.error).toBe('retrieval_profile_forbidden')
+    expect(resolver).not.toHaveBeenCalled()
+  })
+
+  it('allows the default, the catalog, and pre-resolved group profiles', () => {
+    expect(isProfileGranted({ tenantSlug: 't', defaultProfileSlug: 'bastos' }, 'bastos')).toBe(true)
+    expect(isProfileGranted(auth, 'a')).toBe(true) // catalog
+    expect(isProfileGranted(auth, 'b')).toBe(true) // catalog + groupProfiles
+    expect(isProfileGranted(auth, 'zzz')).toBe(false)
+  })
+
+  it('treats an unscoped token as open (any slug allowed)', () => {
+    expect(isProfileGranted({ tenantSlug: 't' }, 'anything')).toBe(true)
+    expect(isProfileGranted(null, 'anything')).toBe(true)
+  })
+})
 
 describe('applyProfileScope', () => {
   it('returns auth unchanged when no slug', async () => {
@@ -98,13 +122,15 @@ describe('applyProfileScope', () => {
       expect(scoped?.retrieval?.learnedHead).toEqual(lente)
     })
 
-    it('fails closed when the resolver finds nothing', async () => {
+    it('fails closed when a GRANTED slug cannot be resolved', async () => {
+      // 'neo' is in the catalog (granted) but the resolver comes up empty —
+      // this is the fail-closed path, distinct from an ungranted slug (forbidden).
       const resolver = vi.fn().mockResolvedValue(null)
-      const result = await applyProfileScope(bare, 'zzz', resolver)
+      const result = await applyProfileScope(bare, 'neo', resolver)
       expect(result.ok).toBe(false)
       if (result.ok) return
       expect(result.error.error).toBe('retrieval_profile_unresolved')
-      expect(result.error.profile).toBe('zzz')
+      expect(result.error.profile).toBe('neo')
       expect(result.error.message).toMatch(/NOT executed/)
     })
 

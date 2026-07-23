@@ -30,12 +30,32 @@ import type { ProfileScopeResolver } from '../retrieval-profile/resolver'
 import type { McpAuthContext } from '../types'
 
 export interface ProfileScopeError {
-  error: 'retrieval_profile_unresolved'
+  error: 'retrieval_profile_unresolved' | 'retrieval_profile_forbidden'
   message: string
   profile: string
 }
 
 export type ProfileScopeResult = { ok: true; auth: McpAuthContext | null } | { ok: false; error: ProfileScopeError }
+
+/**
+ * The profiles a caller was actually granted: its catalog (`availableProfiles`,
+ * sent for multi-profile callers), its default (`defaultProfileSlug`, the single
+ * profile the proxy/builder attached), and any profile the proxy pre-resolved
+ * for THIS request (`groupProfiles`, compare_perspectives). A caller with none
+ * of these is an unscoped legacy token.
+ */
+export function profileGrantedSet(auth: McpAuthContext | null): Set<string> {
+  const granted = new Set<string>((auth?.availableProfiles ?? []).map(p => p.slug))
+  if (auth?.defaultProfileSlug) granted.add(auth.defaultProfileSlug)
+  for (const slug of Object.keys(auth?.groupProfiles ?? {})) granted.add(slug)
+  return granted
+}
+
+/** Whether the caller may search/read under `slug`. Open (unscoped) tokens may use any. */
+export function isProfileGranted(auth: McpAuthContext | null, slug: string): boolean {
+  const granted = profileGrantedSet(auth)
+  return granted.size === 0 || granted.has(slug)
+}
 
 export async function applyProfileScope(
   auth: McpAuthContext | null,
@@ -43,6 +63,21 @@ export async function applyProfileScope(
   resolveProfileScope?: ProfileScopeResolver | null
 ): Promise<ProfileScopeResult> {
   if (!auth || !slug) return { ok: true, auth }
+
+  // Authorization gate. `applyProfileScope` is the single chokepoint every
+  // caller-chosen slug flows through — search, compare, AND the read tools — so
+  // rejecting an ungranted slug here closes cross-profile access everywhere at
+  // once, before the resolver would fetch another profile's scope by slug.
+  if (!isProfileGranted(auth, slug)) {
+    return {
+      ok: false,
+      error: {
+        error: 'retrieval_profile_forbidden',
+        profile: slug,
+        message: `You are not authorized to use retrieval_profile "${slug}". Use one of the profiles available to you.`
+      }
+    }
+  }
 
   const fromHeader = auth.groupProfiles?.[slug]
   if (fromHeader) {

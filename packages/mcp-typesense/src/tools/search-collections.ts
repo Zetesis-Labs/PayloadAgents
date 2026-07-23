@@ -6,6 +6,7 @@
 import type { DocumentSchema, SearchResponse, SearchResponseHit } from 'typesense/lib/Typesense/Documents'
 import type { MultiSearchRequestSchema } from 'typesense/lib/Typesense/Types'
 import { z } from 'zod'
+import { profileGrantedSet } from '../auth/profile-scope'
 import type { ToolContext } from '../context'
 import { applyQueryRewriteTemplate } from '../query-rewrite'
 import { setAttributes, withSpan } from '../tracing'
@@ -88,34 +89,28 @@ export interface ProfileRequiredError {
 }
 
 /**
- * Enforce profile selection AND authorization: the caller may only search under
- * a profile it was actually granted — its catalog (`availableProfiles`, sent for
- * multi-profile callers) plus its default (`defaultProfileSlug`, the single
- * profile the proxy/builder attached). A caller with neither is an unscoped
- * legacy token and may query raw.
+ * Enforce profile selection AND authorization at the search entry point: the
+ * caller may only search under a profile it was granted (its catalog plus its
+ * default), and a multi-profile caller must pick one explicitly rather than
+ * silently defaulting.
  *
- * This is a privilege boundary, not just UX: `applyProfileScope` will resolve
- * ANY slug that exists in the caller's tenant, so without this gate an agent
- * granted profile A could read under a more permissive profile B of the same
- * tenant just by naming B's slug (e.g. via prompt injection). We reject a slug
- * the caller wasn't granted before it ever reaches the resolver.
- *
- * Returns an error payload to surface back to the agent, or null to proceed.
+ * The authorization itself is enforced centrally in `applyProfileScope` (which
+ * every read tool also goes through); this guard adds the search-only "must
+ * pick" rule and surfaces the caller's available profiles in the error so the
+ * LLM can recover. A caller with no profile attached is an unscoped legacy
+ * token and may query raw.
  */
 export function requireProfileSelection(
   auth: McpAuthContext | null,
   chosen: string | undefined
 ): ProfileRequiredError | null {
   const profiles = auth?.availableProfiles ?? []
-  const granted = new Set(profiles.map(p => p.slug))
-  if (auth?.defaultProfileSlug) granted.add(auth.defaultProfileSlug)
+  const granted = profileGrantedSet(auth)
 
   // No profile attached at all → unscoped legacy token, open search.
   if (granted.size === 0) return null
 
   if (chosen) {
-    // A named profile must be one the caller was granted — in single- and
-    // multi-profile alike. This is the line that blocks cross-profile reads.
     if (granted.has(chosen)) return null
     return {
       error: 'retrieval_profile_required',
