@@ -10,7 +10,13 @@ import { scopeFilterClauses } from './scope-filters'
 
 export const getChunksByIdsSchema = z.object({
   collection: z.string().describe('Chunk collection name'),
-  ids: z.array(z.string()).min(1).describe('Array of chunk document IDs to retrieve')
+  ids: z.array(z.string()).min(1).describe('Array of chunk document IDs to retrieve'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      'Profile slug whose scope governs this read. Pass the SAME profile you searched with — ids found under one profile are not readable under another. Defaults to your default profile.'
+    )
 })
 
 export type GetChunksByIdsInput = z.infer<typeof getChunksByIdsSchema>
@@ -66,11 +72,15 @@ export async function getChunksByIds(input: GetChunksByIdsInput, ctx: ToolContex
   })
 
   // Tell the agent why it got fewer chunks than it asked for, so a scope drop
-  // does not read as "these chunks do not exist".
+  // does not read as "these chunks do not exist". We cannot distinguish a
+  // nonexistent id from a scope-filtered one without a second unscoped query,
+  // so the notice names both and points at the usual cause (wrong profile).
   const missing = input.ids.length - chunks.length
   const scopeNotice =
     missing > 0 && scopeFilterClauses(auth).length > 0
-      ? `${missing} of the ${input.ids.length} requested chunks are outside your scope and were not returned.`
+      ? `${missing} of the ${input.ids.length} requested chunks were not returned — they do not exist or are outside ` +
+        'the scope of the retrieval profile used for this read. If they came from a search under a different profile, ' +
+        'retry with that `retrieval_profile`.'
       : undefined
 
   return { chunks, total: chunks.length, ...(scopeNotice ? { scope_notice: scopeNotice } : {}) }

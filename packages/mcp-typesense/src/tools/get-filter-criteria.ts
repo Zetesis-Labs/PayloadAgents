@@ -12,7 +12,11 @@ export const getFilterCriteriaSchema = z.object({
   collection: z
     .string()
     .optional()
-    .describe('Specific collection name to get filters for. If omitted, returns filters for all chunk collections.')
+    .describe('Specific collection name to get filters for. If omitted, returns filters for all chunk collections.'),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe("Profile slug whose scope bounds the facet counts. Defaults to your default profile's scope.")
 })
 
 export type GetFilterCriteriaInput = z.infer<typeof getFilterCriteriaSchema>

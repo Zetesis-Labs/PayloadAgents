@@ -69,6 +69,19 @@ describe('get_chunks_by_ids scope', () => {
     const result = await getChunksByIds({ collection: 'posts_chunk', ids: ['a', 'b'] }, ctx, bastos)
     expect(result.total).toBe(0)
     expect(result.scope_notice).toMatch(/2 of the 2/)
+    // Multi-profile agents recover by re-reading under the profile they
+    // searched with — the notice must point them there.
+    expect(result.scope_notice).toMatch(/retrieval_profile/)
+  })
+
+  it('reads under whichever profile scope the handler resolved', async () => {
+    // Simulates the multi-profile flow: the handler resolves the chosen
+    // profile (e.g. "escohotado") via applyProfileScope and passes that auth —
+    // the read must follow it, not the default profile.
+    const { ctx, search } = makeCtx()
+    const escohotado: McpAuthContext = { tenantSlug: 'internal', taxonomySlugs: ['escohotado'] }
+    await getChunksByIds({ collection: 'posts_chunk', ids: ['156_chunk_3'] }, ctx, escohotado)
+    expect(filterOf(search)).toBe('id:[156_chunk_3] && taxonomy_slugs:=escohotado && tenant:=internal')
   })
 
   it('adds no scope filter for an unscoped caller', async () => {

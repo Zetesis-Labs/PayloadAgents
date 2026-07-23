@@ -16,6 +16,12 @@ export const getTaxonomyTreeSchema = z.object({
     .optional()
     .describe(
       'Output shape. "flat" (default, RECOMMENDED) returns a flat list with parent_slug references — TOON tabularizes it as one CSV-style row per node, ~3x more compact than tree. "tree" returns the nested hierarchy. "both" returns both at ~2x token cost.'
+    ),
+  retrieval_profile: z
+    .string()
+    .optional()
+    .describe(
+      "Profile slug whose scope bounds the tree — you only see the taxonomies that profile can filter by. Defaults to your default profile's scope."
     )
 })
 
