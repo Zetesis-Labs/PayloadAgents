@@ -1,5 +1,15 @@
 # @zetesis/mcp-typesense
 
+## [0.6.6](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.5...mcp-typesense-v0.6.6) (2026-07-23)
+
+
+### Bug Fixes
+
+* **mcp-typesense:** centralize cross-profile authorization in applyProfileScope ([20ae812](https://github.com/Zetesis-Labs/PayloadAgents/commit/20ae8127208897ca8359a6f2657bed9204abbbf0))
+* **mcp-typesense:** never trust a bare retrieval-profile slug as already-applied scope ([812eb4b](https://github.com/Zetesis-Labs/PayloadAgents/commit/812eb4b1eb9057e16f48d1b37cbf83609374977f))
+* **mcp-typesense:** never trust a bare retrieval-profile slug as already-applied scope ([7af4ed9](https://github.com/Zetesis-Labs/PayloadAgents/commit/7af4ed980c21ad977232eb9c794f82cfc6328719))
+* **mcp-typesense:** reject a retrieval_profile the caller was not granted ([f233f0f](https://github.com/Zetesis-Labs/PayloadAgents/commit/f233f0f55d1a69568ce4136d0353b2424191688e))
+
 ## [0.6.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.4...mcp-typesense-v0.6.5) (2026-07-23)
 
 
