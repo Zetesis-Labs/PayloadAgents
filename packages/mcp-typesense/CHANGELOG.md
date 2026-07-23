@@ -1,5 +1,13 @@
 # @zetesis/mcp-typesense
 
+## [0.6.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.3...mcp-typesense-v0.6.4) (2026-07-23)
+
+
+### Bug Fixes
+
+* **mcp-typesense:** enforce retrieval profile scope as a ceiling, not a default ([4fa911b](https://github.com/Zetesis-Labs/PayloadAgents/commit/4fa911b1ac2860619b30f98bbc248c66144b386b))
+* **mcp-typesense:** enforce retrieval profile scope as a ceiling, not a default ([f2ae6db](https://github.com/Zetesis-Labs/PayloadAgents/commit/f2ae6dbc724b7cb6eab47a2e51a94db7fd0ec986))
+
 ## [0.6.3](https://github.com/Zetesis-Labs/PayloadAgents/compare/mcp-typesense-v0.6.2...mcp-typesense-v0.6.3) (2026-06-21)
 
 
