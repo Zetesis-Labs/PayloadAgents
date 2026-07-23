@@ -50,12 +50,41 @@ describe('applyProfileScope', () => {
     expect(resolver).not.toHaveBeenCalled()
   })
 
-  it('skips the resolver when the request already carries that profile scope', async () => {
-    const resolver = vi.fn()
+  it('REGRESSION (Agno single-profile): a bare default slug with no scope headers is resolved, never trusted', async () => {
+    // The Agno builder sends `x-retrieval-profile: bastos` alone when the
+    // agent doc carries no taxonomy filters of its own. Trusting the bare slug
+    // ran the search with no profile filters at all — the original leak.
+    const resolver = vi.fn().mockResolvedValue({ taxonomySlugs: ['bastos'] })
+    const bareSlug: McpAuthContext = { tenantSlug: 't', defaultProfileSlug: 'bastos' }
+    const scoped = unwrap(await applyProfileScope(bareSlug, 'bastos', resolver))
+    expect(resolver).toHaveBeenCalledWith('t', 'bastos')
+    expect(scoped?.taxonomySlugs).toEqual(['bastos'])
+  })
+
+  it('fails closed on a bare default slug when no resolver is configured', async () => {
+    const bareSlug: McpAuthContext = { tenantSlug: 't', defaultProfileSlug: 'bastos' }
+    const result = await applyProfileScope(bareSlug, 'bastos')
+    expect(result.ok).toBe(false)
+  })
+
+  it('prefers the resolved profile over the header scope (profile doc is the source of truth)', async () => {
+    const resolver = vi.fn().mockResolvedValue({ taxonomySlugs: ['fresh'] })
+    const applied: McpAuthContext = { tenantSlug: 't', taxonomySlugs: ['stale'], defaultProfileSlug: 'bastos' }
+    const scoped = unwrap(await applyProfileScope(applied, 'bastos', resolver))
+    expect(scoped?.taxonomySlugs).toEqual(['fresh'])
+  })
+
+  it('falls back to header scope when the resolver finds nothing for the applied default profile', async () => {
+    const resolver = vi.fn().mockResolvedValue(null)
     const applied: McpAuthContext = { tenantSlug: 't', taxonomySlugs: ['bastos'], defaultProfileSlug: 'bastos' }
     const scoped = unwrap(await applyProfileScope(applied, 'bastos', resolver))
     expect(scoped).toBe(applied)
-    expect(resolver).not.toHaveBeenCalled()
+  })
+
+  it('accepts header scope for the default profile when no resolver is configured', async () => {
+    const applied: McpAuthContext = { tenantSlug: 't', taxonomySlugs: ['bastos'], defaultProfileSlug: 'bastos' }
+    const scoped = unwrap(await applyProfileScope(applied, 'bastos'))
+    expect(scoped).toBe(applied)
   })
 
   describe('on-demand resolver (Agno route — no groupProfiles)', () => {
