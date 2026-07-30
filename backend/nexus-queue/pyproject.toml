@@ -1,12 +1,12 @@
 [project]
 name = "nexus-queue"
 version = "0.1.5"
-description = "Nexus-Queue — portable taskiq + Redis Streams worker runtime: namespaced streams, versioned envelope, ports-and-adapters, retry/DLQ/idempotency/tracing/metrics middleware."
+description = "Nexus-Queue — portable NATS JetStream worker runtime: versioned envelope, ports-and-adapters, retry/DLQ, KV idempotency, tracing and metrics."
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Zetesis Labs" }]
-keywords = ["taskiq", "redis", "queue", "worker", "ports-and-adapters", "dlq"]
+keywords = ["nats", "jetstream", "queue", "worker", "ports-and-adapters", "dlq"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
@@ -19,15 +19,13 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.115",
+    "nats-py>=2.11",
     "opentelemetry-api>=1.35",
     "opentelemetry-exporter-otlp-proto-http>=1.35",
     "opentelemetry-sdk>=1.35",
     "prometheus-client>=0.20",
     "pydantic>=2.9",
-    "redis>=5.0",
     "structlog>=24.1",
-    "taskiq>=0.11.18",
-    "taskiq-redis>=1.1.1",
     "uvicorn[standard]>=0.34",
 ]
 

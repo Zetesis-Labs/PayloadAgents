@@ -7,7 +7,7 @@ multi-tenant deploy can build several `RuntimeConfig` instances from one env.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, SecretStr, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from nexus_queue import naming
 
@@ -28,18 +28,9 @@ class RuntimeConfig(BaseModel):
     )
 
     # ── Broker ─────────────────────────────────────────────────────────────
-    redis_url: str = Field(
-        description="Redis URL for the taskiq-redis stream broker (e.g. redis://redis:6379).",
-    )
-
-    # ── HTTP kicker ────────────────────────────────────────────────────────
-    internal_secret: SecretStr = Field(
-        default=SecretStr(""),
-        description="Shared secret required by the kicker (X-Nexus-Secret). Empty disables the kicker auth gate.",
-    )
-    public_paths: tuple[str, ...] = Field(
-        default=("/health", "/ready", "/metrics", "/docs", "/openapi.json"),
-        description="Kicker paths served without the secret.",
+    nats_url: str | None = Field(
+        default=None,
+        description="NATS server URL, e.g. nats://nats:4222 (required).",
     )
 
     # ── Retry / DLQ / idempotency ──────────────────────────────────────────
@@ -53,37 +44,23 @@ class RuntimeConfig(BaseModel):
         gt=0,
         description="Base delay for the exponential backoff applied between retries.",
     )
-    retry_poll_interval_s: float = Field(
-        default=1.0,
-        gt=0,
-        description="How often the delayed-retry poller drains due retries back onto the work stream.",
-    )
     idempotency_ttl_s: int = Field(
         default=86_400,
         ge=0,
-        description="TTL of the dedup key; 0 disables the idempotency middleware.",
+        description="TTL of the dedup key; 0 disables the idempotency claim.",
     )
-    dlq_maxlen: int = Field(
-        default=100_000,
-        ge=0,
-        description="Approx MAXLEN for the dead-letter stream; 0 = unbounded.",
-    )
-
-    # ── Observability ──────────────────────────────────────────────────────
-    metrics_port: int | None = Field(
-        default=None,
+    idempotency_lease_s: float = Field(
+        default=30.0,
         gt=0,
-        lt=65_536,
         description=(
-            "If set, the worker serves Prometheus metrics on this port via an "
-            "in-process HTTP server (scrape target for a ServiceMonitor). The "
-            "taskiq worker has no HTTP server otherwise, so its consume counters "
-            "are invisible without this. Run the worker single-process "
-            "(taskiq --workers 1) and scale by pods, or the port will collide. "
-            "None disables it."
+            "Lease on an in-progress claim, refreshed while the handler runs "
+            "(via the ack_wait heartbeat). If the holder dies, the lease "
+            "expires after this many seconds and a later delivery takes the "
+            "claim over — bounding how long a crashed attempt blocks its idem "
+            "key (vs the full idempotency_ttl_s). Must exceed the heartbeat "
+            "interval; short handlers never reach it."
         ),
     )
-
     # ── Logging ────────────────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
 
@@ -92,22 +69,42 @@ class RuntimeConfig(BaseModel):
     def _validate_slug(cls, value: str, info: ValidationInfo) -> str:
         return naming.validate_slug(value, kind=info.field_name or "slug")
 
-    @property
-    def work_stream(self) -> str:
-        return naming.work_stream(self.project, self.queue)
+    @model_validator(mode="after")
+    def _require_nats_url(self) -> RuntimeConfig:
+        if not self.nats_url:
+            raise ValueError("nats_url is required")
+        return self
+
+    # ── NATS JetStream names ───────────────────────────────────────────────
 
     @property
-    def consumer_group(self) -> str:
-        return naming.consumer_group(self.project, self.queue)
+    def work_subject(self) -> str:
+        return naming.work_subject(self.project, self.queue)
 
     @property
-    def dlq_stream(self) -> str:
-        return naming.dlq_stream(self.project, self.queue)
+    def dlq_subject(self) -> str:
+        return naming.dlq_subject(self.project, self.queue)
 
     @property
-    def delayed_set(self) -> str:
-        return naming.delayed_set(self.project, self.queue)
+    def nats_stream(self) -> str:
+        return naming.nats_stream_name(self.project, self.queue)
 
     @property
-    def status_stream(self) -> str:
-        return naming.status_stream(self.project)
+    def nats_dlq_stream(self) -> str:
+        return naming.nats_dlq_stream_name(self.project, self.queue)
+
+    @property
+    def nats_durable(self) -> str:
+        return naming.nats_durable_name(self.project, self.queue)
+
+    @property
+    def advisory_subject(self) -> str:
+        return naming.max_deliveries_advisory_subject(self.nats_stream, self.nats_durable)
+
+    @property
+    def nats_advisory_stream(self) -> str:
+        return naming.nats_advisory_stream_name(self.project, self.queue)
+
+    @property
+    def nats_advisory_durable(self) -> str:
+        return naming.nats_advisory_durable_name(self.project, self.queue)

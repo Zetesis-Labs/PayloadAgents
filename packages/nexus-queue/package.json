@@ -1,10 +1,11 @@
 {
   "name": "@zetesis/nexus-queue",
   "version": "0.1.1",
-  "description": "TypeScript producer client for the Nexus-Queue standard — enqueues tasks via the HTTP kicker.",
+  "description": "TypeScript producer client for the Nexus-Queue standard — publishes tasks straight to NATS JetStream.",
   "keywords": [
     "nexus-queue",
-    "taskiq",
+    "nats",
+    "jetstream",
     "queue",
     "producer"
   ],
@@ -39,6 +40,9 @@
     "dev": "tsdown --watch",
     "clean": "rimraf -g {dist,*.tsbuildinfo}",
     "prepublishOnly": "pnpm clean && pnpm build"
+  },
+  "dependencies": {
+    "nats": "^2.29.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

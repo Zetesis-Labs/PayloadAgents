@@ -1,9 +1,9 @@
 # Nexus-Queue — Especificación del estándar
 
-> **Versión**: v0.1 · **Fecha**: 2026-06-17 (versionada en repo el 2026-07-03) · **Estado**: vigente — adoptada en ZP y nixon (PR #240)
+> **Versión**: v1.1 · **Fecha**: 2026-07-03 (v0.1: 2026-06-17) · **Estado**: vigente — v0.1 adoptada en ZP y nixon (PR #240); v1.1 añade el **binding NATS JetStream** (runtime v2 sin taskiq, decisión D14) con el wire contract v1 **intacto**
 > **Proyectos de referencia**: `ZetesisPortal` (ZP) · `konect-nixon` (`irontec-comms/konect-nixon`)
 > **Casa**: `@zetesis/nexus-queue` (npm, cliente TS) + `nexus-queue` (PyPI, runtime Python) — ambos en `PayloadAgents/`
-> **Evolución prevista (v1.1)**: migración del transporte a NATS JetStream + runtime v2 sin taskiq + modelo contract-first — plan y decisiones (D1–D14) en [`docs/architecture/nexus-queue-jetstream-migration.md`](../../docs/architecture/nexus-queue-jetstream-migration.md)
+> **Plan de migración y decisiones (D1–D14)**: [`docs/architecture/nexus-queue-jetstream-migration.md`](../../docs/architecture/nexus-queue-jetstream-migration.md)
 
 ---
 
@@ -23,7 +23,7 @@ Nexus-Queue es el estándar de colas asíncronas para el ecosistema. Dos objetiv
 
 ## 2. Principios de diseño
 
-- **Base fija**: taskiq + `taskiq_redis.RedisStreamBroker` (Redis Streams, consumer groups, `XACK`, `XAUTOCLAIM`). At-least-once.
+- **Transporte dual, wire único**: v1 = taskiq + `taskiq_redis.RedisStreamBroker` (Redis Streams, consumer groups, `XACK`, `XAUTOCLAIM`); v2 = **NATS JetStream con runtime propio sin taskiq** (`NatsWorker`/`NatsReceiver`/`NatsPublisher`, D14). At-least-once en ambos; mismo envelope, mismos labels, misma semántica de retry/DLQ — la suite de conformidad corre idéntica contra los dos. Redis permanece como **idempotency store** en ambos (D4).
 - **Agnóstico de dominio**: el paquete `nexus-queue` no importa nada de ZP ni de nixon. Los proyectos dependen de él, nunca al revés.
 - **Ports-and-adapters**: handler → puertos → adapters (por proyecto). El handler es una función sobre puertos + un payload tipado.
 - **Políglota por el wire**: el productor puede ser Python (`Publisher`) o TS (`@zetesis/nexus-queue`); ambos emiten el **mismo** `TaskiqMessage` al **mismo** stream namespaced. El worker (Python) no distingue quién encoló.
@@ -42,7 +42,7 @@ Nexus-Queue es el estándar de colas asíncronas para el ecosistema. Dos objetiv
 ├──────────────────────────────────────────────────────────────┤
 │  RUNTIME  nexus-queue:  broker namespaced · middleware stack    │
 │           (tracing·métricas·idempotencia·retry·DLQ) · lifecycle │
-│           · WORKER_TASKS · Publisher · kicker genérico          │
+│           · WORKER_TASKS · Publisher · probes/metrics HTTP      │
 └──────────────────────────────────────────────────────────────┘
    adapters por proyecto ─┐
    ZP    → PayloadJobState · PayloadMedia · TypesenseIndex
@@ -56,8 +56,9 @@ El **wire contract** (§4) es ortogonal: viaja en los labels de cada mensaje y h
 ## 4. Wire contract v1
 
 ### 4.1 Transporte y serialización
-- Broker: `RedisStreamBroker(url, queue_name=<stream>, consumer_group_name=<group>)`.
-- Un mensaje = entrada de Redis Stream `XADD <stream> * data <json>`, donde `data` es el `TaskiqMessage` serializado por el `JSONFormatter` de taskiq (compatibilidad garantizada con el productor TS, que replica este formato).
+- **Binding Redis (v1)**: `RedisStreamBroker(url, queue_name=<stream>, consumer_group_name=<group>)`. Un mensaje = entrada de Redis Stream `XADD <stream> * data <json>`.
+- **Binding NATS (v2)**: publish JetStream al subject `nq.{project}.{queue}` con el **mismo JSON** en el cuerpo, más header `Nats-Msg-Id` = `nq_idem` para dedup publish-side del broker (ventana corta; la idempotencia de aplicación sigue siendo el muro de carga).
+- El JSON del envelope (`task_id`, `task_name`, `labels`, `args`, `kwargs`) **lo define esta spec**, no taskiq — nació con la forma de `TaskiqMessage` y le sobrevive. Productores TS y Python emiten la misma forma en ambos transportes.
 
 ### 4.2 Naming de streams (resuelve la colisión actual)
 Hoy ZP y nixon usan ambos el default `"taskiq"` → colisionan. El estándar **prohíbe el default** y exige:
@@ -71,6 +72,18 @@ Hoy ZP y nixon usan ambos el default `"taskiq"` → colisionan. El estándar **p
 
 - `project` = slug corto y estable del proyecto (`zp`, `nixon`).
 - `queue` = dominio/pipeline lógico (`documents`, `jobs`). Por defecto **un stream por queue** (las etapas de un pipeline lo comparten y se reparten por registro/`WORKER_TASKS`). Una etapa cara que deba escalar/aislarse **puede** tener su propio `queue` (p.ej. `nq:nixon:transcription`).
+
+**Binding NATS (v2)** — mapeo mecánico de los mismos nombres:
+
+| Recurso | Patrón | Ejemplo |
+|---|---|---|
+| Subject de trabajo | `nq.{project}.{queue}` | `nq.zp.documents` |
+| Stream JetStream | `NQ_{PROJECT}_{QUEUE}` (retention `limits`) | `NQ_ZP_DOCUMENTS` |
+| Subject DLQ | `nq.{project}.{queue}.dlq` | `nq.zp.documents.dlq` |
+| Stream DLQ | `NQ_{PROJECT}_{QUEUE}_DLQ` | `NQ_ZP_DOCUMENTS_DLQ` |
+| Durable consumer | `nq_{project}_{queue}_cg` | `nq_zp_documents_cg` |
+
+> Retention del stream de trabajo = `limits`, no `workqueue`: el listener de agotamiento debe poder recuperar el mensaje por sequence, y `workqueue` además limita el subject a un solo consumer.
 
 ### 4.3 Labels obligatorios y opcionales
 Los labels viajan en `TaskiqMessage.labels`. El `task_name` de taskiq **es** `nq_task` (registro y wire coinciden).
@@ -142,17 +155,24 @@ class StatusEventPort(Protocol):
 
 ## 6. Contrato de handler
 
+Un handler es `async def h(payload, deps) -> None`: su payload tipado más el
+contenedor de adapters del proyecto, tipado como un `Protocol` de los puertos
+que realmente usa. Se registra con `HandlerSpec` (API shippeada — el estilo
+`NexusDepends` de la v0.1 draft nunca llegó a implementarse):
+
 ```python
-async def parse_to_text(
-    p: ParsePayload,
-    state: JobStatePort = NexusDepends(JobStatePort),
-    blobs: BlobStorePort = NexusDepends(BlobStorePort),
-    index: IndexPort     = NexusDepends(IndexPort),
-) -> None:
-    await state.processing(p.job_id)
-    text = await extract(await blobs.get(p.blob_ref))
-    await index.upsert("documents", [{"id": p.job_id, "text": text, "tenant": p.tenant}])
-    await state.complete(p.job_id, result={"chars": len(text)})
+class DocumentPorts(Protocol):
+    state: JobStatePort
+    blobs: BlobStorePort
+    index: IndexPort
+
+async def parse_to_text(p: ParsePayload, deps: DocumentPorts) -> None:
+    await deps.state.processing(p.job_id)
+    text = await extract(await deps.blobs.get(p.blob_ref))
+    await deps.index.upsert("documents", [{"id": p.job_id, "text": text, "tenant": p.tenant}])
+    await deps.state.complete(p.job_id, result={"chars": len(text)})
+
+specs = [HandlerSpec("zp.documents.parse", parse_to_text, ParsePayload)]
 ```
 
 Reglas:
@@ -162,23 +182,45 @@ Reglas:
 
 ### Composición por proyecto (la prueba de movilidad)
 ```python
-# ZP                                         # nixon
-b = create_broker("nq:zp:documents")         b = create_broker("nq:nixon:jobs")
-register_lifecycle(b, ZetesisAdapters(...))  register_lifecycle(b, NixonAdapters(...))
-register(b, parse_to_text)                   register(b, parse_to_text)   # ← handler idéntico
+# ZP (transporte v1, taskiq)                 # nixon (transporte v2, JetStream)
+app, broker = create_worker(                 await run_nats_worker(
+    zp_config, ZetesisAdapters(...), specs       nixon_config, NixonAdapters(...), specs
+)                                            )
+# ← mismos specs, mismo handler; cambia el config y los adapters
 ```
 
 ---
 
-## 7. Middleware stack estándar
+## 7. Semántica estándar de consumo
 
-Lo aporta `create_broker()`; el handler no lo configura. Orden (outer→inner):
+El handler nunca la configura; la aporta el runtime. Las garantías son idénticas
+en ambos transportes — cambia dónde viven:
 
-1. **TracingMiddleware** — extrae `nq_trace`, abre span de *consume* enlazado al de *produce*. OTel.
-2. **MetricsMiddleware** — counters (recibidos/ok/fallidos/reintentos), histograma de latencia, gauge de profundidad (`XLEN`). Prometheus.
-3. **IdempotencyMiddleware** — `SETNX nq:idem:{nq_idem}` con TTL; si ya existe → ack y skip.
-4. **SmartRetryMiddleware** — **defaults sanos del estándar**: `max_retries=3`, backoff **exponencial + jitter** (sustituye el delay fijo de 30 s y los marcadores de string de nixon por errores tipados retryable/permanent).
-5. **DlqMiddleware** — al agotar reintentos (o `NexusPermanent`): `XADD nq:{project}:{queue}:dlq` con `{ original_message, error, traceback, attempts, failed_at }` en vez de drop silencioso. Emite `fail(permanent=True)`.
+**Comunes**: gate de versión (`nq_v`), dedup por `nq_idem` con claim-up-front y
+release en fallo (Redis como store, TTL configurable), span OTel de *consume*
+enlazado al de *produce* vía `nq_trace`, contadores Prometheus estándar,
+backoff **exponencial + jitter** con `max_retries` del config, errores tipados
+`NexusRetryableError`/`NexusPermanentError` (permanente → DLQ directo sin
+quemar presupuesto), y DLQ con `{ envelope, error, permanent, attempts,
+failed_at }` en vez de drop silencioso.
+
+**Binding Redis (v1)** — middleware de taskiq sobre `create_broker()`:
+`MetricsMiddleware` + `RetryDlqMiddleware` (retry = re-publish diferido vía
+sorted-set `nq:*:delayed` + `DelayedRetryPoller` in-worker) + los cross-cutting
+del wrapper de `register`.
+
+**Binding NATS (v2)** — pasos explícitos de `NatsReceiver` (sin middleware):
+- retry transitorio = **`NAK(delay)`** con el schedule derivado del config.
+  *Gotcha verificado en conformidad*: un NAK explícito **ignora** el `backoff`
+  declarativo del consumer — el delay debe viajar en el NAK. El `backoff`
+  declarativo (`max_deliver`, `backoff[]`) queda como red para workers muertos
+  (redelivery por `ack_wait`).
+- permanente = **`TERM`** + registro DLQ.
+- agotamiento de `max_deliver` = advisory **`MAX_DELIVERIES`** → listener → DLQ.
+  Obligatorio: el mensaje agotado es invisible para el worker **y** para la
+  señal de lag de KEDA.
+- handlers largos = heartbeat **`in_progress()`** (evita redeliveries espurias
+  por `ack_wait`).
 
 ---
 
@@ -194,16 +236,27 @@ publisher.enqueue(
 ```
 
 ### 8.2 TypeScript — `@zetesis/nexus-queue`
-Escribe un `TaskiqMessage` compatible directo al stream namespaced (`XADD`), o habla con el kicker estándar. Estampa los mismos labels + `traceparent` (traza e2e desde Node hasta el worker Python). **Reemplaza el kicker hecho a mano de ZP.**
+Publica **directo al broker** (JetStream, subject `nq.{project}.{queue}`):
+estampa el mismo envelope y los mismos labels que el publisher Python (paridad
+verificada por la suite de conformidad §14), valida slugs y tamaño de payload
+en el cliente, pone `Nats-Msg-Id` = clave de idempotencia y propaga
+`traceparent` (traza e2e desde Node hasta el worker). **Reemplazó el kicker
+hecho a mano de ZP.**
 
-### 8.3 Kicker estándar (para productores que no llegan a Redis)
+### 8.3 Fachada HTTP (kicker) — retirada
+No hay fachada HTTP de enqueue: ambos productores (Python y TS) publican
+directo al broker, y el HTTP del worker sirve solo `/health`, `/ready` y
+`/metrics` (D3, `create_probes_app`). El kicker v2 (`POST /enqueue/{task}` +
+`X-Nexus-Secret`) se retiró del paquete al quedarse sin consumidores tras el
+paso del cliente TS a publicación directa; si aparece un productor que no
+pueda hablar NATS (webhook, serverless), se reintroduce con este mismo
+contrato:
 ```
 POST /enqueue/{task}
 X-Nexus-Secret: <hmac>            # o mTLS
 { "payload": {...}, "tenant": "...", "idempotency_key": "...",
   "priority": "default", "trace": "00-..." }
 → 202 { "status": "queued", "task": "<task>", "task_id": "<id>" }
-GET /health · GET /ready          # ready = conectividad al broker
 ```
 
 ---
@@ -230,10 +283,10 @@ GET /health · GET /ready          # ready = conectividad al broker
 
 ## 11. Despliegue y ops
 
-- **Un worker** = runtime + adapters + handlers registrados. Imagen única, entrypoint = el broker module.
+- **Un worker** = runtime + adapters + handlers registrados. Imagen única. Entrypoint: v1 = broker module (taskiq CLI) + uvicorn; v2 = **`run_nats_worker()`** — proceso único con receiver + probes/métricas HTTP.
 - **Split por carga**: `WORKER_TASKS` (idiom de nixon, estándar) — registro selectivo de tasks por env; en Helm, un Deployment por variante.
-- **Autoescalado**: KEDA `ScaledObject` sobre **lag/pending del stream** (señal real), no CPU. (Hoy: ZP HPA-CPU apagado, nixon nada.)
-- **Resiliencia**: PDB por worker; **readiness = conectividad al broker** (hoy ningún worker tiene readiness real); graceful drain (dejar de consumir + terminar en vuelo en SIGTERM).
+- **Autoescalado**: KEDA `ScaledObject` sobre el **lag del consumer** (señal real), no CPU. En NATS: trigger `nats-jetstream` (lag = `num_pending + num_ack_pending` vía monitoring endpoint), **KEDA ≥ 2.15.1** (ideal ≥ 2.20); el consumer durable debe existir independientemente de los workers (CRDs). El endpoint de monitoring no tiene auth → NetworkPolicy.
+- **Resiliencia**: PDB por worker; **probes (D3)**: liveness = salud del proceso; la conectividad al broker es **métrica + alerta, nunca un probe que mate pods** (un parpadeo del broker sincronizaría restarts de toda la flota). Graceful drain: SIGTERM → dejar de consumir + terminar lo en vuelo + ack + salir; `terminationGracePeriodSeconds` debe cubrir el handler más lento.
 
 ---
 
@@ -256,32 +309,33 @@ GET /health · GET /ready          # ready = conectividad al broker
 ## 14. Conformidad ("Nexus-Queue compliant")
 
 Un proyecto cumple si:
-1. Usa streams `nq:{project}:*` (nunca el default `"taskiq"`).
+1. Usa los nombres namespaced del §4.2 (nunca el default del transporte).
 2. Estampa todos los labels obligatorios (§4.3) y payload tipado.
 3. Sus handlers solo dependen de puertos (no del dominio de otro proyecto).
 4. Sus handlers son idempotentes.
 5. Pasa el **round-trip** TS-productor → Python-worker (test de conformidad).
 6. Tiene retry+DLQ activos (no drop) y emite status events.
-7. Expone métricas + readiness de broker.
+7. Expone las métricas estándar y probes según D3 (liveness = proceso).
 
-La suite de conformidad (pytest + vitest) se cablea a ambos CIs.
+**La suite existe**: `backend/nexus-queue/tests/conformance/` — pytest contra
+un NATS real (el binding Redis se retiró con el runtime v1), con el round-trip
+cross-language conduciendo el **dist real** del cliente TS publicando directo
+al broker. Corre en el CI de este repo (job `nexus-queue-conformance`); los
+proyectos adoptantes la cablean al suyo.
 
 ---
 
-## 15. Migración de ZP y nixon
+## 15. Adopción y migración
 
-**nixon** (ya hexagonal — el trabajo es *promover*):
-- Sacar `EventBusPort`/`UnitOfWorkPort`/`StorageServicePort`/`PublisherPort` de `nixon_server_core` → implementar los puertos de `nexus-queue`.
-- `nixon-worker-core` pasa a depender de `nexus-queue` (broker factory, lifecycle, middleware) en vez de definirlos.
-- ~~Fix: subir `queue_max_attempts`~~ **CORRECCIÓN (verificado en origin/main 2026-07-02)**: `queue_max_attempts` default=3 ⇒ los reintentos de nixon SÍ funcionan, y ya distingue no-retryables (por string-markers). Lo que aporta el estándar aquí: errores tipados, backoff exponencial+jitter y DLQ al agotar.
+**Histórico (v0.1, completado)**: nixon promovió su hexagonal a los puertos del
+estándar (PR #240) y ZP refactorizó su documents-worker a puertos; los streams
+se renombraron al naming anti-colisión con drenado coordinado.
 
-**ZP** (el trabajo es *refactor a puertos*):
-- Refactor de `parse_document` para hablar con `JobStatePort`/`BlobStorePort`/`IndexPort` en vez de `PayloadClient`/`LlamaParseClient` directos.
-- Mapear `JobStatePort` → campos `parse_*` del doc.
-- `payload-documents-worker-builder` depende de `nexus-queue`.
-- **Fix**: el `payload_service_token` que `main.py:20` pasa a un `RuntimeConfig` que ya no lo declara (rompería en boot).
-
-**Ambos**: renombrar streams a `nq:{project}:documents|jobs` (anti-colisión) — **cambio coordinado** (drenar la cola vieja antes de cortar).
+**Migración de transporte (v1 → v2)**: sigue el plan M0–M9 del doc de
+migración. Por cola: contrato → topología declarada (CRDs) → dual-consume →
+drenar → cutover, con la suite de conformidad como test de aceptación. El lado
+Redis conserva taskiq hasta drenar; al cierre, taskiq sale de las dependencias
+del runtime (criterio de éxito #10).
 
 ---
 
@@ -290,18 +344,28 @@ La suite de conformidad (pytest + vitest) se cablea a ambos CIs.
 ```
 PayloadAgents/
   packages/nexus-queue/   → npm  @zetesis/nexus-queue   (cliente TS + tipos del envelope + helpers de test)
-  backend/nexus-queue/    → PyPI nexus-queue            (runtime, puertos, middleware, kicker, PipelineRouter)
+  backend/nexus-queue/    → PyPI nexus-queue            (runtime JetStream, puertos, probes)
 ```
 - Release-please (scopes nuevos `nexus-queue` TS + `nexus-queue` Python). Contenido **agnóstico de Zetesis** pese al scope `@zetesis/`; Konect lo consume desde npm/PyPI (ya consume `@zetesis/*`).
 
 ---
 
-## 17. Decisiones abiertas
+## 17. Decisiones (resueltas en v1.1)
 
-1. **Stream por queue vs por task** por defecto — propuesto: por queue, con opt-in a por-task para etapas que escalan aparte. ¿OK?
-2. **Resultados grandes** (p.ej. `parsed_text`) — ¿inline en `result` del status event, o `result_ref` vía `BlobStorePort`? Propuesto: `result_ref` si supera N KB.
-3. **Interop runtime real** (¿Redis compartido entre proyectos, o solo formato común?) — propuesto: formato común + Redis por proyecto; interop "física" solo para el DLQ-inspector central (lee read-only los `nq:*:dlq`).
-4. **`nq_idem` determinista** — ¿lo genera el productor siempre, o el runtime cae a `task_id` si falta? Propuesto: productor siempre; runtime avisa (warn) si falta.
+1. **Stream por queue** ✅ — con opt-in a por-task para etapas que escalan
+   aparte. En NATS el opt-in se abarata: la jerarquía de subjects permite un
+   consumer filtrado sin crear streams nuevos.
+2. **Resultados grandes** ✅ — `result_ref` vía `BlobStorePort` (claim-check).
+   En NATS es además **obligatorio** por encima del límite de payload del
+   broker (1 MB por defecto): el publisher valida y rechaza con error tipado (D12).
+3. **Interop** ✅ — formato común + broker por proyecto; nunca colas
+   compartidas. Interop de *operaciones*: el DLQ-inspector lee los DLQ de cada
+   proyecto en read-only. En NATS, accounts/leaf nodes quedan como opción
+   futura con trigger propio (inspector cross-proyecto como uso diario).
+4. **`nq_idem`** ✅ — lo genera el productor siempre; sin él, el publisher v2
+   usa `task_id` como `Nats-Msg-Id` (sin dedup runtime) y el handler pierde la
+   garantía de dedup — la suite lo trata como no conformante para tasks
+   idempotentes.
 
 ---
 

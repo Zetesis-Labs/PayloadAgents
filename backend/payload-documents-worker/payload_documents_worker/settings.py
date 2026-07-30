@@ -19,7 +19,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    redis_url: str = "redis://redis:6379"
+    nats_url: str = "nats://nats:4222"
 
     payload_url: HttpUrl = HttpUrl("http://app:3000")
     documents_collection_slug: str = "documents"

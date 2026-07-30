@@ -22,12 +22,14 @@ dev = [
     "pytest-asyncio>=0.24",
     "pytest>=8.3",
     "ruff>=0.9",
-    "taskiq[reload]>=0.11.18",
 ]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# spike-jetstream is the JetStream evaluation bench (throwaway lab scripts,
+# see its EVALUATION.md) — not shipping code, not lint-gated
+extend-exclude = ["nexus-queue/spike-jetstream"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "C4", "S", "SIM", "RUF"]
@@ -53,7 +55,7 @@ warn_unused_configs = true
 ignore_missing_imports = false
 
 [[tool.mypy.overrides]]
-module = ["agno.*", "msal", "taskiq", "taskiq.*", "taskiq_redis", "taskiq_redis.*", "prometheus_client", "prometheus_client.*"]
+module = ["agno.*", "msal", "prometheus_client", "prometheus_client.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

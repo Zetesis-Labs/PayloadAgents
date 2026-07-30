@@ -1,20 +1,12 @@
-"""Prometheus counters for queue throughput.
+"""Prometheus counters for the NATS receiver's throughput and connectivity.
 
-Latency is measured in the handler wrapper (it needs an ``around`` scope that
-middleware hooks can't give); here we keep the stateless counters.
+Stateless module-level counters incremented directly by the receiver loop
+(:mod:`nexus_queue.nats_runtime`).
 """
 
 from __future__ import annotations
 
-from typing import Any
-
 from prometheus_client import Counter, Histogram
-from taskiq.abc.middleware import TaskiqMiddleware
-from taskiq.message import TaskiqMessage
-from taskiq.result import TaskiqResult
-
-from nexus_queue.config import RuntimeConfig
-from nexus_queue.naming import LABEL_TASK
 
 _LABELNAMES = ("project", "queue", "task")
 
@@ -39,21 +31,18 @@ CONSUME_SECONDS = Histogram(
     _LABELNAMES,
 )
 
+# Broker-connectivity signals for the NATS receiver. D3 keeps connectivity out
+# of the liveness/readiness probes (a broker blip must not kill pods) and makes
+# it a metric + alert instead — these are that metric.
+_CONN_LABELNAMES = ("project", "queue")
 
-class MetricsMiddleware(TaskiqMiddleware):
-    """Increment throughput counters around execution."""
-
-    def __init__(self, config: RuntimeConfig) -> None:
-        super().__init__()
-        self._config = config
-
-    def _task(self, message: TaskiqMessage) -> str:
-        return str(message.labels.get(LABEL_TASK, message.task_name))
-
-    def pre_execute(self, message: TaskiqMessage) -> TaskiqMessage:
-        RECEIVED.labels(self._config.project, self._config.queue, self._task(message)).inc()
-        return message
-
-    def post_execute(self, message: TaskiqMessage, result: TaskiqResult[Any]) -> None:
-        counter = FAILED if result.is_err else COMPLETED
-        counter.labels(self._config.project, self._config.queue, self._task(message)).inc()
+FETCH_ERRORS = Counter(
+    "nexus_queue_fetch_errors_total",
+    "Pull-fetch failures in the NATS receiver loop (broker connectivity).",
+    _CONN_LABELNAMES,
+)
+NATS_DISCONNECTS = Counter(
+    "nexus_queue_nats_disconnects_total",
+    "NATS connection disconnect events observed by the worker.",
+    _CONN_LABELNAMES,
+)

@@ -64,3 +64,55 @@ jobs:
 
       - name: Tests (pytest)
         run: uv run pytest agno-agent-builder/tests agno-microsoft-teams/tests -q
+
+  nexus-queue-conformance:
+    name: Nexus-Queue Conformance
+    runs-on: herschel-runners
+    steps:
+      - uses: actions/checkout@v4
+
+      # The cross-language round-trip drives the REAL TS client, so the dist
+      # must exist before pytest runs (the test skips loudly otherwise).
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build TS client
+        run: pnpm --filter @zetesis/nexus-queue build
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install Python + dependencies
+        working-directory: backend
+        run: uv sync --frozen --all-packages
+
+      # docker run instead of a GH service: service containers can't take
+      # command args and NATS needs `-js`. A per-run name AND host port keep
+      # concurrent runs on one shared self-hosted runner from clashing.
+      - name: Start NATS JetStream
+        run: |
+          NATS_PORT=$(( 20000 + ${{ github.run_number }} % 20000 ))
+          echo "NATS_PORT=$NATS_PORT" >> "$GITHUB_ENV"
+          docker run -d --name nq-ci-nats-${{ github.run_id }} \
+            -p "$NATS_PORT:4222" nats:2.11-alpine -js
+          sleep 2
+
+      - name: Conformance suite
+        working-directory: backend
+        env:
+          NATS_URL: nats://127.0.0.1:${{ env.NATS_PORT }}
+        run: uv run pytest nexus-queue/tests/conformance -q
+
+      - name: Stop NATS
+        if: always()
+        run: docker rm -f nq-ci-nats-${{ github.run_id }} || true

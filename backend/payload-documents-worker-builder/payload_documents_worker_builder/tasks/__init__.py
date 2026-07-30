@@ -1,8 +1,7 @@
 """Built-in tasks.
 
-Exposes the LlamaParse parse-document handler and its payload model. The
-handler is registered with the broker by ``create_app`` via a
-``nexus_queue.HandlerSpec``.
+Exposes the LlamaParse parse-document handler and its payload model, wired
+into the worker as a ``nexus_queue.HandlerSpec`` by ``run_worker``.
 """
 
 from payload_documents_worker_builder.tasks.parse_document import (
