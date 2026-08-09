@@ -59,14 +59,14 @@
     "react": "^19"
   },
   "devDependencies": {
-    "@payloadcms/richtext-lexical": "^3.85.2",
-    "@storybook/react": "^8.6.11",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19",
+    "@payloadcms/richtext-lexical": "^3.87.1",
+    "@storybook/react": "^8.6.18",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
     "copyfiles": "^2.4.1",
     "rimraf": "^5.0.10",
-    "tsdown": "^0.16.5",
-    "typescript": "^5.0.0"
+    "tsdown": "^0.16.8",
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "exports": {
