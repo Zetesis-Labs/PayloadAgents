@@ -24,16 +24,16 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.0",
-    "@opentelemetry/api": "^1.9.0",
-    "@toon-format/toon": "^2.1.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@toon-format/toon": "^2.3.1",
     "typesense": "^2.1.0",
-    "zod": "^3.24.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.20.1",
     "rimraf": "3.0.2",
-    "tsdown": "^0.16.5",
+    "tsdown": "^0.16.8",
     "typescript": "5.7.3"
   },
   "engines": {

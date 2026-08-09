@@ -43,10 +43,10 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "dependencies": {
-    "@toon-format/toon": "^2.1.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^3.0.0",
-    "zod": "^3.23.0"
+    "@toon-format/toon": "^2.3.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "@payloadcms/db-postgres": "^3.85.2",
@@ -70,17 +70,17 @@
     }
   },
   "devDependencies": {
-    "@payloadcms/db-postgres": "^3.85.2",
-    "@types/node": "^22.5.4",
-    "@types/react": "^19.0.0",
+    "@payloadcms/db-postgres": "^3.87.1",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
     "@zetesis/agent-ui": "workspace:*",
     "@zetesis/payload-agents-core": "workspace:*",
-    "framer-motion": "^12.0.0",
-    "payload": "^3.85.2",
-    "react": "^19.0.0",
-    "recharts": "^2.13.3",
+    "framer-motion": "^12.43.0",
+    "payload": "^3.87.1",
+    "react": "^19.2.8",
+    "recharts": "^2.15.4",
     "rimraf": "3.0.2",
-    "tsdown": "^0.16.5",
+    "tsdown": "^0.16.8",
     "typescript": "5.7.3"
   },
   "engines": {
