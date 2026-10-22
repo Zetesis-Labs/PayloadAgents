@@ -14,10 +14,10 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "^3.85.2",
-    "@payloadcms/next": "^3.85.2",
-    "@payloadcms/richtext-lexical": "^3.85.2",
-    "@payloadcms/ui": "^3.85.2",
+    "@payloadcms/db-postgres": "^3.92.0",
+    "@payloadcms/next": "^3.92.0",
+    "@payloadcms/richtext-lexical": "^3.92.0",
+    "@payloadcms/ui": "^3.92.0",
     "@zetesis/agent-ui": "workspace:*",
     "@zetesis/payload-agents-core": "workspace:*",
     "@zetesis/payload-agents-metrics": "workspace:*",
@@ -33,11 +33,11 @@
     "framer-motion": "^12.0.0",
     "graphql": "^16.9.0",
     "lucide-react": "^0.563.0",
-    "next": "^16",
-    "payload": "^3.85.2",
+    "next": "^16.4.2",
+    "payload": "^3.92.0",
     "react": "^19.2",
     "react-dom": "^19.2",
-    "sharp": "0.32.6",
+    "sharp": "0.35.5",
     "zod": "^3.23.0"
   },
   "devDependencies": {

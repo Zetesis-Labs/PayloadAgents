@@ -29,8 +29,8 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "peerDependencies": {
-    "@payloadcms/ui": "^3.85.2",
-    "payload": "^3.85.2",
+    "@payloadcms/ui": "^3.92.0",
+    "payload": "^3.92.0",
     "react": "^19"
   },
   "peerDependenciesMeta": {
@@ -45,7 +45,7 @@
     "@zetesis/nexus-queue": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.19.7",
+    "@types/node": "^24.10.1",
     "@types/react": "^19",
     "rimraf": "3.0.2",
     "tsdown": "^0.16.5",

@@ -41,7 +41,7 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.10.1",
     "rimraf": "^5.0.10",
     "tsdown": "^0.16.5",
     "typescript": "^5.0.0"
