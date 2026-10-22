@@ -6,7 +6,7 @@
   "packages/payload-agents-metrics": "1.5.0",
   "packages/payload-documents": "0.6.0",
   "packages/payload-indexer": "0.5.0",
-  "packages/payload-lexical-blocks-builder": "0.2.4",
+  "packages/payload-lexical-blocks-builder": "0.2.5",
   "packages/payload-taxonomies": "0.2.4",
   "packages/payload-typesense": "0.5.0",
   "backend/agno-agent-builder": "0.1.16",

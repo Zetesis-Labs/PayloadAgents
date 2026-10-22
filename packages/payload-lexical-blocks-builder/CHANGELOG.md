@@ -1,5 +1,12 @@
 # @zetesis/payload-lexical-blocks-builder
 
+## [0.2.5](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-lexical-blocks-builder-v0.2.4...payload-lexical-blocks-builder-v0.2.5) (2026-10-22)
+
+
+### Bug Fixes
+
+* **payload-lexical-blocks-builder:** pin Storybook 8 peer for React package ([bbf2a88](https://github.com/Zetesis-Labs/PayloadAgents/commit/bbf2a88a4e6df3375cd98ca52276ba445c6cff67))
+
 ## [0.2.4](https://github.com/Zetesis-Labs/PayloadAgents/compare/payload-lexical-blocks-builder-v0.2.3...payload-lexical-blocks-builder-v0.2.4) (2026-07-06)
 
 
