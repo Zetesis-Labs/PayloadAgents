@@ -13,25 +13,36 @@ legacy ``agno_sessions.runs`` column in place as a backup (Agno merges it with
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from agno.db.migrations.manager import MigrationManager
 from agno.db.postgres import PostgresDb
-from sqlalchemy import column, func, select, table, text
+from sqlalchemy import column, func, literal_column, select, table, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import Select
+from sqlalchemy.sql.elements import ColumnClause
 
 from agno_agent_builder.db import normalize_pg_url
 from agno_agent_builder.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Agno copies a legacy run only when it is an object with a non-null run_id.
+_MIGRATABLE_RUNS: ColumnClause[Any] = literal_column("'$[*] ? (@.run_id != null)'::jsonpath")
+_TARGET_VERSION = (3, 0, 0)
+
+
+class MigrationIncompleteError(RuntimeError):
+    """The migration finished without moving the store to the Agno 3 layout."""
+
 
 @dataclass(frozen=True)
 class MigrationReport:
     """Counts taken right after the migration, for the job log.
 
-    ``legacy_runs`` keeps growing while a pre-upgrade runtime still serves, so a
-    gap against ``runs`` is expected during a rollout and is not a failure.
+    ``legacy_runs`` counts the runs in ``agno_sessions.runs`` that Agno can copy
+    (those with a ``run_id``). It keeps growing while a pre-upgrade runtime still
+    serves, so a partial gap against ``runs`` is expected during a rollout.
     """
 
     sessions_schema_version: str
@@ -44,7 +55,8 @@ async def migrate_database(*, database_url: str, database_schema: str = "agno") 
     """Apply every pending Agno migration to the runtime's store.
 
     Builds the ``PostgresDb`` exactly as ``AgentRegistry`` does, so the migrated
-    tables are the ones the runtime reads.
+    tables are the ones the runtime reads. Raises ``MigrationIncompleteError``
+    when the store is left in a state the runtime cannot read.
     """
     db = PostgresDb(db_url=normalize_pg_url(database_url), db_schema=database_schema)
     try:
@@ -60,7 +72,29 @@ async def migrate_database(*, database_url: str, database_schema: str = "agno") 
         legacy_runs=report.legacy_runs,
         runs=report.runs,
     )
+    _check(report)
     return report
+
+
+def _check(report: MigrationReport) -> None:
+    """Fail when Agno stamped the store without moving it to the v3 layout.
+
+    ``MigrationManager`` stamps the version even when a step reports nothing to do,
+    and never re-runs a stamped step, so this is the last point to catch it.
+    """
+    if report.sessions > 0 and _version(report.sessions_schema_version) < _TARGET_VERSION:
+        raise MigrationIncompleteError(
+            f"agno_sessions is still at schema {report.sessions_schema_version}; expected 3.0.0 or later"
+        )
+    if report.legacy_runs > 0 and report.runs == 0:
+        raise MigrationIncompleteError(
+            f"{report.legacy_runs} legacy runs in agno_sessions.runs but agno_runs is empty: the "
+            "v3.0.0 copy did not run. Check agno_schema_versions before retrying."
+        )
+
+
+def _version(value: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in value.split(".")[:3])
 
 
 def _report(db: PostgresDb) -> MigrationReport:
@@ -81,9 +115,16 @@ def _report(db: PostgresDb) -> MigrationReport:
         legacy_runs = (
             _scalar(
                 conn,
-                select(func.coalesce(func.sum(func.jsonb_array_length(sessions.c.runs)), 0)).where(
-                    func.jsonb_typeof(sessions.c.runs) == "array"
-                ),
+                select(
+                    func.coalesce(
+                        func.sum(
+                            func.jsonb_array_length(
+                                func.jsonb_path_query_array(sessions.c.runs, _MIGRATABLE_RUNS)
+                            )
+                        ),
+                        0,
+                    )
+                ).where(func.jsonb_typeof(sessions.c.runs) == "array"),
             )
             if legacy_column
             else 0

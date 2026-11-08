@@ -11,7 +11,11 @@ from typing import Any, ClassVar
 
 import pytest
 from agno_agent_builder import migrations
-from agno_agent_builder.migrations import MigrationReport, migrate_database
+from agno_agent_builder.migrations import (
+    MigrationIncompleteError,
+    MigrationReport,
+    migrate_database,
+)
 
 REPORT = MigrationReport(sessions_schema_version="3.0.0", sessions=5, legacy_runs=6, runs=6)
 
@@ -30,7 +34,10 @@ class FakeDb:
 
 
 def _install(
-    monkeypatch: pytest.MonkeyPatch, *, up_error: BaseException | None = None
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    up_error: BaseException | None = None,
+    report: MigrationReport = REPORT,
 ) -> list[Any]:
     FakeDb.instances = []
     migrated: list[Any] = []
@@ -46,7 +53,7 @@ def _install(
 
     monkeypatch.setattr(migrations, "PostgresDb", FakeDb)
     monkeypatch.setattr(migrations, "MigrationManager", FakeManager)
-    monkeypatch.setattr(migrations, "_report", lambda db: REPORT)
+    monkeypatch.setattr(migrations, "_report", lambda db: report)
     return migrated
 
 
@@ -77,3 +84,39 @@ async def test_failure_propagates_and_still_closes_the_pool(
 
     [db] = FakeDb.instances
     assert db.closed
+
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        MigrationReport(sessions_schema_version="3.0.0", sessions=5, legacy_runs=6, runs=0),
+        MigrationReport(sessions_schema_version="2.5.6", sessions=5, legacy_runs=0, runs=0),
+    ],
+    ids=["legacy-runs-not-copied", "sessions-not-stamped"],
+)
+async def test_fails_when_the_store_is_not_on_the_v3_layout(
+    monkeypatch: pytest.MonkeyPatch, report: MigrationReport
+) -> None:
+    _install(monkeypatch, report=report)
+
+    with pytest.raises(MigrationIncompleteError):
+        await migrate_database(database_url="postgresql://u:p@h:5432/db")
+
+    [db] = FakeDb.instances
+    assert db.closed
+
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        MigrationReport(sessions_schema_version="3.0.0", sessions=0, legacy_runs=0, runs=0),
+        MigrationReport(sessions_schema_version="3.0.0", sessions=5, legacy_runs=9, runs=6),
+    ],
+    ids=["fresh-database", "rollout-gap"],
+)
+async def test_accepts_a_fresh_store_and_a_partial_rollout_gap(
+    monkeypatch: pytest.MonkeyPatch, report: MigrationReport
+) -> None:
+    _install(monkeypatch, report=report)
+
+    assert await migrate_database(database_url="postgresql://u:p@h:5432/db") == report
