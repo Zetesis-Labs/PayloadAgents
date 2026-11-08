@@ -42,11 +42,11 @@ interface MetricsPluginConfigBase {
   extraPricing?: Record<string, { input: number; output: number }>
 
   /**
-   * Fully-qualified Agno sessions table used to resolve conversation detail and
-   * first-message previews. Default: `'agno.agno_sessions'`. Override if your
-   * Agno deployment uses a different schema or table name.
+   * Fully-qualified Agno runs table (one row per run, Agno >= 3) used to resolve
+   * conversation detail and first-message previews. Default: `'agno.agno_runs'`.
+   * Override if your Agno deployment uses a different schema or table name.
    */
-  agnoSessionsTable?: string
+  agnoRunsTable?: string
 }
 
 /**
@@ -87,5 +87,5 @@ export interface ResolvedMetricsConfig {
   agentsSlug: string
   collectionOverrides: ((current: CollectionConfig) => CollectionConfig) | undefined
   extraPricing: Record<string, { input: number; output: number }>
-  agnoSessionsTable: string
+  agnoRunsTable: string
 }

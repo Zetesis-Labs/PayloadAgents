@@ -72,7 +72,7 @@ export default function Page() {
   - `GET /aggregate` — totals, paginated buckets, top-by-cost, day series.
   - `POST /ingest` — authenticated batch ingest (1–100 events).
   - `GET /sessions` — conversation list with per-session totals.
-  - `GET /session` — conversation detail, pulling the full transcript from `agno.agno_sessions`.
+  - `GET /session` — conversation detail, pulling the full transcript from `agno.agno_runs`.
 
 ### Data flow
 
@@ -110,7 +110,7 @@ Full shape lives in `MetricsPluginConfig` but the common options are:
 | `ingestSecret` | `process.env.AGNO_INTERNAL_SECRET ?? 'dev'` | Shared secret required by `POST /ingest`. |
 | `collectionSlug` | `'llm-usage-events'` | Override the Payload collection slug. |
 | `extraPricing` | `{}` | Extend or override the built-in model price table. |
-| `agnoSessionsTable` | `'agno.agno_sessions'` | Fully-qualified Agno sessions table used by session detail and first-message previews. |
+| `agnoRunsTable` | `'agno.agno_runs'` | Fully-qualified Agno runs table (Agno >= 3) used by session detail and first-message previews. |
 
 ## Cost calculation
 
