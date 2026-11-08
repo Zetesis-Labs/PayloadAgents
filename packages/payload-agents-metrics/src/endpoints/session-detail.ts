@@ -182,21 +182,23 @@ export function createSessionDetailHandler(config: ResolvedMetricsConfig): Paylo
 
     const db = getDrizzle(payload)
     const result = await db.execute(sql`
-      SELECT runs FROM ${sql.raw(config.agnoSessionsTable)} WHERE session_id = ${conversationId} LIMIT 1
+      SELECT run_data FROM ${sql.raw(config.agnoRunsTable)}
+      WHERE session_id = ${conversationId}
+      ORDER BY run_index ASC NULLS LAST, created_at ASC
     `)
 
-    const row = result.rows[0]
-    if (!row?.runs) return Response.json({ messages: [] })
-
-    let rawRuns: unknown
-    if (typeof row.runs === 'string') {
-      try {
-        rawRuns = JSON.parse(row.runs)
-      } catch {
-        return Response.json({ messages: [] })
+    const rawRuns: unknown[] = []
+    for (const row of result.rows) {
+      if (typeof row.run_data !== 'string') {
+        rawRuns.push(row.run_data)
+        continue
       }
-    } else {
-      rawRuns = row.runs
+      try {
+        rawRuns.push(JSON.parse(row.run_data))
+      } catch {
+        // Skip the run so the rest of the transcript still renders, but leave a trace.
+        payload.logger.warn({ conversationId }, '[metrics] session detail: skipping a run whose run_data is not JSON')
+      }
     }
 
     const allMessages: AgnoMessage[] = extractMessagesFromRuns(parseAgnoRuns(rawRuns))

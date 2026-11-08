@@ -38,7 +38,7 @@ function resolveConfig(userConfig: MetricsPluginConfig): ResolvedMetricsConfig {
     agentsSlug: userConfig.agentsSlug ?? 'agents',
     collectionOverrides: userConfig.collectionOverrides,
     extraPricing: userConfig.extraPricing ?? {},
-    agnoSessionsTable: userConfig.agnoSessionsTable ?? 'agno.agno_sessions'
+    agnoRunsTable: userConfig.agnoRunsTable ?? 'agno.agno_runs'
   }
 }
 

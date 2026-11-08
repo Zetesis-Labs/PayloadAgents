@@ -1,8 +1,9 @@
 /**
  * Token usage query — reads daily consumption from Agno's session store.
  *
- * Agno persists per-run token metrics in `agno.agno_sessions`. This module
- * only reads; Agno is the single source of truth for token consumption.
+ * Agno (>= 3) persists one row per run in `agno.agno_runs`, with the run's
+ * token metrics inside `run_data`. This module only reads; Agno is the single
+ * source of truth for token consumption.
  *
  * Uses cost-weighted "effective tokens" instead of raw totals so the daily
  * budget reflects real spend. Cached input counts at 25% and output tokens
@@ -63,16 +64,17 @@ async function getCurrentDailyUsage(payload: Payload, userId: string | number): 
   try {
     const db = getDrizzle(payload)
 
+    // Runs of the sessions the user opened today — the same window the
+    // pre-Agno-3 query applied to the legacy `agno_sessions.runs` blob.
     const result = await db.execute(sql`
       SELECT
-        COALESCE(SUM((r->>'input_tokens')::int), 0) AS input_tokens,
-        COALESCE(SUM((r->>'output_tokens')::int), 0) AS output_tokens,
-        COALESCE(SUM((r->>'cache_read_tokens')::int), 0) AS cache_read_tokens,
-        COALESCE(SUM((r->>'reasoning_tokens')::int), 0) AS reasoning_tokens,
-        COALESCE(SUM((r->>'total_tokens')::int), 0) AS total_tokens
-      FROM agno.agno_sessions s,
-           jsonb_array_elements(s.runs) AS run,
-           jsonb_extract_path(run, 'metrics') AS r
+        COALESCE(SUM((r.run_data #>> '{metrics,input_tokens}')::int), 0) AS input_tokens,
+        COALESCE(SUM((r.run_data #>> '{metrics,output_tokens}')::int), 0) AS output_tokens,
+        COALESCE(SUM((r.run_data #>> '{metrics,cache_read_tokens}')::int), 0) AS cache_read_tokens,
+        COALESCE(SUM((r.run_data #>> '{metrics,reasoning_tokens}')::int), 0) AS reasoning_tokens,
+        COALESCE(SUM((r.run_data #>> '{metrics,total_tokens}')::int), 0) AS total_tokens
+      FROM agno.agno_sessions s
+      JOIN agno.agno_runs r ON r.session_id = s.session_id
       WHERE s.user_id = ${userIdStr}
         AND s.created_at >= ${todayEpoch}
     `)

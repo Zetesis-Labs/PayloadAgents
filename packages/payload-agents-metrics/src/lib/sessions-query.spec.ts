@@ -42,7 +42,7 @@ function baseConfig(overrides: Partial<ResolvedMetricsConfig> = {}): ResolvedMet
     agentsSlug: 'agents',
     collectionOverrides: undefined,
     extraPricing: {},
-    agnoSessionsTable: 'agno.agno_sessions',
+    agnoRunsTable: 'agno.agno_runs',
     ...overrides
   }
 }
@@ -210,94 +210,50 @@ describe('getSessions — label resolution', () => {
 })
 
 describe('getSessions — first message lookup', () => {
-  it('extracts the first user message from agno runs', async () => {
+  const oneSession = [
+    [{ total: '1' }],
+    [{}],
+    [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }]
+  ]
+
+  it('uses the first user message Postgres picks from the agno runs table', async () => {
     const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [
-          {
-            session_id: 'sess-1',
-            runs: [
-              {
-                messages: [
-                  { role: 'system', content: 'you are an assistant' },
-                  { role: 'user', content: 'hola mundo' }
-                ]
-              }
-            ]
-          }
-        ]
-      ]
+      executes: [...oneSession, [{ session_id: 'sess-1', content: 'hola mundo' }]]
     })
     const result = await getSessions(payload, baseConfig(), {}, 1)
     expect(result.sessions[0]?.firstMessage).toBe('hola mundo')
   })
 
+  it('queries the configured runs table for user messages', async () => {
+    const { payload, execute } = makePayload({
+      executes: [...oneSession, [{ session_id: 'sess-1', content: 'hola' }]]
+    })
+    await getSessions(payload, baseConfig({ agnoRunsTable: 'custom.my_runs' }), {}, 1)
+    // Query index 3 is the first-message lookup.
+    const { sql, params } = dialect.sqlToQuery(execute.mock.calls[3]?.[0] as SQL<unknown>)
+    expect(sql).toContain('FROM custom.my_runs r')
+    expect(sql).toContain("m.value ->> 'role' = 'user'")
+    expect(sql).not.toContain('agno_sessions')
+    expect(params).toEqual(['sess-1'])
+  })
+
   it('truncates very long first messages to 200 chars', async () => {
-    const longMessage = 'x'.repeat(500)
     const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [
-          {
-            session_id: 'sess-1',
-            runs: [{ messages: [{ role: 'user', content: longMessage }] }]
-          }
-        ]
-      ]
+      executes: [...oneSession, [{ session_id: 'sess-1', content: 'x'.repeat(500) }]]
     })
     const result = await getSessions(payload, baseConfig(), {}, 1)
     expect(result.sessions[0]?.firstMessage).toHaveLength(200)
   })
 
-  it('parses runs when stored as a JSON string', async () => {
-    const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [
-          {
-            session_id: 'sess-1',
-            runs: JSON.stringify([{ messages: [{ role: 'user', content: 'json-stringified' }] }])
-          }
-        ]
-      ]
-    })
-    const result = await getSessions(payload, baseConfig(), {}, 1)
-    expect(result.sessions[0]?.firstMessage).toBe('json-stringified')
-  })
-
-  it('leaves firstMessage null when runs is null', async () => {
-    const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [{ session_id: 'sess-1', runs: null }]
-      ]
-    })
+  it('leaves firstMessage null when the session has no user message', async () => {
+    const { payload } = makePayload({ executes: [...oneSession, []] })
     const result = await getSessions(payload, baseConfig(), {}, 1)
     expect(result.sessions[0]?.firstMessage).toBeNull()
   })
 
-  it('leaves firstMessage null when runs contain no user message', async () => {
+  it('ignores a row whose content is not text', async () => {
     const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [
-          {
-            session_id: 'sess-1',
-            runs: [{ messages: [{ role: 'system', content: 'no user here' }] }]
-          }
-        ]
-      ]
+      executes: [...oneSession, [{ session_id: 'sess-1', content: null }]]
     })
     const result = await getSessions(payload, baseConfig(), {}, 1)
     expect(result.sessions[0]?.firstMessage).toBeNull()
@@ -308,20 +264,6 @@ describe('getSessions — first message lookup', () => {
     await getSessions(payload, baseConfig(), {}, 1)
     // 3 calls only: count, totals, sessions. No agno query.
     expect(execute).toHaveBeenCalledTimes(3)
-  })
-
-  it('survives when runs is malformed JSON (does not throw, just misses the message)', async () => {
-    const { payload } = makePayload({
-      executes: [
-        [{ total: '1' }],
-        [{}],
-        [{ conversation_id: 'sess-1', user_id: 0, tenant_id: 0, first_run_at: null, last_run_at: null }],
-        [{ session_id: 'sess-1', runs: '{not valid json' }]
-      ]
-    })
-    // Currently throws — once the fix is in, this should resolve with firstMessage=null.
-    const result = await getSessions(payload, baseConfig(), {}, 1)
-    expect(result.sessions[0]?.firstMessage).toBeNull()
   })
 
   it('skips conversation_id=null instead of searching for the literal string "null"', async () => {

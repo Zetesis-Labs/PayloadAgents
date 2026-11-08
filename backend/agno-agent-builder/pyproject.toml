@@ -19,13 +19,13 @@ classifiers = [
 ]
 dependencies = [
     "ag-ui-protocol>=0.1.13",
-    "agno[anthropic,mcp,openai,os,postgres,telegram]>=2.6.0",
+    "agno[anthropic,mcp,openai,os,postgres,telegram]>=3.1.12,<4",
     "agno-microsoft-teams",
     "cryptography>=42.0",
     "fastapi>=0.115",
     "httpx>=0.28",
     "langfuse>=3.0",
-    "openinference-instrumentation-agno>=0.1",
+    "openinference-instrumentation-agno>=1.1,<2",
     "opentelemetry-exporter-otlp>=1.35",
     "opentelemetry-instrumentation-httpx>=0.46b0",
     "opentelemetry-sdk>=1.35",

@@ -18,7 +18,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "agno>=2.6.0",
+    "agno>=3.1.12,<4",
     "cryptography>=42.0",
     "fastapi>=0.115",
     "httpx>=0.28",

@@ -200,7 +200,7 @@ export async function getSessions(
   const conversationIds = rawSessions
     .filter(r => r.conversation_id != null && r.conversation_id !== '')
     .map(r => String(r.conversation_id))
-  const firstMessages = await batchFetchFirstMessages(db, conversationIds, config.agnoSessionsTable)
+  const firstMessages = await batchFetchFirstMessages(db, conversationIds, config.agnoRunsTable)
 
   const sessions: SessionRow[] = rawSessions.map(r => buildSessionRow(r, userMap, tenantMap, firstMessages))
 
@@ -220,11 +220,16 @@ export async function getSessions(
 async function batchFetchFirstMessages(
   db: DrizzleLike,
   conversationIds: string[],
-  agnoSessionsTable: string
+  agnoRunsTable: string
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   if (conversationIds.length === 0) return result
 
+  // One row per session: the first user message of its earliest run. Postgres
+  // picks it (DISTINCT ON + ORDER BY run position, then message position) so the
+  // full run payloads never leave the database. `->>` yields the content as text:
+  // a plain string stays as-is, structured content comes back as its JSON text.
+  //
   // session_id IN (...) emits one parameterised placeholder per id, which
   // node-postgres binds correctly. ANY(${array}::text[]) looks cleaner but
   // drizzle's sql template hands the JS array to pg as a single string
@@ -232,37 +237,23 @@ async function batchFetchFirstMessages(
   // sql.join with comma separators expands to ($1, $2, …) and uses the
   // session_id index just as well as a chained OR list.
   const rows = await db.execute(sql`
-    SELECT session_id, runs
-    FROM ${sql.raw(agnoSessionsTable)}
-    WHERE session_id IN (${sql.join(
+    SELECT DISTINCT ON (r.session_id) r.session_id, m.value ->> 'content' AS content
+    FROM ${sql.raw(agnoRunsTable)} r
+    CROSS JOIN LATERAL jsonb_array_elements(
+      CASE WHEN jsonb_typeof(r.run_data -> 'messages') = 'array' THEN r.run_data -> 'messages' ELSE '[]'::jsonb END
+    ) WITH ORDINALITY AS m(value, ord)
+    WHERE r.session_id IN (${sql.join(
       conversationIds.map(id => sql`${id}`),
       sql`, `
     )})
+      AND m.value ->> 'role' = 'user'
+      AND m.value ->> 'content' IS NOT NULL
+    ORDER BY r.session_id, r.run_index ASC NULLS LAST, r.created_at ASC, m.ord ASC
   `)
 
   for (const row of rows.rows) {
-    const sessionId = String(row.session_id)
-    let runs: Array<{ messages?: Array<{ role: string; content: unknown }> }> | null
-    if (typeof row.runs === 'string') {
-      try {
-        runs = JSON.parse(row.runs)
-      } catch {
-        continue
-      }
-    } else {
-      runs = row.runs as Array<{ messages?: Array<{ role: string; content: unknown }> }> | null
-    }
-
-    if (!runs) continue
-    for (const run of runs) {
-      if (!run.messages) continue
-      const userMsg = run.messages.find(m => m.role === 'user')
-      if (userMsg) {
-        const content = typeof userMsg.content === 'string' ? userMsg.content : JSON.stringify(userMsg.content)
-        result.set(sessionId, content.slice(0, 200))
-        break
-      }
-    }
+    if (typeof row.content !== 'string') continue
+    result.set(String(row.session_id), row.content.slice(0, 200))
   }
 
   return result

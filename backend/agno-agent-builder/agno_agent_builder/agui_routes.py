@@ -33,11 +33,8 @@ from ag_ui.core import (
     RunStartedEvent,
 )
 from ag_ui.encoder import EventEncoder
-from agno.os.interfaces.agui.utils import (
-    async_stream_agno_response_as_agui_events,
-    extract_agui_user_input,
-    validate_agui_state,
-)
+from agno.os.interfaces.agui.input import extract_user_input, validate_state
+from agno.os.interfaces.agui.stream import async_stream_agno_response_as_agui_events
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -95,7 +92,7 @@ async def _run_with_metrics(agent: Any, run_input: RunAgentInput) -> AsyncIterat
     run_id = run_input.run_id or str(uuid.uuid4())
 
     try:
-        user_input = extract_agui_user_input(run_input.messages or [])
+        user_input = extract_user_input(run_input.messages or [])
 
         yield RunStartedEvent(
             type=EventType.RUN_STARTED, thread_id=run_input.thread_id, run_id=run_id
@@ -105,7 +102,7 @@ async def _run_with_metrics(agent: Any, run_input: RunAgentInput) -> AsyncIterat
         if run_input.forwarded_props and isinstance(run_input.forwarded_props, dict):
             forwarded_user_id = run_input.forwarded_props.get("user_id")
 
-        session_state = validate_agui_state(run_input.state, run_input.thread_id)
+        session_state = validate_state(run_input.state, run_input.thread_id)
 
         response_stream = agent.arun(
             input=user_input,
