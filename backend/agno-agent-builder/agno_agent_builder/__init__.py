@@ -45,6 +45,7 @@ from agno_agent_builder.instructions import (
     DEFAULT_TOOL_PROTOCOL,
     compose_instructions,
 )
+from agno_agent_builder.migrations import MigrationReport, migrate_database
 from agno_agent_builder.sources import AgentConfig, AgentSource, PayloadAgentSource
 
 __all__ = [
@@ -63,6 +64,7 @@ __all__ = [
     "AgentSource",
     "AuthenticationError",
     "InvalidModelError",
+    "MigrationReport",
     "MissingApiKeyError",
     "MissingLiteLlmVirtualKeyError",
     "PayloadAgentSource",
@@ -72,4 +74,5 @@ __all__ = [
     "build_model",
     "compose_instructions",
     "create_app",
+    "migrate_database",
 ]

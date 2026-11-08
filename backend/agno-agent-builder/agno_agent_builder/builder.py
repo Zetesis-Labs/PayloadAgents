@@ -50,11 +50,11 @@ def build_agent(
         tools=[build_mcp_tools(mcp_url, cfg)],
         add_history_to_context=True,
         num_history_runs=5,
-        # Reasoning scaffolding stays OFF through the gateway: the preset hides
-        # the real model from Agno's heuristic and native reasoners reason
-        # server-side anyway; scaffolding doubles turns with a strict:true call
-        # OpenAI rejects for map-shaped tool params and inflates the prompt.
-        reasoning=False,
+        # Reasoning scaffolding stays OFF through the gateway: no reasoning_model
+        # is set, so Agno never runs it. The preset hides the real model from
+        # Agno's heuristic and native reasoners reason server-side anyway;
+        # scaffolding doubles turns with a strict:true call OpenAI rejects for
+        # map-shaped tool params and inflates the prompt.
         tool_call_limit=cfg.tool_call_limit,
         telemetry=False,
     )
