@@ -196,7 +196,8 @@ export function createSessionDetailHandler(config: ResolvedMetricsConfig): Paylo
       try {
         rawRuns.push(JSON.parse(row.run_data))
       } catch {
-        // A run whose payload is not JSON is skipped; the rest of the transcript still renders.
+        // Skip the run so the rest of the transcript still renders, but leave a trace.
+        payload.logger.warn({ conversationId }, '[metrics] session detail: skipping a run whose run_data is not JSON')
       }
     }
 

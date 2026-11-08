@@ -38,15 +38,16 @@ function run(user: string, answer: string) {
 async function getDetail(rows: Record<string, unknown>[], config = baseConfig()) {
   const execute = vi.fn<(q: unknown) => Promise<{ rows: Record<string, unknown>[] }>>()
   execute.mockResolvedValue({ rows })
+  const warn = vi.fn()
   const req = {
     url: 'http://x/session?conversationId=sess-1',
     user: { id: 1 },
-    payload: { db: { drizzle: { execute } } },
+    payload: { db: { drizzle: { execute } }, logger: { warn } },
     headers: new Headers()
   } as unknown as PayloadRequest
   const res = await createSessionDetailHandler(config)(req)
   const body = (await res.json()) as { messages: Array<{ role: string; content: string }> }
-  return { body, execute }
+  return { body, execute, warn }
 }
 
 describe('createSessionDetailHandler — transcript from agno_runs', () => {
@@ -74,9 +75,10 @@ describe('createSessionDetailHandler — transcript from agno_runs', () => {
     expect(body.messages.map(m => m.content)).toEqual(['hola', 'buenas'])
   })
 
-  it('skips a run whose payload is not JSON and still renders the others', async () => {
-    const { body } = await getDetail([{ run_data: '{not json' }, { run_data: run('hola', 'buenas') }])
+  it('skips a run whose payload is not JSON, logs it and still renders the others', async () => {
+    const { body, warn } = await getDetail([{ run_data: '{not json' }, { run_data: run('hola', 'buenas') }])
     expect(body.messages.map(m => m.content)).toEqual(['hola', 'buenas'])
+    expect(warn).toHaveBeenCalledWith({ conversationId: 'sess-1' }, expect.stringContaining('not JSON'))
   })
 
   it('returns no messages when the conversation has no runs', async () => {
