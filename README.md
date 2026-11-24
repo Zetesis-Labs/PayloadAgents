@@ -1,6 +1,6 @@
 # PayloadAgents
 
-Open-source [Payload CMS](https://payloadcms.com) plugins for **semantic search, RAG-powered chat, AI agents, taxonomy management, and content rendering** — extracted from [Zetesis Portal](https://zetesis.xyz), a production platform that turns organizational knowledge into accessible, AI-powered experiences.
+Open-source [Payload CMS](https://payloadcms.com) plugins for **semantic search, RAG-powered chat, AI agents, taxonomy management, and content rendering** — extracted from [Zetesis Portal](https://zetesis.es), a production platform that turns organizational knowledge into accessible, AI-powered experiences.
 
 > **ζήτησις** (zḗtēsis) — _inquiry_. Zetesis builds systems that make company expertise searchable and conversational through semantic search, AI agents, and structured content. These packages are the open-source core of that work.
 
@@ -156,4 +156,4 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-Built by [Zetesis](https://zetesis.xyz)
+Built by [Zetesis](https://zetesis.es)
