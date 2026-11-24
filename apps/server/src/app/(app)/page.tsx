@@ -67,7 +67,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           <strong className="text-foreground">Payload Agents</strong> is a collection of open-source
           plugins extracted from{' '}
           <a
-            href="https://zetesis.xyz"
+            href="https://zetesis.es"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline underline-offset-4 hover:opacity-80"
@@ -180,7 +180,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         <p>
           Built by{' '}
           <a
-            href="https://zetesis.xyz"
+            href="https://zetesis.es"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:opacity-80"

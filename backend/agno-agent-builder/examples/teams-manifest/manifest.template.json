@@ -5,9 +5,9 @@
   "id": "__TEAMS_APP_ID__",
   "developer": {
     "name": "Zetesis",
-    "websiteUrl": "https://zetesis.xyz",
-    "privacyUrl": "https://zetesis.xyz/privacy",
-    "termsOfUseUrl": "https://zetesis.xyz/terms"
+    "websiteUrl": "https://zetesis.es",
+    "privacyUrl": "https://zetesis.es/privacy",
+    "termsOfUseUrl": "https://zetesis.es/terms"
   },
   "name": {
     "short": "Zetesis Agent",
